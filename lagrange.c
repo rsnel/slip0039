@@ -33,7 +33,7 @@ static void helper(slip0039_set_t *s, int no_idx,
 			if (i == j) continue;
 
 			prod = gf256_mul(prod,
-					gf256_div( gf256_add(x, idx[j]),
+					gf256_div(gf256_add(x, idx[j]),
 						gf256_add(idx[i], idx[j])));
 		}
 		sum = gf256_add(sum, prod);
