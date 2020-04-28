@@ -45,8 +45,9 @@ etc
 
 ## Features
 
-* Attempts are made to wipe all sensitive data from memory upon termination, to
-  lock the data in memory so that it does not get swapped out to disk
+* Attempts are made to wipe all sensitive data from memory upon termination.
+
+* Data is locked memory so that it does not get swapped out to disk.
 
 * The program is constructed such that the amount of data that is needlessly
   rearranged an copied around is reduced.
