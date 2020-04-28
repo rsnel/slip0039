@@ -46,8 +46,7 @@ etc
 ## Features
 
 * Attempts are made to wipe all sensitive data from memory upon termination, to
-  lock the data in memory so that it does not get swapped out to disk and to use
-  constant time algrorithms when handling confidential data.
+  lock the data in memory so that it does not get swapped out to disk
 
 * The program is constructed such that the amount of data that is needlessly
   rearranged an copied around is reduced.
