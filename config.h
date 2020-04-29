@@ -24,7 +24,9 @@
 // support secrets of at most BLOCKS*2 bytes since
 // the spec requires that secrets of 256 bits (32 bytes)
 // are supported, BLOCKS must be >= 16
-#define BLOCKS 	16
+// to allow storage of BIP39 seed (512 bits) we set
+// BLOCKS to 32
+#define BLOCKS	32
 
 #define BITS_PER_WORD 10
 
