@@ -1,6 +1,6 @@
-SLIP-0039 implementation in C without dependencies
+# SLIP-0039 implementation in C without dependencies
 
-Usage:
+## Usage
 
 `$ slip0039 [ -d ] [ -q ] recover`
 
@@ -16,14 +16,14 @@ option `-q` (quiet) shuts up warnings
     S means 'secret'
     P means 'plaintext' (decrypted secret)
 
-`recover` (default when no mode is specified)
+### Mode `recover` (default when no mode is specified)
 
-in mode recover, the first line of standard input is the passphrase, and the
+In this mode, the first line of standard input is the passphrase, and the
 rest of the lines (until EOF) are mnemonics, the output is a base16 encoded
 string of the secret when there are no errors and is an errormessage when there
 are
 
-`split`
+### Mode `split`
 
 in mode split, the first line of standard input is also the passphrase, the
 second line of standard input should be the master secret in hex
@@ -43,21 +43,29 @@ The first `XofY` reflects the distribution of shares in the first group.
 The second `XofY` reflects the distribution of shares in the second group.
 etc
 
-Attempts are made to wipe all sensitive data from memory upon termination, to
-lock the data in memory so that it does not get swapped out to disk and to use
-constant time algrorithms when handling confidential data.
+## Features
 
-The program is constructed such that the amount of data that is needlessly
-rearranged an copied around is reduced.
+* Attempts are made to wipe all sensitive data from memory upon termination.
 
-The output of the program is deterministic, so that the output can be
-reproduced on multiple machines and it is easy to see that he random data in
-the shares and in the second part of the digest share contains no information.
+* Data is locked memory so that it does not get swapped out to disk.
+
+* The program is constructed such that the amount of data that is needlessly
+  rearranged an copied around is reduced.
+
+* The output of the program is deterministic, so that the output can be
+  reproduced on multiple machines and it is easy to see that he random data in
+  the shares and in the second part of the digest share contains no information.
+
+* Sensitive data should be handled in constant time.
+
+## Testsuite
 
 The original test-suite is included as vectors.json and can be checked by
 running `./test.sh` or `make test`
 
-Example split `MS = 000000000000000000000000000000` with debug output:
+## Examples
+
+Example split `MS = 000000000000000000000000000000`, `SEED = fdsaludskj` with debug output:
 
     $ slip0039 split -d fdsaludskj 0 4 2of3 5of10 1of1 7of14 << EOF
     TREZOR
