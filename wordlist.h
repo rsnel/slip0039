@@ -17,10 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef SLIP0039_WORDLIST_H
-#define SLIP0039_WORDLIST_H
+#ifndef SLIP0039_WORDLISTS_H
+#define SLIP0039_WORDLISTS_H
 
-extern char *wordlist[1024];
+extern char *wordlist_slip0039[1024];
 
-#endif /* SLIP0039_WORDLIST_H */
+#endif /* SLIP0039_WORDLISTS_H */
 

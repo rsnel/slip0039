@@ -28,7 +28,7 @@
 #include "base1024.h"
 #include "rs1024.h"
 #include "utils.h"
-#include "wordlists.h"
+#include "wordlist.h"
 
 void base1024_to_string(base1024_t *b, slip0039_mnemonic_t line) {
 	sbuf_t s = {
@@ -43,7 +43,7 @@ void base1024_to_string(base1024_t *b, slip0039_mnemonic_t line) {
 	while (++i < b->no_words) {
 		sbufprintf(&s, " ");
 start:
-		sbufprintf(&s, "%s", wordlist[b->words[i]]);
+		sbufprintf(&s, "%s", wordlist_slip0039[b->words[i]]);
 	}
 }
 
@@ -110,7 +110,7 @@ void base1024_append_checksum(base1024_t *b) {
 void base1024_print(base1024_t *b) {
 	printf("no_words=%d, data:", b->no_words);
 	for (int i = 0; i < b->no_words; i++) 
-		printf(" %04x (%s)", b->words[i], wordlist[b->words[i]]);
+		printf(" %04x (%s)", b->words[i], wordlist_slip0039[b->words[i]]);
 
 	printf("\n");
 }

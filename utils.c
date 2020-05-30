@@ -19,7 +19,7 @@
  */
 #include <stdarg.h>
 #include "utils.h"
-#include "wordlists.h"
+#include "wordlist.h"
 #include "verbose.h"
 
 int memeq(const uint8_t *a, const uint8_t *b, size_t n) {
@@ -55,8 +55,8 @@ entry:
 int search(const char *word) {
         int res = -1; /* == 0xffffffff */
 
-        for (int i = 0; i < sizeof_array(wordlist); i++)
-                res &= i|(-(streq(word, wordlist[i])));
+        for (int i = 0; i < sizeof_array(wordlist_slip0039); i++)
+                res &= i|(-(streq(word, wordlist_slip0039[i])));
 
         return res;
 }
