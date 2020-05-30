@@ -28,7 +28,7 @@
 #include "base1024.h"
 #include "rs1024.h"
 #include "utils.h"
-#include "wordlist.h"
+#include "wordlists.h"
 
 void base1024_to_string(base1024_t *b, slip0039_mnemonic_t line) {
 	sbuf_t s = {

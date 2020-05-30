@@ -19,7 +19,7 @@
  */
 #include <stdarg.h>
 #include "utils.h"
-#include "wordlist.h"
+#include "wordlists.h"
 #include "verbose.h"
 
 int memeq(const uint8_t *a, const uint8_t *b, size_t n) {
