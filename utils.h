@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 #include "config.h"
+#include "wordlist.h"
 
 #define sizeof_array(a)	(sizeof(a)/sizeof(*a))
 
@@ -52,7 +53,7 @@ int memeq(const uint8_t*, const uint8_t*, size_t);
 
 int streq(const char*, const char*);
 
-int search(const char*);
+int search(const char*, wordlist_t*);
 
 void snprintf_strict(char*, size_t, const char*, ...);
 

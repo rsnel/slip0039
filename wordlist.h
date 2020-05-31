@@ -20,7 +20,15 @@
 #ifndef SLIP0039_WORDLISTS_H
 #define SLIP0039_WORDLISTS_H
 
-extern char *wordlist_slip0039[1024];
+#include <stdlib.h>
+
+typedef struct wordlist_s {
+	size_t no_words;
+	char **words;
+} wordlist_t;
+
+//extern char *wordlist_slip0039[1024];
+wordlist_t wordlist_slip0039;
 
 #endif /* SLIP0039_WORDLISTS_H */
 

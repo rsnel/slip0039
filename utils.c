@@ -52,11 +52,11 @@ entry:
 // search word in wordlist, return -1 if not found
 // the time this function takes to run should not
 // depend on the input
-int search(const char *word) {
+int search(const char *word, wordlist_t *w) {
         int res = -1; /* == 0xffffffff */
 
-        for (int i = 0; i < sizeof_array(wordlist_slip0039); i++)
-                res &= i|(-(streq(word, wordlist_slip0039[i])));
+        for (int i = 0; i < w->no_words; i++)
+                res &= i|(-(streq(word, w->words[i])));
 
         return res;
 }
