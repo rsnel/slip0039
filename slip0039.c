@@ -414,7 +414,8 @@ void slip0039_split(slip0039_set_t *s, size_t n, pbkdf2_t *p) {
 			memcpy(s->shares[i], s->secret, n);
 		}
 	} else {
-		/* the secret and digest are known */
+		/* the secret and digest will be known, once we start
+		 * to compute the other shares using lagrange */
         	uint8_t idx[MAX_SHARES] = { -1, -2 };
         	int no_idx = 2;
 
