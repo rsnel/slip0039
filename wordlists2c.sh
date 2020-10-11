@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# wordlist2c.sh - shellscript to translate wordlist.txt to c file
+# wordlists2c.sh - shellscript to translate wordlist.txt to c file
 #
 # Copyright 2020 Rik Snel <rik@snel.it>
 #

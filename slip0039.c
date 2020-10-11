@@ -34,7 +34,7 @@
 #include "digest.h"
 #include "lagrange.h"
 #include "lrcipher.h"
-#include "wordlist.h"
+#include "wordlists.h"
 
 slip0039_mode_t mode = SLIP0039_MODE_NULL;
 slip0039_t s;                 // the main struct with all the info
