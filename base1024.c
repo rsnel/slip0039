@@ -74,7 +74,7 @@ void base1024_from_string(base1024_t *b, const slip0039_mnemonic_t line,
 
 		b->words[b->no_words++] = index;
 
-		/* max lengt of a valid word is 8 chars, so
+		/* max length of a valid word is 8 chars, so
 		 * we need to skip at most 8 letters to get
 		 * to the space or EOS */
 		for (int i = 0; i < 8; i++)
