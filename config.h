@@ -24,7 +24,8 @@
 // support secrets of at most BLOCKS*2 bytes since
 // the spec requires that secrets of 256 bits (32 bytes)
 // are supported, BLOCKS must be >= 16
-#define BLOCKS 16
+// we set this to 32 to be able to store xpubs and xprvs
+#define BLOCKS 32
 
 #define BITS_PER_WORD 10
 
