@@ -23,18 +23,46 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "config.h"
+
 /* we work in a context where our binary data is processed in chunks
- * of 16 bits, so we represent our integers as arrays of uint16_t's */
+ * of 16 bits, but since we need to account for endianness, we represent
+ * out fixnums as arrays of uint8_t's */
 
 typedef struct fixnum_s {
-	uint16_t *limbs; /* limbs stored in big endian order */
-	size_t no_limbs;
+	uint8_t *limbs; /* limbs stored in big endian order */
+	size_t no_limbs; /* we need at least 2 limbs */
 } fixnum_t;
 
-void fixnum_init_uint16(fixnum_t*, uint16_t*, size_t, uint16_t);
+typedef struct fixnum_factor_s {
+	fixnum_t max_left_shift;
+	uint16_t value;
+	uint8_t log2;
+	uint8_t pure; // power of two?
+} fixnum_factor_t;
+
+void fixnum_init(fixnum_t*, uint8_t*, size_t);
+
+void fixnum_init_uint16(fixnum_t*, uint8_t*, size_t, uint16_t);
+
+void fixnum_init_fixnum(fixnum_t*, uint8_t*, size_t, const fixnum_t*);
+
+void fixnum_show(const fixnum_t*, const char*);
+
+void fixnum_factor_init(fixnum_factor_t*, uint8_t*, size_t, uint16_t);
+
+void fixnum_factor_show(const fixnum_factor_t*, const char*);
+
+uint16_t fixnum_peek(fixnum_t*, int, uint8_t);
 
 uint16_t fixnum_add_uint16(fixnum_t*, uint16_t);
 
-uint16_t fixnum_mul_uint16(fixnum_t*, uint16_t);
+uint16_t fixnum_shl(fixnum_t*, uint8_t);
+
+uint16_t fixnum_shr(fixnum_t*, uint8_t);
+
+uint16_t fixnum_mul(fixnum_t*, const fixnum_factor_t*);
+
+uint16_t fixnum_div(fixnum_t*, const fixnum_factor_t*);
 
 #endif /* SLIP0039_FIXNUM_H */

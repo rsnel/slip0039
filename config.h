@@ -34,9 +34,9 @@
 // and enough words to store BLOCKS*16 bits
 #define WORDS 	(4 + (BLOCKS*16 + BITS_PER_WORD - 1)/BITS_PER_WORD + 3)
 
-// size of a line with WORDS words of 8 characters
-// (there are no longer words than 8 chars 
-// in the wordlist)
+// size of a line with WORDS words of 8 characters (there are no longer words
+// than 8 chars in the wordlist) (space between the words and end with newline
+// and string terminator)
 #define LINE 	(WORDS*9 + 1)
 
 #define DISPLAYLINE 160
