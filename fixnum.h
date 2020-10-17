@@ -43,6 +43,12 @@ typedef struct fixnum_factor_s {
 
 void fixnum_init(fixnum_t*, uint8_t*, size_t);
 
+typedef enum fixnum_pattern_e {
+	PATTERN_ZERO, PATTERN_MAX, PATTERN_ADD11
+} fixnum_pattern_t;
+
+void fixnum_init_pattern(fixnum_t*, uint8_t*, size_t, fixnum_pattern_t);
+
 void fixnum_init_uint16(fixnum_t*, uint8_t*, size_t, uint16_t);
 
 void fixnum_init_fixnum(fixnum_t*, uint8_t*, size_t, const fixnum_t*);
@@ -53,7 +59,7 @@ void fixnum_factor_init(fixnum_factor_t*, uint8_t*, size_t, uint16_t);
 
 void fixnum_factor_show(const fixnum_factor_t*, const char*);
 
-uint16_t fixnum_peek(fixnum_t*, int, uint8_t);
+uint16_t fixnum_peek(fixnum_t*, size_t, uint8_t);
 
 uint16_t fixnum_add_uint16(fixnum_t*, uint16_t);
 

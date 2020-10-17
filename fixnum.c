@@ -29,6 +29,26 @@ void fixnum_init(fixnum_t *f, uint8_t *limbs, size_t no_limbs) {
 	f->limbs = limbs;
 }
 
+void fixnum_init_pattern(fixnum_t *f, uint8_t *limbs,
+		size_t no_limbs, fixnum_pattern_t pattern) {
+	fixnum_init(f, limbs, no_limbs);
+	uint8_t tmp = 0x01;
+
+	switch (pattern) {
+		case PATTERN_ZERO:
+			memset(f->limbs, 0, f->no_limbs);
+			break;
+		case PATTERN_MAX:
+			memset(f->limbs, 0xff, f->no_limbs);
+			break;
+		case PATTERN_ADD11:
+			for (size_t i = 0; i < f->no_limbs; i++) {
+				f->limbs[i] = tmp;
+				tmp += 0x22;
+			}
+	}
+}
+
 void fixnum_init_uint16(fixnum_t *f, uint8_t *limbs, size_t no_limbs, uint16_t val) {
 	assert(no_limbs >= 2);
 	fixnum_init(f, limbs, no_limbs);
@@ -53,7 +73,7 @@ void fixnum_show(const fixnum_t *f, const char *name) {
 }
 
 uint16_t fixnum_shl(fixnum_t *f, uint8_t shift) {
-	assert(f && f->no_limbs > 0 && shift < 16);
+	assert(f && f->no_limbs > 0 && shift <= 16);
 	uint16_t carry = 0;
 
 	if (shift >= 8) {
@@ -78,7 +98,7 @@ uint16_t fixnum_shl(fixnum_t *f, uint8_t shift) {
 }
 
 uint16_t fixnum_shr(fixnum_t *f, uint8_t shift) {
-	assert(f && f->no_limbs > 0 && shift < 16);
+	assert(f && f->no_limbs > 0 && shift <= 16);
 	uint16_t carry = 0;
 
 	if (shift >= 8) {
@@ -109,9 +129,9 @@ void fixnum_factor_init(fixnum_factor_t *d, uint8_t *limbs, size_t no_limbs, uin
 	d->log2 = 0;
 	while (value >>= 1) d->log2++;
 	d->max_left_shift.limbs[0] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-2];
-	d->max_left_shift.limbs[d->max_left_shift.no_limbs-2] = 0;
+	if (no_limbs > 3) d->max_left_shift.limbs[d->max_left_shift.no_limbs-2] = 0;
 	d->max_left_shift.limbs[1] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-1];
-	d->max_left_shift.limbs[d->max_left_shift.no_limbs-1] = 0;
+	if (no_limbs > 2) d->max_left_shift.limbs[d->max_left_shift.no_limbs-1] = 0;
 	fixnum_shl(&d->max_left_shift, 16 - d->log2 - 1);
 	d->pure = (d->value == 1<<d->log2);
 }
@@ -121,59 +141,88 @@ void fixnum_factor_show(const fixnum_factor_t *d, const char *name) {
 	fixnum_show(&d->max_left_shift, "mls");
 }
 
-#if 0
 uint16_t fixnum_peek(fixnum_t *f, size_t offset, uint8_t size) {
-	//      |<  limbs[30]   |<  limbs[31]   |
-	// 00011001101010101101001011010101010101
-	//                              |       ^
-	//                              |    offset 0
-	// so fixnum_peek(f, 8, 3) gives|
-	//                            101
 	assert(size <= 16);
-	assert(offset + size <= NO_LIMBS<<4);
-	printf("offset=%ld, size=%d\n", offset, size);
-	size_t limb = NO_LIMBS - (offset>>4) - 1;
-	printf("limb=%ld\n", limb);
-	uint32_t tmp = f->limbs[limb];
-	if (limb > 0) tmp |= (f->limbs[limb-1])<<16;
-	printf("tmp=%08x\n", tmp);
-	printf("tmp>>(offset&0xf)=%08x\n", tmp>>(offset&0xf));
-	printf("mask %08x\n", 0xffffffff>>(32-size));
-	return (tmp>>(offset&0xf))&(0xffffffff>>(32 - size));
+	assert(f && offset + size <= (f->no_limbs<<3));
+	uint16_t out = 0;
+	//       01101101101100101100101011010110
+	// byte  33333333222222221111111100000000
+	// bit   76543210765432107654321076543210
+	size_t offset_limb = f->no_limbs - 1 - (offset>>3);
+	uint8_t offset_bit = offset%8;
+	uint8_t ssize[3] = { };
+	ssize[0] = 8 - offset_bit;
+	if (ssize[0] > size) ssize[0] = size;
+	else {
+		assert(offset_limb > 0);
+		ssize[1] = size - ssize[0];
+		if (ssize[1] > 8) {
+			assert(offset_limb > 1);
+			ssize[2] = ssize[1] - 8;
+			ssize[1] = 8;
+		}
+	}
+	assert(ssize[0] + ssize[1] + ssize[2] == size);
+
+	printf("size = %u, ssize[0] = %u, ssize[1] = %u, ssize[2] = %u, offset_bit=%u\n",
+			size, ssize[0], ssize[1], ssize[2], offset_bit);
+
+	out = (f->limbs[offset_limb]>>offset_bit)&(0xff>>(8-ssize[0]));
+	if (ssize[1]) {
+		out |= (f->limbs[offset_limb-1]<<ssize[0])&(0xffff>>(16-ssize[0]-ssize[1]));
+		if (ssize[2]) {
+			out |= (f->limbs[offset_limb-2]<<(ssize[0]+ssize[1]))&(0xffff>>(16-size));
+		}
+	}
+	
+	return out;
 }
 
 uint16_t fixnum_add_uint16(fixnum_t *f, uint16_t operand) {
-	uint32_t acc;
-	uint16_t carry = operand;
-	size_t idx = NO_LIMBS;
+	assert(f && f->no_limbs >= 2);
+	uint16_t acc;
+	uint8_t carry;
+	size_t idx = f->no_limbs - 2;
+
+	acc = f->limbs[f->no_limbs-1] + (operand&0xff);
+	f->limbs[f->no_limbs-1] = acc&0xff;
+	carry = acc>>8;
+
+	acc = f->limbs[f->no_limbs-2] + (operand>>8) + carry;
+	f->limbs[f->no_limbs-2] = acc&0xff;
+	carry = acc>>8;
 
 	while (idx-- > 0) {
 		acc = f->limbs[idx] + carry;
-		f->limbs[idx] = acc&0xffff;
-		carry = acc>>16;
+		f->limbs[idx] = acc&0xff;
+		carry = acc>>8;
 	}
 
 	return carry;
 }
 
 uint16_t fixnum_mul(fixnum_t *f, const fixnum_factor_t *m) {
-	uint32_t acc;
-	uint16_t carry = 0;
-	size_t idx = NO_LIMBS;
+	assert(f && m && f->no_limbs >= 2 && f->no_limbs == m->max_left_shift.no_limbs);
 
 	if (m->pure)
 		return fixnum_shl(f, m->log2);
 
+	uint8_t low = m->value&0xff, high = m->value>>8;
+        uint16_t acc_low = 0, acc_high = 0;
+	size_t idx = f->no_limbs;
+
 	while (idx-- > 0) {
-		acc = f->limbs[idx]*m->value;
-		acc += carry;
-		f->limbs[idx] = acc&0xffff;
-		carry = acc>>16;
+		acc_low += low*f->limbs[idx] + (acc_high&0xff);
+		acc_high >>= 8;
+		acc_high += high*f->limbs[idx];
+		f->limbs[idx] = acc_low&0xff;
+		acc_low >>= 8;
 	}
 
-	return carry;
+	return acc_high + acc_low;
 }
 
+#if 0
 uint16_t fixnum_div(fixnum_t *f, const fixnum_factor_t *d) {
 	fixnum_t shiftreg, quotient = { };
 
