@@ -20,7 +20,11 @@
 #ifndef SLIP0039_WORDLISTS_H
 #define SLIP0039_WORDLISTS_H
 
-extern char *wordlist_slip0039[1024];
+char *wordlist_slip0039[1024];
+
+char *wordlist_bip0039_english[2048];
+
+char *wordlist_diceware_german[7776];
 
 #endif /* SLIP0039_WORDLISTS_H */
 
