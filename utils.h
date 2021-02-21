@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "wordlist.h"
+#include "wordlists.h"
 
 #define sizeof_array(a)	(sizeof(a)/sizeof(*a))
 
