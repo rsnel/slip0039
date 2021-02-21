@@ -75,6 +75,6 @@ void rs1024_checksum(rs1024_state_t *state, uint16_t *out) {
 
 	state->chk ^= 1;
 
-	for (int i = 0; i < 3; i++) 
+	for (int i = 0; i < 3; i++)
 		out[i] = (state->chk>>10*(2-i))&0x3FF;
 }
