@@ -40,7 +40,7 @@ static void helper(slip0039_set_t *s, int no_idx,
 	}
 	s->shares[(int8_t)x][offset] = sum;
 }
-		
+
 void lagrange(slip0039_set_t *s, size_t n,
 		int no_idx, uint8_t *idx, uint8_t x) {
 	for (int i = 0; i < n; i++)
