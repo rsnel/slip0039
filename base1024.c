@@ -74,10 +74,9 @@ void base1024_from_string(base1024_t *b, const slip0039_mnemonic_t line,
 
 		b->words[b->no_words++] = index;
 
-		/* max lengt of a valid word is 8 chars, so
-		 * we need to skip at most 8 letters to get
-		 * to the space or EOS */
-		for (int i = 0; i < 8; i++)
+		/* skip ahead tot the next word, use max_word_length
+		 * to make this code constant time */
+		for (int i = 0; i < wordlist_slip0039.max_word_length; i++)
 			line += (*line != '\0') &&
 				(*line != ' ') && (*line != '\n');
 
@@ -109,7 +108,7 @@ void base1024_append_checksum(base1024_t *b) {
 
 void base1024_print(base1024_t *b) {
 	printf("no_words=%d, data:", b->no_words);
-	for (int i = 0; i < b->no_words; i++) 
+	for (int i = 0; i < b->no_words; i++)
 		printf(" %04x (%s)", b->words[i], wordlist_slip0039.words[b->words[i]]);
 
 	printf("\n");
@@ -131,7 +130,7 @@ void base1024_rewind_and_truncate(base1024_t *b, unsigned int index) {
 		b->word_idx--;
 		b->bit_idx = 10;
 	}
-	
+
 	b->words[b->word_idx] &= 0xFFFF<<(BITS_PER_WORD-target_bit_idx);
 	b->bit_idx = target_bit_idx;
 }

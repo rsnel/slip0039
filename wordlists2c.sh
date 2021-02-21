@@ -51,9 +51,11 @@ format_wordlist() {
 		fatal "file $FILENAME has $NUM lines, when $3 lines were expected"
 	fi
 
+	MAX_WORD_LENGTH=`wc -L $FILENAME | cut -f 1 -d ' '`
 	echo
 	echo wordlist_t $1 = {
 	echo "\t.no_words = $3,"
+	echo "\t.max_word_length = $MAX_WORD_LENGTH,"
 	echo "\t.words = (char *[]){"
 	head -n -1 $FILENAME | sed "s/^/\t\t\"/;s/\$/\",/"
 	tail -n 1 $FILENAME | sed "s/^/\t\t\"/;s/\$/\"/"
