@@ -27,8 +27,11 @@ typedef struct wordlist_s {
 	char **words;
 } wordlist_t;
 
-//extern char *wordlist_slip0039[1024];
 wordlist_t wordlist_slip0039;
+
+wordlist_t wordlist_bip0039_english;
+
+wordlist_t wordlist_diceware_german;
 
 #endif /* SLIP0039_WORDLISTS_H */
 

@@ -20,7 +20,6 @@
 #ifndef SLIP0039_BASE1024_H
 #define SLIP0039_BASE1024_H
 
-
 #include <stdint.h>
 #include "slip0039.h"
 #include "config.h"

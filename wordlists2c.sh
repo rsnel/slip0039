@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# wordlist2c.sh - shellscript to translate wordlist.txt to c file
+# wordlists2c.sh - shellscript to translate wordlist.txt to c file
 #
 # Copyright 2020 Rik Snel <rik@snel.it>
 #
@@ -18,9 +18,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
-
-WORDLIST_SLIP0039=wordlist_slip0039.txt
-WORDLIST_SLIP0039_SHA256=bcc4555340332d169718aed8bf31dd9d5248cb7da6e5d355140ef4f1e601eec3
 
 fatal() {
 	echo $1 >&2
@@ -76,30 +73,5 @@ format_wordlist wordlist_slip0039 \
 #    https://github.com/bitcoin/bips/raw/master/bip-0039/english.txt
 format_wordlist wordlist_bip0039_english \
 	2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda 2048
-
-#if [ ! -f "$WORDLIST_SLIP0039" ]; then
-#	echo file \"$WORDLIST_SLIP0039\" not found >&2
-#	exit 1
-#fi
-#if [ ! -r "$WORDLIST_SLIP0039" ]; then
-#	echo file \"$WORDLIST_SLIP0039\" is not readable >&2
-#	exit 1
-#fi
-
-#if [ "$WORDLIST_SLIP0039_SHA256" != `sha256sum "$WORDLIST_SLIP0039" | cut -f 1 -d ' '` ]; then
-#	echo sha256sum of \"$WORDLIST_SLIP0039\" does not match >&2
-#	exit 1
-#fi
-
-#get the number of words
-#NUM=`wc -l $WORDLIST_SLIP0039 | cut -f 1 -d ' '`
-#if [ "$NUM" != 1024 ]; then
-#	echo file \"$WORDLIST_SLIP0039\" has an unexpected number of lines $NUM vs the expected 1024 >&2
-#	exit 1
-#fi
-
-#echo
-#echo char \*wordlist_slip0039[1024] = {
-#head -n -1 $WORDLIST_SLIP0039 | sed "s/^/\t\"/;s/\$/\",/"
-#tail -n 1 $WORDLIST_SLIP0039 | sed "s/^/\t\"/;s/\$/\"/"
-#echo }\;
+format_wordlist wordlist_diceware_german \
+	86eaf47b43df1c7f926b1d2f4cc724141de626c601a32562f28ec204fb3b9607 7776

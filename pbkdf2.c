@@ -58,13 +58,14 @@ void pbkdf2_update_salt_uint8(pbkdf2_t *p, uint8_t val) {
 }
 
 void pbkdf2_finalize_salt(pbkdf2_t *p, uint64_t iterations) {
-	assert(p->index == 0 || p->state == 1);
+	assert(p->state == 0 || p->state == 1);
 	assert(p->index == 1);
 	if (p->state == 0) finish_processing_password(p);
 	if (p->state == 1) {
 		p->iterations = iterations;
 		p->state = 2;
 	}
+	assert(p->iterations > 0);
 }
 
 static void helper(pbkdf2_t *p) { 
@@ -87,7 +88,6 @@ void pbkdf2_generate(pbkdf2_t *p, void *buf, size_t dkLen) {
 	size_t len;
 	assert(p->state == 2);
 	assert(p->tmp_offset <= SHA256_LEN && p->tmp_offset >= 0);
-	assert(p->iterations > 0);
 	while (dkLen > 0) {
 		if (p->tmp_offset == SHA256_LEN) helper(p);
 		len = (dkLen > SHA256_LEN - p->tmp_offset)?(SHA256_LEN - p->tmp_offset):dkLen;

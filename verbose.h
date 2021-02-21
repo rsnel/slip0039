@@ -46,6 +46,4 @@ extern int quiet;
 
 void verbose_init(char*);
 
-void verbose_buffer(const char*, const void*, size_t);
-
 #endif /* SLIP0039_VERBOSE_H */
