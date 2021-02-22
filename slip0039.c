@@ -35,6 +35,7 @@
 #include "lagrange.h"
 #include "lrcipher.h"
 #include "wordlists.h"
+#include "charlists.h"
 
 slip0039_mode_t mode = SLIP0039_MODE_NULL;
 slip0039_t s;                 // the main struct with all the info
@@ -312,27 +313,15 @@ void slip0039_add_plaintext(slip0039_t *s, FILE *fp) {
 			else FATAL("error %d reading passphrase: %s",
 					errno, strerror(errno));
 		} else if (character == '\n') break;
-		else if ((character >= '0' && character <= '9') ||
-				(character >= 'a' && character <= 'f') ||
-				(character >= 'A' && character <= 'F')) {
-			uint8_t value;
-			if (n == BLOCKS<<1)
-				FATAL("plaintext is too long "
-						"(compile time limit "
-						"is %d bytes)", BLOCKS<<1);
-			if (character >= '0' && character <= '9')
-				value = character - '0';
-			else if (character >= 'A' && character <= 'F')
-			       	value = character - 'A' + 10;
-			else value = character - 'a' + 10;
-			s->storage_plaintext[n] |= value<<(nibble<<2);
+		else {
+			s->storage_plaintext[n] |=
+				charlist_search(&charlist_base16, character)<<(nibble<<2);
 			nibble--;
 			if (nibble < 0) {
 				n++;
 				nibble = 1;
 			}
-		} else FATAL("invalid character in plaintext "
-				"(only 0-9, a-f, A-F allowed)");
+		}
 	} while (1);
 
 	if (nibble == 0) FATAL("odd number of hexadecimal digits given");
