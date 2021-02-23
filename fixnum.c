@@ -115,6 +115,14 @@ uint16_t fixnum_shl(fixnum_t *f, uint8_t shift) {
 	return carry;
 }
 
+uint16_t fixnum_shl_in(fixnum_t *f, uint8_t shift, uint16_t in) {
+	assert(in < 1<<shift);
+	uint16_t carry = fixnum_shl(f, shift);
+	assert(fixnum_peek(f, 0, shift) == 0);
+	fixnum_poke(f, 0, shift, in);
+	return carry;
+}
+
 uint16_t fixnum_shr(fixnum_t *f, uint8_t shift) {
 	assert(f && f->no_limbs > 0 && shift <= 16);
 	uint16_t carry = 0;
@@ -140,6 +148,14 @@ uint16_t fixnum_shr(fixnum_t *f, uint8_t shift) {
 	return carry;
 }
 
+uint16_t fixnum_shr_in(fixnum_t *f, uint8_t shift, uint16_t in) {
+	assert(in < 1<<shift);
+	uint16_t carry = fixnum_shr(f, shift);
+	assert(fixnum_peek(f, f->no_limbs*8 - shift, shift) == 0);
+	fixnum_poke(f, (f->no_limbs<<3) - shift, shift, in);
+	return carry;
+}
+
 void fixnum_factor_init(fixnum_factor_t *d, uint8_t *limbs, size_t no_limbs, uint16_t value) {
 	assert(d && value);
 	fixnum_init_uint16(&d->max_left_shift, limbs, no_limbs, value);
@@ -160,12 +176,13 @@ void fixnum_factor_show(const fixnum_factor_t *d, const char *name) {
 }
 
 uint32_t fixnum_peek(fixnum_t *f, size_t offset, uint8_t size) {
+	assert(f);
 	if (offset + size > f->no_limbs<<3) {
 		size -= offset + size - (f->no_limbs<<3);
 	}
-	assert(size <= 17);
-	assert(f && offset + size <= (f->no_limbs<<3));
-	uint32_t out = 0;
+	assert(size <= 17); // size 17 is required for long division
+	assert(offset + size <= (f->no_limbs<<3));
+
 	//       01101101101100101100101011010110
 	// byte  33333333222222221111111100000000
 	// bit   76543210765432107654321076543210
@@ -188,7 +205,7 @@ uint32_t fixnum_peek(fixnum_t *f, size_t offset, uint8_t size) {
 	//printf("size = %u, ssize[0] = %u, ssize[1] = %u, ssize[2] = %u, offset_bit=%u\n",
 	//		size, ssize[0], ssize[1], ssize[2], offset_bit);
 
-	out = (f->limbs[offset_limb]>>offset_bit)&(0xff>>(8-ssize[0]));
+	uint32_t out = (f->limbs[offset_limb]>>offset_bit)&(0xff>>(8-ssize[0]));
 	if (ssize[1]) {
 		out |= (f->limbs[offset_limb-1]<<ssize[0])&(0xffff>>(16-ssize[0]-ssize[1]));
 		if (ssize[2]) {
@@ -197,6 +214,47 @@ uint32_t fixnum_peek(fixnum_t *f, size_t offset, uint8_t size) {
 	}
 	
 	return out;
+}
+
+void fixnum_poke(fixnum_t *f, size_t offset, uint8_t size, uint32_t in) {
+	if (offset + size > f->no_limbs<<3) {
+		size -= offset + size - (f->no_limbs<<3);
+	}
+	assert(offset + size <= (f->no_limbs<<3));
+	assert(size <= 17); // use 17 as max, same as peek
+	assert(in < 1<<size);
+
+	size_t offset_limb = f->no_limbs - 1 - (offset>>3);
+	uint8_t offset_bit = offset%8;
+	uint8_t ssize[3] = { };
+	uint8_t smask[3] = { };
+	ssize[0] = 8 - offset_bit;
+	smask[0] = (((1<<size) - 1))<<offset_bit;
+	if (ssize[0] > size) {
+		ssize[0] = size;
+	}
+	else {
+		assert(offset_limb > 0);
+		ssize[1] = size - ssize[0];
+		smask[1] = (1<<ssize[1]) - 1;
+		if (ssize[1] > 8) {
+			assert(offset_limb > 1);
+			ssize[2] = ssize[1] - 8;
+			ssize[1] = 8;
+			smask[2] = (1<<ssize[2]) - 1;
+		}
+	}
+	assert(ssize[0] + ssize[1] + ssize[2] == size);
+
+	//printf("size = %u, ssize[0] = %u, ssize[1] = %u, ssize[2] = %u, offset_bit=%u, smask[0]=%u, smask[1]=%u, smask[2]=%u\n",
+//			size, ssize[0], ssize[1], ssize[2], offset_bit, smask[0], smask[1], smask[2]);
+
+	f->limbs[offset_limb] &= ~smask[0];
+	f->limbs[offset_limb] |= in<<offset_bit;
+	f->limbs[offset_limb-1] &= ~smask[1];
+	f->limbs[offset_limb-1] |= in>>(8-offset_bit);
+	f->limbs[offset_limb-2] &= ~smask[2];
+	f->limbs[offset_limb-2] |= in>>(16-offset_bit);
 }
 
 uint16_t fixnum_add_uint16(fixnum_t *f, uint16_t operand) {

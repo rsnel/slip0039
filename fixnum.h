@@ -73,13 +73,19 @@ void fixnum_factor_show(const fixnum_factor_t*, const char*);
 
 uint32_t fixnum_peek(fixnum_t*, size_t, uint8_t);
 
+void fixnum_poke(fixnum_t*, size_t, uint8_t, uint32_t);
+
 uint16_t fixnum_add_uint16(fixnum_t*, uint16_t);
 
 uint16_t fixnum_sub_fixnum(fixnum_t*, const fixnum_t*, uint8_t);
 
 uint16_t fixnum_shl(fixnum_t*, uint8_t);
 
+uint16_t fixnum_shl_in(fixnum_t*, uint8_t, uint16_t);
+
 uint16_t fixnum_shr(fixnum_t*, uint8_t);
+
+uint16_t fixnum_shr_in(fixnum_t*, uint8_t, uint16_t);
 
 uint16_t fixnum_mul(fixnum_t*, const fixnum_factor_t*);
 
