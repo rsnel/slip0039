@@ -190,7 +190,7 @@ uint32_t fixnum_peek(fixnum_t *f, size_t offset, uint8_t size) {
 	uint8_t offset_bit = offset%8;
 	uint8_t ssize[3] = { };
 	ssize[0] = 8 - offset_bit;
-	if (ssize[0] > size) ssize[0] = size;
+	if (ssize[0] >= size) ssize[0] = size;
 	else {
 		assert(offset_limb > 0);
 		ssize[1] = size - ssize[0];
@@ -230,10 +230,9 @@ void fixnum_poke(fixnum_t *f, size_t offset, uint8_t size, uint32_t in) {
 	uint8_t smask[3] = { };
 	ssize[0] = 8 - offset_bit;
 	smask[0] = (((1<<size) - 1))<<offset_bit;
-	if (ssize[0] > size) {
+	if (ssize[0] >= size) {
 		ssize[0] = size;
-	}
-	else {
+	} else {
 		assert(offset_limb > 0);
 		ssize[1] = size - ssize[0];
 		smask[1] = (1<<ssize[1]) - 1;
@@ -246,8 +245,8 @@ void fixnum_poke(fixnum_t *f, size_t offset, uint8_t size, uint32_t in) {
 	}
 	assert(ssize[0] + ssize[1] + ssize[2] == size);
 
-	//printf("size = %u, ssize[0] = %u, ssize[1] = %u, ssize[2] = %u, offset_bit=%u, smask[0]=%u, smask[1]=%u, smask[2]=%u\n",
-//			size, ssize[0], ssize[1], ssize[2], offset_bit, smask[0], smask[1], smask[2]);
+	printf("size = %u, ssize[0] = %u, ssize[1] = %u, ssize[2] = %u, offset_bit=%u, smask[0]=%u, smask[1]=%u, smask[2]=%u\n",
+			size, ssize[0], ssize[1], ssize[2], offset_bit, smask[0], smask[1], smask[2]);
 
 	f->limbs[offset_limb] &= ~smask[0];
 	f->limbs[offset_limb] |= in<<offset_bit;
