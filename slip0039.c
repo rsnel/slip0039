@@ -36,6 +36,7 @@
 #include "lrcipher.h"
 #include "wordlists.h"
 #include "charlists.h"
+#include "fixnum.h"
 
 slip0039_mode_t mode = SLIP0039_MODE_NULL;
 slip0039_t s;                 // the main struct with all the info
@@ -302,9 +303,10 @@ void slip0039_add_plaintext(slip0039_t *s, FILE *fp) {
 
 	/* if nibble is 1 we are expecting to read the high nibble
 	 * and if nibble is 0 we are expecting to read the low nibble */
-	size_t n = 0;
-	int nibble = 1; // 11110000 
+	size_t nibbles = 0;
+	fixnum_t f;
 	int character;
+	fixnum_init(&f, s->storage_plaintext, BLOCKS<<1);
 	do {
 		character = fgetc(fp);
 		if (character == EOF) {
@@ -313,23 +315,16 @@ void slip0039_add_plaintext(slip0039_t *s, FILE *fp) {
 			else FATAL("error %d reading passphrase: %s",
 					errno, strerror(errno));
 		} else if (character == '\n') break;
-		else {
-			s->storage_plaintext[n] |=
-				charlist_search(&charlist_base16, character)<<(nibble<<2);
-			nibble--;
-			if (nibble < 0) {
-				n++;
-				nibble = 1;
-			}
-		}
+		else fixnum_poke(&f, (f.no_limbs<<3) - (nibbles++<<2) - 4, 4,
+					charlist_search(&charlist_base16, character));
 	} while (1);
 
-	if (nibble == 0) FATAL("odd number of hexadecimal digits given");
-	if (n%2) FATAL("size of plaintext must be a multiple of 16 bits");
-	if (n < 16) FATAL("size of plaintext must be at least 16 bytes");
+	if (nibbles%2) FATAL("odd number of hexadecimal digits given");
+	if (nibbles%4) FATAL("size of plaintext must be a multiple of 16 bits");
+	if (nibbles>>1 < 16) FATAL("size of plaintext must be at least 16 bytes");
 
 	s->plaintext = s->storage_plaintext;
-	s->n = n;
+	s->n = nibbles>>1;
 
 	character = fgetc(fp);
 	if (!feof(fp)) WARNING("data detected after plaintext on input");
