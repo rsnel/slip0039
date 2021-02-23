@@ -18,6 +18,7 @@
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <assert.h>
+#include <ctype.h>
 
 #include "verbose.h"
 #include "charlists.h"
@@ -75,8 +76,10 @@ uint8_t charlist_search(charlist_t *l, char in) {
 	for (int i = 0; i < l->no_chars; i++)
 		match &= i|(-(in != l->chars[i]));
 
-	if (match == -1)
-		FATAL("illegal character \\%3o found in %s encoded data", in, l->name);
+	if (match == -1) {
+		if (isprint(in)) FATAL("illegal character '%c' found in %s encoded data", in, l->name);
+		else FATAL("illegal non-printable character \\%o found in %s encoded data", in, l->name);
+	}
  
 	return match;
 }
