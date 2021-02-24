@@ -47,6 +47,10 @@ typedef struct sbuf_s {
 
 typedef char displayline_t[DISPLAYLINE];
 
+int vsnprintf_strict(char*, size_t, const char*, va_list ap);
+
+int snprintf_strict(char*, size_t, const char*, ...);
+
 void sbufprintf(sbuf_t*, const char* format, ...);
 
 int memeq(const uint8_t*, const uint8_t*, size_t);
@@ -54,7 +58,5 @@ int memeq(const uint8_t*, const uint8_t*, size_t);
 int streq(const char*, const char*);
 
 int search(const char*, wordlist_t*);
-
-void snprintf_strict(char*, size_t, const char*, ...);
 
 #endif /* SLIP0039_UTILS_H */

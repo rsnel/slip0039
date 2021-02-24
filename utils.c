@@ -61,25 +61,25 @@ int search(const char *word, wordlist_t *w) {
         return res;
 }
 
-void sbufprintf(sbuf_t *s, const char *format, ...) {
-	int ret;
-	va_list ap;
-	va_start(ap, format);
-
-	ret = vsnprintf(s->buf + s->len, s->size - s->len, format, ap);
-
-	if (ret >= s->size - s->len) BUG("buffer too small");
-	else if (ret < 0) FATAL("error writing to buffer");
-
-	s->len += ret;
-}
-
-void snprintf_strict(char *str, size_t size, const char *format, ...) {
-	int ret;
-	va_list ap;
-	va_start(ap, format);
-
-	ret = vsnprintf(str, size, format, ap);
+int vsnprintf_strict(char *str, size_t size, const char *format, va_list ap) {
+	int ret = vsnprintf(str, size, format, ap);
 
 	if (ret >= size) BUG("buffer too small");
+	else if (ret < 0) FATAL("error writing to buffer");
+
+	return ret;
+}
+
+int snprintf_strict(char *str, size_t size, const char *format, ...) {
+	va_list ap;
+	va_start(ap, format);
+
+	return vsnprintf_strict(str, size, format, ap);
+}
+
+void sbufprintf(sbuf_t *s, const char *format, ...) {
+	va_list ap;
+	va_start(ap, format);
+
+	s->len += vsnprintf_strict(s->buf + s->len, s->size - s->len, format, ap);
 }
