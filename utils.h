@@ -51,7 +51,9 @@ int vsnprintf_strict(char*, size_t, const char*, va_list ap);
 
 int snprintf_strict(char*, size_t, const char*, ...);
 
-void sbufprintf(sbuf_t*, const char* format, ...);
+int sbufprintf(sbuf_t*, const char* format, ...);
+
+int sbufprintf_base16(sbuf_t*, const uint8_t*, size_t);
 
 int memeq(const uint8_t*, const uint8_t*, size_t);
 

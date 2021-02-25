@@ -22,6 +22,7 @@
 #include <stdio.h>
 
 #include "fixnum.h"
+#include "charlists.h"
 
 void fixnum_init(fixnum_t *f, uint8_t *limbs, size_t no_limbs) {
 	assert(f && no_limbs > 0 && limbs);
@@ -75,11 +76,15 @@ void fixnum_init_fixnum(fixnum_t *out, uint8_t *limbs, size_t no_limbs, const fi
 	fixnum_set_fixnum(out, in);
 }
 
+void fixnum_printf(const fixnum_t *f) {
+	for (int nibble = (f->no_limbs<<1) - 1; nibble >= 0; nibble--) {
+		putchar(charlist_dereference(&charlist_base16, fixnum_peek(f, nibble<<2, 4)));
+	}
+}
+
 void fixnum_show(const fixnum_t *f, const char *name) {
 	printf("%s: ", name);
-	for (size_t i = 0; i < f->no_limbs; i++) {
-		printf("%02x", f->limbs[i]);
-	}
+	fixnum_printf(f);
 	printf("\n");
 }
 
@@ -175,7 +180,7 @@ void fixnum_factor_show(const fixnum_factor_t *d, const char *name) {
 	fixnum_show(&d->max_left_shift, "mls");
 }
 
-uint32_t fixnum_peek(fixnum_t *f, size_t offset, uint8_t size) {
+uint32_t fixnum_peek(const fixnum_t *f, size_t offset, uint8_t size) {
 	assert(f);
 	if (offset + size > f->no_limbs<<3) {
 		size -= offset + size - (f->no_limbs<<3);

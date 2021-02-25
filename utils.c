@@ -19,7 +19,9 @@
  */
 #include <stdarg.h>
 #include "utils.h"
+#include "fixnum.h"
 #include "wordlists.h"
+#include "charlists.h"
 #include "verbose.h"
 
 int memeq(const uint8_t *a, const uint8_t *b, size_t n) {
@@ -77,9 +79,24 @@ int snprintf_strict(char *str, size_t size, const char *format, ...) {
 	return vsnprintf_strict(str, size, format, ap);
 }
 
-void sbufprintf(sbuf_t *s, const char *format, ...) {
+int sbufprintf(sbuf_t *s, const char *format, ...) {
+	int ret;
 	va_list ap;
 	va_start(ap, format);
 
-	s->len += vsnprintf_strict(s->buf + s->len, s->size - s->len, format, ap);
+	s->len += (ret = vsnprintf_strict(s->buf + s->len, s->size - s->len, format, ap));
+
+	return ret;
+}
+
+int sbufprintf_base16(sbuf_t *s, const uint8_t *buf, size_t len) {
+	fixnum_t f;
+	fixnum_init(&f, (uint8_t*)buf, len);
+	int ret;
+
+	for (int nibble = (len<<1) - 1; nibble >= 0; nibble--)
+		ret += sbufprintf(s, "%c", charlist_dereference(&charlist_base16,
+					fixnum_peek(&f, nibble<<2, 4)));
+
+	return ret;
 }

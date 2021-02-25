@@ -43,6 +43,7 @@ slip0039_t s;                 // the main struct with all the info
 base1024_t b;                 // needed to convert wordlist to and from bits
 slip0039_mnemonic_t mnemonic; // buffer to contain one mnemonic
 pbkdf2_t prng;                // PRNG for shares and part of digests
+displayline_t dl;
 
 // seed for PRNG
 const char *seed = NULL;
@@ -60,9 +61,8 @@ int slip0039_quorum(slip0039_set_t *s) {
 
 void slip0039_debug_share(const char *path, int index, int space,
 		const uint8_t *buf, size_t n, const char *title) {
-	char line[DISPLAYLINE];
 	char character;
-        sbuf_t sbuf = { .buf = line, .size = sizeof(line) };
+        sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
 
 	if (index == -3) character = MS_IDENTIFIER;
 	else if (index == -2) character = DIGEST_IDENTIFIER;
@@ -75,11 +75,10 @@ void slip0039_debug_share(const char *path, int index, int space,
 
 	while (space--) sbufprintf(&sbuf, " ");
 
-	for (int i = 0; i < n; i++)
-		sbufprintf(&sbuf, "%02x", buf[i]);
+	sbufprintf_base16(&sbuf, buf, n);
 
 	sbufprintf(&sbuf, " %s", title);
-	DEBUG("%s", line);
+	DEBUG("%s", dl);
 }
 
 void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
@@ -136,6 +135,7 @@ void wipe() {
 	wipememory(&s, sizeof(s));
 	wipememory(mnemonic, sizeof(mnemonic));
 	wipememory(&b, sizeof(b));
+	wipememory(dl, sizeof(dl));
 	wipememory(seed, seed_len);
 	pbkdf2_finished(&prng);
 }
@@ -209,8 +209,11 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 }
 
 void slip0039_print_plaintext(slip0039_t *s) {
-	for (int i = 0; i < s->n; i++)
-		printf("%02x", s->plaintext[i]);
+	fixnum_t f;
+	fixnum_init(&f, s->plaintext, s->n);
+
+	for (int nibble = (s->n<<1) - 1; nibble >= 0; nibble--)
+		putchar(charlist_dereference(&charlist_base16, fixnum_peek(&f, nibble<<2, 4)));
 
 	printf("\n");
 }

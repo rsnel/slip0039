@@ -71,7 +71,7 @@ void fixnum_factor_init(fixnum_factor_t*, uint8_t*, size_t, uint16_t);
 
 void fixnum_factor_show(const fixnum_factor_t*, const char*);
 
-uint32_t fixnum_peek(fixnum_t*, size_t, uint8_t);
+uint32_t fixnum_peek(const fixnum_t*, size_t, uint8_t);
 
 void fixnum_poke(fixnum_t*, size_t, uint8_t, uint32_t);
 
