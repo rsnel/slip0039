@@ -209,13 +209,10 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 }
 
 void slip0039_print_plaintext(slip0039_t *s) {
-	fixnum_t f;
-	fixnum_init(&f, s->plaintext, s->n);
+        sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+	sbufprintf_base16(&sbuf, s->plaintext, s->n);
 
-	for (int nibble = (s->n<<1) - 1; nibble >= 0; nibble--)
-		putchar(charlist_dereference(&charlist_base16, fixnum_peek(&f, nibble<<2, 4)));
-
-	printf("\n");
+	printf("%s\n", dl);
 }
 
 void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
