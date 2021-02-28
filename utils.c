@@ -18,6 +18,9 @@
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <stdarg.h>
+#include <assert.h>
+#include <ctype.h>
+
 #include "utils.h"
 #include "fixnum.h"
 #include "wordlists.h"
@@ -61,6 +64,32 @@ int search(const char *word, wordlist_t *w) {
                 res &= i|(-(streq(word, w->words[i])));
 
         return res;
+}
+
+// constant time implementation of charlist[idx]
+char charlist_dereference(charlist_t *l, uint8_t idx) {
+        assert(l && idx < l->no_chars);
+        char out = 0;
+
+        for (int i = 0; i < l->no_chars; i++)
+                out |= l->chars[i]&(-(i == idx));
+
+        return out;
+}
+
+
+uint8_t charlist_search(charlist_t *l, char in) {
+        int match = -1; /* 0xffffffff */
+
+        for (int i = 0; i < l->no_chars; i++)
+                match &= i|(-(in != l->chars[i]));
+
+        if (match == -1) {
+                if (isprint(in)) FATAL("illegal character '%c' found in %s encoded data", in, l->name);
+                else FATAL("illegal non-printable character \\%o found in %s encoded data", in, l->name);
+        }
+
+        return match;
 }
 
 int vsnprintf_strict(char *str, size_t size, const char *format, va_list ap) {

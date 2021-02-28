@@ -34,9 +34,5 @@ charlist_t charlist_base58;
 
 charlist_t charlist_bech32;
 
-char charlist_dereference(charlist_t*, uint8_t);
-
-uint8_t charlist_search(charlist_t*, char);
-
 #endif /* SLIP0039_CHARLISTS_H */
 

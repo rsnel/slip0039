@@ -17,9 +17,6 @@
  * You should have received a copy of the GNU General Public License
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <assert.h>
-#include <ctype.h>
-
 #include "verbose.h"
 #include "charlists.h"
 
@@ -57,29 +54,3 @@ charlist_t charlist_bech32 = {
 		'c', 'e', '6', 'm', 'u', 'a', '7', 'l'
 	}
 };
-
-// constant time implementation of charlist[idx]
-char charlist_dereference(charlist_t *l, uint8_t idx) {
-	assert(l && idx < l->no_chars);
-	char out = 0;
-
-	for (int i = 0; i < l->no_chars; i++)
-		out |= l->chars[i]&(-(i == idx));
-
-	return out;
-}
-
-
-uint8_t charlist_search(charlist_t *l, char in) {
-	int match = -1; /* 0xffffffff */
-
-	for (int i = 0; i < l->no_chars; i++)
-		match &= i|(-(in != l->chars[i]));
-
-	if (match == -1) {
-		if (isprint(in)) FATAL("illegal character '%c' found in %s encoded data", in, l->name);
-		else FATAL("illegal non-printable character \\%o found in %s encoded data", in, l->name);
-	}
- 
-	return match;
-}

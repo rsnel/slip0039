@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 #include "config.h"
+#include "charlists.h"
 #include "wordlists.h"
 
 #define sizeof_array(a)	(sizeof(a)/sizeof(*a))
@@ -47,6 +48,12 @@ typedef struct sbuf_s {
 
 typedef char displayline_t[DISPLAYLINE];
 
+int search(const char*, wordlist_t*);
+
+char charlist_dereference(charlist_t*, uint8_t);
+
+uint8_t charlist_search(charlist_t*, char);
+
 int vsnprintf_strict(char*, size_t, const char*, va_list ap);
 
 int snprintf_strict(char*, size_t, const char*, ...);
@@ -58,7 +65,5 @@ int sbufprintf_base16(sbuf_t*, const uint8_t*, size_t);
 int memeq(const uint8_t*, const uint8_t*, size_t);
 
 int streq(const char*, const char*);
-
-int search(const char*, wordlist_t*);
 
 #endif /* SLIP0039_UTILS_H */
