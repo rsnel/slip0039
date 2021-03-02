@@ -254,8 +254,8 @@ void fixnum_poke(fixnum_t *f, size_t offset, uint8_t size, uint32_t in) {
 	}
 	assert(ssize[0] + ssize[1] + ssize[2] == size);
 
-	printf("size = %u, ssize[0] = %u, ssize[1] = %u, ssize[2] = %u, offset_bit=%u, smask[0]=%u, smask[1]=%u, smask[2]=%u\n",
-			size, ssize[0], ssize[1], ssize[2], offset_bit, smask[0], smask[1], smask[2]);
+	//printf("size = %u, ssize[0] = %u, ssize[1] = %u, ssize[2] = %u, offset_bit=%u, smask[0]=%u, smask[1]=%u, smask[2]=%u\n",
+	//		size, ssize[0], ssize[1], ssize[2], offset_bit, smask[0], smask[1], smask[2]);
 
 	f->limbs[offset_limb] &= ~smask[0];
 	f->limbs[offset_limb] |= in<<offset_bit;
