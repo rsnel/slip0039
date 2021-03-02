@@ -46,6 +46,7 @@ int streq(const char *unknown, const char *target) {
         goto entry;
 
         while (*(++target)) {
+		// increment pointer if current value is not NUL, SPC or LF
 		unknown += cthelp_neq(*unknown, '\0')&
 			cthelp_neq(*unknown, ' ')&cthelp_neq(*unknown, '\n');
 
@@ -68,6 +69,32 @@ int search(const char *word, wordlist_t *w) {
         return res;
 }
 
+void sbufputchar(sbuf_t *s, char c) {
+	if (isprint(c)) sbufprintf(s, "%c", c);
+	else sbufprintf(s, "\\%o", c);
+}
+
+uint16_t wordlist_search(wordlist_t *w, const char *word) {
+	int match = -1; /* 0xffffffff */
+
+        for (int i = 0; i < w->no_words; i++)
+                match &= i|(-(streq(word, w->words[i])));
+	
+	if (match == -1) {
+		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+
+		sbufprintf(&sbuf, "word '");
+
+		while (*word != '\0' && *word != ' ' && *word != '\n')
+			sbufputchar(&sbuf, *word++);
+
+		sbufprintf(&sbuf, "' not found in %s wordlist", w->name);
+		FATAL("%s", dl);
+	}
+
+	return match;
+}
+
 // constant time implementation of charlist[idx]
 char charlist_dereference(charlist_t *l, uint8_t idx) {
         assert(l && idx < l->no_chars);
@@ -87,8 +114,13 @@ uint8_t charlist_search(charlist_t *l, char in) {
                 match &= i|(-cthelp_neq(in, l->chars[i])); /* if neq == 1, then -neq = 0xffff */
 
         if (match == -1) {
-                if (isprint(in)) FATAL("illegal character '%c' found in %s encoded data", in, l->name);
-                else FATAL("illegal non-printable character \\%o found in %s encoded data", in, l->name);
+		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+
+		sbufprintf(&sbuf, "illegal character '");
+		sbufputchar(&sbuf, in);
+		sbufprintf(&sbuf, "'  found in %s encoded data", l->name);
+
+                FATAL("%s", dl);
         }
 
         return match;

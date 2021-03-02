@@ -29,6 +29,7 @@
 #include "rs1024.h"
 #include "utils.h"
 #include "wordlists.h"
+#include "cthelp.h"
 
 void base1024_to_string(base1024_t *b, slip0039_mnemonic_t line) {
 	sbuf_t s = {
@@ -62,26 +63,17 @@ void base1024_from_string(base1024_t *b, const slip0039_mnemonic_t line,
 					"%d supported at maximum",
 					line_number, WORDS);
 
-		int index = search(line, &wordlist_slip0039);
-		if (index < 0) {
-			const char *end = line;
-			for (int i = 0; i < LINE; i++)
-				end += (*end != '\0') &&
-					(*end != ' ') && (*end != '\n');
-			FATAL("word \"%.*s\" not found in wordlist",
-					(int)(end - line), line);
-		}
+		int index = wordlist_search(&wordlist_slip0039, line);
 
 		b->words[b->no_words++] = index;
 
 		/* skip ahead tot the next word, use max_word_length
 		 * to make this code constant time */
 		for (int i = 0; i < wordlist_slip0039.max_word_length; i++)
-			line += (*line != '\0') &&
-				(*line != ' ') && (*line != '\n');
+			line += cthelp_neq(*line, '\0')&cthelp_neq(*line, ' ')&cthelp_neq(*line, '\n');
 
 		/* skip a space (if any) */
-		line += (*line == ' ') || (*line == '\n');
+		line += cthelp_eq(*line, ' ')|cthelp_eq(*line, '\n');
 	}
 }
 

@@ -23,7 +23,9 @@
 
 // return a != b
 static inline int cthelp_neq(uint32_t a, uint32_t b) {
-	uint32_t diff = a - b;
+	uint32_t diff = a - b; // we could also use a^b (XOR)
+	/* diff|-diff has the most significant bit set if and only if diff != 0
+	 * when we shift this bit 31 places to the right, we end up with 1 or 0 */
 	return (diff|-diff)>>31;
 }
 

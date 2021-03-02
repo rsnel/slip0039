@@ -43,7 +43,6 @@ slip0039_t s;                 // the main struct with all the info
 base1024_t b;                 // needed to convert wordlist to and from bits
 slip0039_mnemonic_t mnemonic; // buffer to contain one mnemonic
 pbkdf2_t prng;                // PRNG for shares and part of digests
-displayline_t dl;
 
 // seed for PRNG
 const char *seed = NULL;

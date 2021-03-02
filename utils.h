@@ -48,7 +48,11 @@ typedef struct sbuf_s {
 
 typedef char displayline_t[DISPLAYLINE];
 
+displayline_t dl;
+
 int search(const char*, wordlist_t*);
+
+uint16_t wordlist_search(wordlist_t*, const char*);
 
 char charlist_dereference(charlist_t*, uint8_t);
 
