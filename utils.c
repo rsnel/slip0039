@@ -26,6 +26,7 @@
 #include "wordlists.h"
 #include "charlists.h"
 #include "verbose.h"
+#include "cthelp.h"
 
 int memeq(const uint8_t *a, const uint8_t *b, size_t n) {
 	int xor = 0;
@@ -45,7 +46,8 @@ int streq(const char *unknown, const char *target) {
         goto entry;
 
         while (*(++target)) {
-                unknown += (*unknown != '\0') && (*unknown != ' ') && (*unknown != '\n');
+		unknown += cthelp_neq(*unknown, '\0')&
+			cthelp_neq(*unknown, ' ')&cthelp_neq(*unknown, '\n');
 
 entry:
                 eq |= (*unknown)^(*target);
@@ -72,7 +74,7 @@ char charlist_dereference(charlist_t *l, uint8_t idx) {
         char out = 0;
 
         for (int i = 0; i < l->no_chars; i++)
-                out |= l->chars[i]&(-(i == idx));
+                out |= l->chars[i]&(-(cthelp_eq(i, idx)));
 
         return out;
 }
@@ -82,7 +84,7 @@ uint8_t charlist_search(charlist_t *l, char in) {
         int match = -1; /* 0xffffffff */
 
         for (int i = 0; i < l->no_chars; i++)
-                match &= i|(-(in != l->chars[i]));
+                match &= i|(-cthelp_neq(in, l->chars[i])); /* if neq == 1, then -neq = 0xffff */
 
         if (match == -1) {
                 if (isprint(in)) FATAL("illegal character '%c' found in %s encoded data", in, l->name);
