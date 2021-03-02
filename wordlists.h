@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 typedef struct wordlist_s {
+	char *name;
 	size_t no_words, max_word_length;
 	char **words;
 } wordlist_t;

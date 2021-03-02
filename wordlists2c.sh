@@ -30,7 +30,7 @@ fi
 
 # filename_prefix sha256 lines
 format_wordlist() {
-	FILENAME=$1.txt
+	FILENAME=wordlist_$1.txt
 	if [ ! -f "$FILENAME" ]; then
 		fatal "file \"$FILENAME\" not found"
 	fi
@@ -50,7 +50,8 @@ format_wordlist() {
 
 	MAX_WORD_LENGTH=`wc -L $FILENAME | cut -f 1 -d ' '`
 	echo
-	echo wordlist_t $1 = {
+	echo wordlist_t wordlist_$1 = {
+	echo "\t.name = \"$1\","
 	echo "\t.no_words = $3,"
 	echo "\t.max_word_length = $MAX_WORD_LENGTH,"
 	echo "\t.words = (char *[]){"
@@ -66,12 +67,12 @@ echo "#include \"wordlists.h\""
 
 # wordlist_slip0039 on 2020-05-31 available from
 #    https://github.com/satoshilabs/slips/raw/master/slip-0039/wordlist.txt
-format_wordlist wordlist_slip0039 \
+format_wordlist slip0039 \
 	bcc4555340332d169718aed8bf31dd9d5248cb7da6e5d355140ef4f1e601eec3 1024
 
 # wordlist_bip0039_english on 2020-05-31 available from
 #    https://github.com/bitcoin/bips/raw/master/bip-0039/english.txt
-format_wordlist wordlist_bip0039_english \
+format_wordlist bip0039_english \
 	2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda 2048
-format_wordlist wordlist_diceware_german \
+format_wordlist diceware_german \
 	86eaf47b43df1c7f926b1d2f4cc724141de626c601a32562f28ec204fb3b9607 7776
