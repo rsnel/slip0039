@@ -44,7 +44,7 @@ void base1024_to_string(base1024_t *b, slip0039_mnemonic_t line) {
 	while (++i < b->no_words) {
 		sbufprintf(&s, " ");
 start:
-		sbufprintf(&s, "%s", wordlist_slip0039.words[b->words[i]]);
+		sbufwordlist_dereference(&wordlist_slip0039, &s, b->words[i]);
 	}
 }
 
@@ -63,17 +63,14 @@ void base1024_from_string(base1024_t *b, const slip0039_mnemonic_t line,
 					"%d supported at maximum",
 					line_number, WORDS);
 
-		int index = wordlist_search(&wordlist_slip0039, line);
+		const char *stuff;
+		int index = wordlist_search(&wordlist_slip0039, line, &stuff);
 
 		b->words[b->no_words++] = index;
 
-		/* skip ahead tot the next word, use max_word_length
-		 * to make this code constant time */
-		for (int i = 0; i < wordlist_slip0039.max_word_length; i++)
-			line += cthelp_neq(*line, '\0')&cthelp_neq(*line, ' ')&cthelp_neq(*line, '\n');
+		assert(*stuff == ' ' || (*stuff == '\n' && *(stuff + 1) == '\0'));
 
-		/* skip a space (if any) */
-		line += cthelp_eq(*line, ' ')|cthelp_eq(*line, '\n');
+		line = stuff + 1;
 	}
 }
 
@@ -96,14 +93,6 @@ void base1024_append_checksum(base1024_t *b) {
 	rs1024_add_array(&s, b->words, b->no_words);
 	rs1024_checksum(&s, b->words + b->no_words);
 	b->no_words += 3;
-}
-
-void base1024_print(base1024_t *b) {
-	printf("no_words=%d, data:", b->no_words);
-	for (int i = 0; i < b->no_words; i++)
-		printf(" %04x (%s)", b->words[i], wordlist_slip0039.words[b->words[i]]);
-
-	printf("\n");
 }
 
 void base1024_rewind_and_truncate(base1024_t *b, unsigned int index) {

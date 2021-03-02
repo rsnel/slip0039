@@ -39,46 +39,67 @@ int memeq(const uint8_t *a, const uint8_t *b, size_t n) {
 
 // check if unknown string is equal to target, comparison
 // time should not depend on the length of unknown,
-// unknown can be terminated by space or by NUL
-int streq(const char *unknown, const char *target) {
-        int eq = 0;
+// unknown can be terminated by SPC or by LF
+static int wordeq(const char *unknown, const char *target, const char **end) {
+        int eq = 0, boolean;
 
         goto entry;
 
         while (*(++target)) {
-		// increment pointer if current value is not NUL, SPC or LF
-		unknown += cthelp_neq(*unknown, '\0')&
-			cthelp_neq(*unknown, ' ')&cthelp_neq(*unknown, '\n');
+		// increment pointer if current value is not SPC or LF
+		unknown += cthelp_neq(*unknown, ' ')&cthelp_neq(*unknown, '\n');
 
 entry:
                 eq |= (*unknown)^(*target);
         }
 
-        return eq != 0;
+	boolean = cthelp_neq(eq, 0);
+	
+	// set *end to point to the value after the last letter of the word
+	// if there is a match
+	*end = (void*)((((long int)unknown + 1)&(boolean - 1))|(long int)*end);
+
+        return boolean;
 }
 
-// search word in wordlist, return -1 if not found
-// the time this function takes to run should not
-// depend on the input
-int search(const char *word, wordlist_t *w) {
-        int res = -1; /* == 0xffffffff */
-
-        for (int i = 0; i < w->no_words; i++)
-                res &= i|(-(streq(word, w->words[i])));
-
-        return res;
-}
-
+// escape unprintable char as \ooo so that error messages
+// will never mess up the terminal
 void sbufputchar(sbuf_t *s, char c) {
 	if (isprint(c)) sbufprintf(s, "%c", c);
-	else sbufprintf(s, "\\%o", c);
+	else sbufprintf(s, "\\%o", (unsigned char)c);
 }
 
-uint16_t wordlist_search(wordlist_t *w, const char *word) {
+int wordlist_dereference(wordlist_t *w, char *buf, int buf_size, uint16_t idx) {
+	assert(w && idx < w->no_words && buf_size > w->max_word_length);
+	int ret = 0;
+
+	for (int i = 0; i < w->max_word_length + 1; i++)
+		assert(*(buf + i) == '\0');
+
+	for (int i = 0; i < w->no_words; i++) {
+		char *cur = w->words[i];
+		int eq = cthelp_eq(i, idx);
+		while (*cur) {
+			*(buf + (cur - w->words[i])) |= *cur&(-eq);
+			ret += 1&(-eq);
+			cur++;
+		}
+	}
+
+	return ret;
+}
+
+void sbufwordlist_dereference(wordlist_t *w, sbuf_t *s, uint16_t idx) {
+	assert(s);
+	s->len += wordlist_dereference(w, s->buf + s->len, s->size - s->len, idx);
+}
+
+uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 	int match = -1; /* 0xffffffff */
+	*end = NULL;
 
         for (int i = 0; i < w->no_words; i++)
-                match &= i|(-(streq(word, w->words[i])));
+                match &= i|(-(wordeq(word, w->words[i], end)));
 	
 	if (match == -1) {
 		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };

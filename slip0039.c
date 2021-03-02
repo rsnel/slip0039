@@ -160,6 +160,38 @@ void slip0039_set_increment_available(slip0039_set_t *m) {
 		slip0039_set_increment_available(m->parent);
 }
 
+void slip0039_write_title(slip0039_t *s, uint16_t *title) {
+	sbuf_t sb;
+	sb.buf = s->title;
+	sb.size = sizeof(s->title);
+	sb.len = 0;
+	sbufprintf(&sb, " (");
+	sbufwordlist_dereference(&wordlist_slip0039, &sb, title[0]);
+	sbufprintf(&sb, " ");
+	sbufwordlist_dereference(&wordlist_slip0039, &sb, title[1]);
+	sbufprintf(&sb, ")");
+}
+
+void slip0039_write_group_title(slip0039_t *s, uint8_t i, uint16_t group) {
+	sbuf_t sb;
+	sb.buf = s->root.names[i];
+	sb.size = sizeof(*s->root.names);
+	sb.len = 0;
+	sbufprintf(&sb, " (");
+	sbufwordlist_dereference(&wordlist_slip0039, &sb, group);
+	sbufprintf(&sb, ")");
+}
+
+void slip0039_write_member_title(slip0039_t *s, uint8_t i, uint8_t j, uint16_t member) {
+	sbuf_t sb;
+	sb.buf = s->members[i].names[j];
+	sb.size = sizeof(*s->members[i].names);
+	sb.len = 0;
+	sbufprintf(&sb, "  (");
+	sbufwordlist_dereference(&wordlist_slip0039, &sb, member);
+	sbufprintf(&sb, ")");
+}
+
 void slip0039_print_mnemonics(slip0039_t *s) {
 	// these conditions are (?) enfored elsewhere
 	assert(s->n >= 16 && s->n%2 == 0 && s->n <= BLOCKS<<1);
@@ -169,24 +201,21 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 	base1024_write_bits(&b, s->id, 15);
 	base1024_write_bits(&b, s->e, 5);
 
-	snprintf_strict(s->title, sizeof(s->title), " (%s %s)",
-			wordlist_slip0039.words[b.words[0]],
-			wordlist_slip0039.words[b.words[1]]);
+	slip0039_write_title(s, b.words);
 
 	for (uint8_t i = 0; i < s->root.count; i++) {
 		base1024_write_bits(&b, i, 4);
 		base1024_write_bits(&b, s->root.threshold - 1, 4);
 		base1024_write_bits(&b, s->root.count - 1, 4);
-		snprintf_strict(s->root.names[i], sizeof(*s->root.names),
-				"  (%s)", wordlist_slip0039.words[b.words[2]]);
+
+		slip0039_write_group_title(s, i, b.words[2]);
 
 		for (uint8_t j = 0; j < s->members[i].count; j++) {
 			base1024_write_bits(&b, j, 4);
 			base1024_write_bits(&b,
 					s->members[i].threshold - 1, 4);
-			snprintf_strict(s->members[i].names[j],
-					sizeof(*s->members[i].names),
-					"   (%s)", wordlist_slip0039.words[b.words[3]]);
+
+			slip0039_write_member_title(s, i, j, b.words[3]);
 
 			// write padding
 			base1024_write_bits(&b, 0, padding_bits);
@@ -239,9 +268,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 	uint8_t T = base1024_read_bits(&b, 4) + 1;
 
 	if (s->n == 0) { // s is uninitialized
-		snprintf_strict(s->title, sizeof(s->title), " (%s %s)",
-				wordlist_slip0039.words[b.words[0]],
-				wordlist_slip0039.words[b.words[1]]);
+		slip0039_write_title(s, b.words);
 		s->id = id;
 		s->e = e;
 		s->root.threshold = GT;
@@ -267,8 +294,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 	slip0039_set_t *m = &s->members[GI];
 	if (!m->threshold) { // new group
-		snprintf_strict(s->root.names[GI], sizeof(*s->root.names),
-				"  (%s)", wordlist_slip0039.words[b.words[2]]);
+		slip0039_write_group_title(s, GI, b.words[2]);
 		m->threshold = T;
 		m->count = 0; // undefined
 	} else if (m->threshold != T)
@@ -279,8 +305,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 		FATAL("share is already loaded in mnemonic on line %d",
 				line_number);
 
-	snprintf_strict(m->names[I], sizeof(*m->names), "   (%s)",
-				wordlist_slip0039.words[b.words[3]]);
+	slip0039_write_member_title(s, GI, I, b.words[3]);
 	m->line_numbers[I] = line_number;
 
 	if (base1024_read_bits(&b, surplus))
@@ -300,8 +325,6 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 void slip0039_add_plaintext(slip0039_t *s, FILE *fp) {
 	assert(s && !s->plaintext && !s->n);
 
-	/* if nibble is 1 we are expecting to read the high nibble
-	 * and if nibble is 0 we are expecting to read the low nibble */
 	size_t nibbles = 0;
 	fixnum_t f;
 	int character;
@@ -418,7 +441,7 @@ void slip0039_split(slip0039_set_t *s, size_t n, pbkdf2_t *p) {
 			idx[no_idx++] = i; // share[i] is set
 		}
 
-		/* compute the other shares */
+		/* compute the remaining shares */
 		for (uint8_t i = s->threshold - 2; i < s->count; i++) {
 			assert(!s->shares[i]);
 			s->shares[i] = s->storage_shares[i];

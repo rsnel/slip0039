@@ -50,9 +50,11 @@ typedef char displayline_t[DISPLAYLINE];
 
 displayline_t dl;
 
-int search(const char*, wordlist_t*);
+int wordlist_dereference(wordlist_t*, char *, int, uint16_t);
 
-uint16_t wordlist_search(wordlist_t*, const char*);
+void sbufwordlist_dereference(wordlist_t*, sbuf_t*, uint16_t);
+
+uint16_t wordlist_search(wordlist_t*, const char*, const char**);
 
 char charlist_dereference(charlist_t*, uint8_t);
 
@@ -67,7 +69,5 @@ int sbufprintf(sbuf_t*, const char* format, ...);
 int sbufprintf_base16(sbuf_t*, const uint8_t*, size_t);
 
 int memeq(const uint8_t*, const uint8_t*, size_t);
-
-int streq(const char*, const char*);
 
 #endif /* SLIP0039_UTILS_H */

@@ -46,8 +46,6 @@ void base1024_verify_checksum(base1024_t*, int);
 
 void base1024_append_checksum(base1024_t*);
 
-void base1024_print(base1024_t*);
-
 unsigned int base1024_read_bits(base1024_t*, unsigned int);
 
 void base1024_write_bits(base1024_t*, unsigned int, unsigned int);
