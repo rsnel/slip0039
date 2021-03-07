@@ -75,8 +75,8 @@ void lrcipher_execute(lrcipher_t *l, unsigned char *dst,
 
 	size >>= 1;
 
-	// if dir == LRCRYPT_ENCRYPT, then the rounds are 0,1,2,3
-	// if dir == LRCRYPT_DECRYPT, then the rounds are 3,2,1,0
+	// if dir == LRCIPHER_ENCRYPT, then the rounds are 0,1,2,3
+	// if dir == LRCIPHER_DECRYPT, then the rounds are 3,2,1,0
         for (int i = 0; i < 4; i++)
                 helper(l, dst, dst + size, size, i^dir,
 				iterations, i == 3);
