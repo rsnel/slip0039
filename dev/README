@@ -1,0 +1,13 @@
+some utils to develop and test parts of the program
+the functions in this directory are not constant time and/or
+meant to be used in production
+
+tfixnum.c: test some aspects of fixnum.c, dev.c includes functions to show fixnums
+
+ta.c: quick test of constant time helpers
+
+lrperm.c: show how to generate deterministic reversible 'permutations' using rlcipher.c
+
+tcharlist.c: how to use charlist functions to show hexadecimal numbers
+
+16tothe32.c: computer 16 to the 32th power and find the decimal representation

@@ -48,7 +48,7 @@ typedef enum fixnum_pattern_e {
 } fixnum_pattern_t;
 
 typedef struct fixnum_scratch_s {
-	fixnum_t shift, tozero;
+	fixnum_t a, b;
 } fixnum_scratch_t;
 
 void fixnum_scratch_init(fixnum_scratch_t*, uint8_t*, size_t, uint8_t*, size_t);
@@ -87,8 +87,12 @@ uint16_t fixnum_shr(fixnum_t*, uint8_t);
 
 uint16_t fixnum_shr_in(fixnum_t*, uint8_t, uint16_t);
 
-uint16_t fixnum_mul(fixnum_t*, const fixnum_factor_t*);
+uint16_t fixnum_mul_factor(fixnum_t*, const fixnum_factor_t*);
 
-uint16_t fixnum_div(fixnum_t*, const fixnum_factor_t*, fixnum_scratch_t*);
+uint16_t fixnum_mul_factor(fixnum_t*, const fixnum_factor_t*);
+
+void fixnum_mul_fixnum(fixnum_t*, const fixnum_t*, fixnum_scratch_t*);
+
+uint16_t fixnum_div_factor(fixnum_t*, const fixnum_factor_t*, fixnum_scratch_t*);
 
 #endif /* SLIP0039_FIXNUM_H */

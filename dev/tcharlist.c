@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "fixnum.h"
-#include "charlists.h"
-#include "verbose.h"
+#include "dev.h"
 
 int main(int argc, char *argv[]) {
 	uint8_t limbs_a[BLOCKS], limbs_f[BLOCKS];
@@ -19,7 +17,7 @@ int main(int argc, char *argv[]) {
 
 	const char *buf = code;
 	while (*buf) {
-		fixnum_mul(&a, &f);
+		fixnum_mul_factor(&a, &f);
 		int idx = charlist_search(&charlist_base16, *buf);
 		assert(idx != -1);
 		fixnum_add_uint16(&a, idx);

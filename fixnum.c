@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 #include "fixnum.h"
-#include "charlists.h"
+#include "cthelp.h"
 
 void fixnum_init(fixnum_t *f, uint8_t *limbs, size_t no_limbs) {
 	assert(f && no_limbs > 0 && limbs);
@@ -76,25 +76,11 @@ void fixnum_init_fixnum(fixnum_t *out, uint8_t *limbs, size_t no_limbs, const fi
 	fixnum_set_fixnum(out, in);
 }
 
-#if 0
-void fixnum_printf(const fixnum_t *f) {
-	for (int nibble = (f->no_limbs<<1) - 1; nibble >= 0; nibble--) {
-		putchar(charlist_dereference(&charlist_base16, fixnum_peek(f, nibble<<2, 4)));
-	}
-}
-
-void fixnum_show(const fixnum_t *f, const char *name) {
-	printf("%s: ", name);
-	fixnum_printf(f);
-	printf("\n");
-}
-#endif
-
-void fixnum_scratch_init(fixnum_scratch_t *s, uint8_t *shift, size_t no_shift,
-		uint8_t *tozero, size_t no_tozero) {
-	assert(s && no_shift == no_tozero && no_shift >= 2);
-	fixnum_init(&s->shift, shift, no_shift);
-	fixnum_init(&s->tozero, tozero, no_tozero);
+void fixnum_scratch_init(fixnum_scratch_t *s, uint8_t *a, size_t no_a,
+		uint8_t *b, size_t no_b) {
+	assert(s && no_a == no_b && no_a >= 2);
+	fixnum_init(&s->a, a, no_a);
+	fixnum_init(&s->b, b, no_b);
 }
 
 uint16_t fixnum_shl(fixnum_t *f, uint8_t shift) {
@@ -174,15 +160,8 @@ void fixnum_factor_init(fixnum_factor_t *d, uint8_t *limbs, size_t no_limbs, uin
 	d->max_left_shift.limbs[1] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-1];
 	if (no_limbs > 2) d->max_left_shift.limbs[d->max_left_shift.no_limbs-1] = 0;
 	fixnum_shl(&d->max_left_shift, 16 - d->log2 - 1);
-	d->pure = (d->value == 1<<d->log2);
+	d->pure = cthelp_eq(d->value, 1<<d->log2);
 }
-
-# if 0
-void fixnum_factor_show(const fixnum_factor_t *d, const char *name) {
-	printf("value=%04x log2=%d pure=%d ", d->value, d->log2, d->pure);
-	fixnum_show(&d->max_left_shift, "mls");
-}
-#endif
 
 uint32_t fixnum_peek(const fixnum_t *f, size_t offset, uint8_t size) {
 	assert(f);
@@ -302,7 +281,7 @@ uint16_t fixnum_sub_fixnum(fixnum_t *f, const fixnum_t *s, uint8_t mask) {
 	return acc;
 }
 
-uint16_t fixnum_mul(fixnum_t *f, const fixnum_factor_t *m) {
+uint16_t fixnum_mul_factor(fixnum_t *f, const fixnum_factor_t *m) {
 	assert(f && m && f->no_limbs >= 2 && f->no_limbs == m->max_left_shift.no_limbs);
 
 	if (m->pure)
@@ -323,32 +302,33 @@ uint16_t fixnum_mul(fixnum_t *f, const fixnum_factor_t *m) {
 	return acc_high + acc_low;
 }
 
-uint16_t fixnum_div(fixnum_t *f, const fixnum_factor_t *d, fixnum_scratch_t *s) {
+uint16_t fixnum_div_factor(fixnum_t *f, const fixnum_factor_t *d, fixnum_scratch_t *s) {
 	assert(f && d && f->no_limbs == d->max_left_shift.no_limbs && f->no_limbs >= 2);
 
+	// s->a is used as a shift register and s->b is brought to zero
 	if (d->pure) 
 		return fixnum_shr(f, d->log2);
 
-	assert(s->shift.no_limbs == f->no_limbs && s->tozero.no_limbs == f->no_limbs);
+	assert(s->a.no_limbs == f->no_limbs && s->b.no_limbs == f->no_limbs);
 
-	fixnum_set_fixnum(&s->tozero, f);
+	fixnum_set_fixnum(&s->b, f);
 	fixnum_set_pattern(f, PATTERN_ZERO);
-	fixnum_set_fixnum(&s->shift, &d->max_left_shift);
+	fixnum_set_fixnum(&s->a, &d->max_left_shift);
 	size_t bit = (f->no_limbs<<3) - d->log2;
 	uint32_t test;
 	uint16_t ret;
 
 	while (bit-- > 0) {
 		fixnum_shl(f, 1);
-		test = (fixnum_peek(&s->tozero, bit, d->log2 + 2) - d->value)>>31;
+		test = (fixnum_peek(&s->b, bit, d->log2 + 2) - d->value)>>31;
 		fixnum_add_uint16(f, 1 - test);
-		fixnum_sub_fixnum(&s->tozero, &s->shift, 0xff+test);
-		fixnum_shr(&s->shift, 1);
+		fixnum_sub_fixnum(&s->b, &s->a, 0xff+test);
+		fixnum_shr(&s->a, 1);
 	}
 
-	ret = s->tozero.limbs[s->tozero.no_limbs-1] + (s->tozero.limbs[s->tozero.no_limbs-2]<<8);
+	ret = s->b.limbs[s->b.no_limbs-1] + (s->b.limbs[s->b.no_limbs-2]<<8);
 
-	s->tozero.limbs[s->tozero.no_limbs-1] = s->tozero.limbs[s->tozero.no_limbs-2] = 0;
+	s->b.limbs[s->b.no_limbs-1] = s->b.limbs[s->b.no_limbs-2] = 0;
 
 	return ret;
 }
