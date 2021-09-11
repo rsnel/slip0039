@@ -176,7 +176,7 @@ int sbufprintf(sbuf_t *s, const char *format, ...) {
 int sbufprintf_base16(sbuf_t *s, const uint8_t *buf, size_t len) {
 	fixnum_t f;
 	fixnum_init(&f, (uint8_t*)buf, len);
-	int ret;
+	int ret = 0;
 
 	for (int nibble = (len<<1) - 1; nibble >= 0; nibble--)
 		ret += sbufprintf(s, "%c", charlist_dereference(&charlist_base16,

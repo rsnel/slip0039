@@ -1,7 +1,7 @@
 #!/bin/sh
 # simple script to run the official slip0039
 # test vectors through slip0039
-JQ=/usr/bin/jq
+JQ="`which jq`"
 VECTORS=vectors.json
 if [ ! -x $JQ ]; then
 	echo "executable jq not found"

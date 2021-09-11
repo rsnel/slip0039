@@ -428,10 +428,10 @@ void slip0039_split(slip0039_set_t *s, size_t n, pbkdf2_t *p) {
         	int no_idx = 2;
 
 		/* compute digest */
-		assert(!s->shares[-2]);
-		s->shares[-2] = s->storage_digest;
-		pbkdf2_generate(p, s->shares[-2] + DIGEST_LEN, n - DIGEST_LEN);
-		digest_compute(s->shares[-2], s->shares[-1], n);
+		assert(!*(s->shares - 2));
+		*(s->shares - 2) = s->storage_digest;
+		pbkdf2_generate(p, *(s->shares - 2) + DIGEST_LEN, n - DIGEST_LEN);
+		digest_compute(*(s->shares - 2), *(s->shares - 1), n);
 
 		/* generate the other required shares randomly */
 		for (uint8_t i = 0; i < s->threshold - 2; i++) {
@@ -493,7 +493,7 @@ void slip0039_recover(slip0039_set_t *s, uint8_t *secret, size_t n) {
 
 		for (int i = -2; i < 0; i++) {
 			assert(!s->shares[i]);
-			s->shares[i] = (i == -2)?s->storage_digest:secret;
+			*(s->shares + i) = (i == -2)?s->storage_digest:secret;
 			lagrange(s, n, no_idx, idx, (uint8_t)i);
 		}
 
@@ -518,10 +518,14 @@ void slip0039_encrypt(slip0039_t *s) {
 }
 
 void boring_stuff() {
+#if defined(__APPLE__) && defined(__MACH__)
+	WARNING("MACOS does not implement mloclall() api, your secret would be write to swap disk!");
+#else
         /* lock me into memory; don't leak info to swap */
         if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
                 FATAL("failed locking process in RAM: %s",
                                 strerror(errno));
+#endif
 
 	if (atexit(wipe))
 		FATAL("error setting atexit() handler");
@@ -653,8 +657,8 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-	boring_stuff();
 	verbose_init(argv[0]);
+	boring_stuff();
 
        	slip0039_init(&s);
 	parse_options(&s, argc,argv);
