@@ -12,7 +12,6 @@ if [ ! -r "$VECTORS" ]; then
 	exit 1
 fi
 COUNT=`$JQ length < "$VECTORS"`
-COUNT=40
 PASSED=0
 echo running $COUNT tests
 for i in `seq 1 $COUNT`; do
