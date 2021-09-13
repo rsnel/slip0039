@@ -13,7 +13,7 @@ ifneq ($(dep_files),)
 endif
 
 %.o: %.c
-	$(CC) $(CFLAGS) -Wp,-MD,$(dep_file) -c -o $@ $<
+	$(CC) $(CFLAGS) -Wp,-MD,$(<:.c=.d) -c -o $@ $<
 
 wordlists.c: wordlist_slip0039.txt wordlist_bip0039_english.txt \
 	wordlist_diceware_german.txt wordlists2c.sh
