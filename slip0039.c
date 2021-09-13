@@ -519,6 +519,7 @@ void slip0039_encrypt(slip0039_t *s) {
 
 void boring_stuff() {
 #if defined(__APPLE__) && defined(__MACH__)
+#	warning MACOS does not implement mlockall() api, your secret would be write to swap disk!
 	WARNING("MACOS does not implement mlockall() api, your secret would be write to swap disk!");
 #else
         /* lock me into memory; don't leak info to swap */
