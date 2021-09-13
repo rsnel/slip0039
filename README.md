@@ -50,7 +50,7 @@ etc
 * Data is locked memory so that it does not get swapped out to disk.
 
 * The program is constructed such that the amount of data that is needlessly
-  rearranged an copied around is reduced.
+  rearranged and copied around is reduced.
 
 * The output of the program is deterministic, so that the output can be
   reproduced on multiple machines and it is easy to see that he random data in
