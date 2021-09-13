@@ -68,9 +68,9 @@ void base1024_from_string(base1024_t *b, const slip0039_mnemonic_t line,
 
 		b->words[b->no_words++] = index;
 
-		assert(*stuff == ' ' || (*stuff == '\n' && *(stuff + 1) == '\0'));
+		assert(*stuff == ' ' || *stuff == '\0' || (*stuff == '\n' && *(stuff + 1) == '\0'));
 
-		line = stuff + 1;
+		line = stuff + (*stuff == '\0' ? 0 : 1);
 	}
 }
 

@@ -18,7 +18,7 @@
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
 #ifndef SLIP0039_GF256_H
-#define SLIP0039_GR256_H
+#define SLIP0039_GF256_H
 #include <stdint.h>
 
 uint8_t gf256_add(uint8_t, uint8_t);

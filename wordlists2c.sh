@@ -28,6 +28,10 @@ if [ "$#" != "0" ]; then
 	fatal "wrong number of arguments given"
 fi
 
+if ! command -v sha256sum >/dev/null && command -v shasum >/dev/null; then
+	sha256sum() { shasum -a 256 "$@"; }
+fi
+
 # filename_prefix sha256 lines
 format_wordlist() {
 	FILENAME=wordlist_$1.txt
@@ -43,20 +47,20 @@ format_wordlist() {
 		fatal "sha256sum of \"$FILENAME\" does not match"
 	fi
 
-	NUM=`wc -l $FILENAME | cut -f 1 -d ' '`
+	NUM=`wc -l $FILENAME | awk '{print $1}'`
+
 	if [ "$NUM" != "$3" ]; then
 		fatal "file $FILENAME has $NUM lines, when $3 lines were expected"
 	fi
 
-	MAX_WORD_LENGTH=`wc -L $FILENAME | cut -f 1 -d ' '`
+	MAX_WORD_LENGTH=`awk -vmax=0 'length($0) > max {max = length($0)} END {print max}' < "$FILENAME"`
 	echo
 	echo wordlist_t wordlist_$1 = {
 	echo "\t.name = \"$1\","
 	echo "\t.no_words = $3,"
 	echo "\t.max_word_length = $MAX_WORD_LENGTH,"
 	echo "\t.words = (char *[]){"
-	head -n -1 $FILENAME | sed "s/^/\t\t\"/;s/\$/\",/"
-	tail -n 1 $FILENAME | sed "s/^/\t\t\"/;s/\$/\"/"
+	sed "s/^/\t\t\"/;s/\$/\",/" < "$FILENAME"
 	echo "\t}"
 	echo "};"
 }
