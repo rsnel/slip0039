@@ -60,8 +60,16 @@ etc
 
 ## Testsuite
 
-The original test-suite is included as vectors.json and can be checked by
-running `./test.sh` or `make test`
+The original test-suite is included as the first 40 entries of vectors.json and can
+be checked by running `./test.sh` or `make test`
+
+Test 41 can detect certain errors in modular arithmetic.
+
+## Portability
+
+The program is known to work on Linux and MacOS. MacOS does not support
+mlockall(), so when you use this application on MacOS your secret may leak to
+swap.
 
 ## Examples
 
