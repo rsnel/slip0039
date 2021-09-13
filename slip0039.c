@@ -227,6 +227,7 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 
 
 			base1024_append_checksum(&b);
+			wipememory(mnemonic, sizeof(mnemonic));
 			base1024_to_string(&b, mnemonic);
 			printf("%s\n", mnemonic);
 
