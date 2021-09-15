@@ -74,7 +74,12 @@ void slip0039_debug_share(const char *path, int index, int space,
 
 	while (space--) sbufprintf(&sbuf, " ");
 
-	sbufprintf_base16(&sbuf, buf, n);
+	if (n <= 32) {
+		sbufprintf_base16(&sbuf, buf, n);
+	} else {
+		sbufprintf_base16(&sbuf, buf, 32);
+		sbufprintf(&sbuf, "...");
+	}
 
 	sbufprintf(&sbuf, " %s", title);
 	DEBUG("%s", dl);
@@ -113,6 +118,8 @@ void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
 }
 
 void slip0039_debug(slip0039_t *s) {
+	if (!debug) return;
+
 	assert(s);
 	DEBUG("---START---internal slip0039 data----");
 	if (s->n) DEBUG("size of master secret=%ld bytes", s->n);
