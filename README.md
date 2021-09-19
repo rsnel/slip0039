@@ -69,6 +69,10 @@ Test 41 can detect certain errors in modular arithmetic.
 
 The program is known to work on Linux and MacOS. Issues pertaining to MacOS not having mlockall() have been fixed.
 
+## Authors
+
+The project was started by Rik Snel (https://github.com/rsnel/). MacOS compatibilty and various fixes where offered by James Z.M. Gao  (https://github.com/gzm55).
+
 ## Examples
 
 Example split `MS = 000000000000000000000000000000`, `SEED = fdsaludskj` with debug output:
