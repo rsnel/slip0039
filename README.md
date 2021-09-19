@@ -67,9 +67,7 @@ Test 41 can detect certain errors in modular arithmetic.
 
 ## Portability
 
-The program is known to work on Linux and MacOS. MacOS does not support
-mlockall(), so when you use this application on MacOS your secret may leak to
-swap.
+The program is known to work on Linux and MacOS. Issues pertaining to MacOS not having mlockall() have been fixed.
 
 ## Examples
 
