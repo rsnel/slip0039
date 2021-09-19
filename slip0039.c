@@ -82,7 +82,7 @@ void slip0039_debug_share(const char *path, int index, int space,
 	}
 
 	sbufprintf(&sbuf, " %s", title);
-	DEBUG("%s", dl);
+	WHINE("%s", dl);
 }
 
 void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
@@ -93,7 +93,7 @@ void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
 		if (m->count) snprintf_strict(count, sizeof(count), "%2d",
 				m->count);
 		else strncpy(count, " ?", 6);
-		DEBUG("%s%s  count=%s available=%2d threshold=% 2d %s",
+		WHINE("%s%s  count=%s available=%2d threshold=% 2d %s",
 				path, m->parent?"":"  ", count, m->available,
 				m->threshold,  title);
 
@@ -121,17 +121,18 @@ void slip0039_debug(slip0039_t *s) {
 	if (!debug) return;
 
 	assert(s);
-	DEBUG("---START---internal slip0039 data----");
-	if (s->n) DEBUG("size of master secret=%ld bytes", s->n);
-	if (s->id != -1) DEBUG("Identifier=0x%04x", s->id);
+	WHINE("---START---debug internal slip0039 data----");
+	WHINE("!!! DO NOT USE -d OPTION IN PRODUCTION ENVIRONMENT !!!");
+	if (s->n) WHINE("size of master secret=%ld bytes", s->n);
+	if (s->id != -1) WHINE("Identifier=0x%04x", s->id);
 	if (s->e != -1)
-		DEBUG("Iteration exponent=%d (%ld iterations per round)",
+		WHINE("Iteration exponent=%d (%ld iterations per round)",
 				s->e, 2500L<<s->e);
 
 	slip0039_debug_set(&s->root, s, "/", s->title);
 	if (s->plaintext)
 		slip0039_debug_share("/", -3, 2, s->plaintext, s->n, "");
-	DEBUG("---END-----internal slip0039 data----");
+	WHINE("---END-----debug internal slip0039 data----");
 }
 
 // function that gets called atexit(), so that
