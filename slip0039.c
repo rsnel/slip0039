@@ -772,7 +772,6 @@ int main(int argc, char *argv[]) {
 		slip0039_decrypt(&s);
 
 		slip0039_print_plaintext(&s);
-		wipememory(&s, sizeof s);
 	}
 
 	 wipestackmemory(STACK_CLEAR_SIZE);
