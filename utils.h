@@ -51,8 +51,6 @@ typedef struct sbuf_s {
 
 typedef char displayline_t[DISPLAYLINE];
 
-displayline_t dl;
-
 int wordlist_dereference(wordlist_t*, char *, int, uint16_t);
 
 void sbufwordlist_dereference(wordlist_t*, sbuf_t*, uint16_t);

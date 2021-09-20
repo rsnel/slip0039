@@ -102,7 +102,8 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
                 match &= i|(-(wordeq(word, w->words[i], end)));
 	
 	if (match == -1) {
-		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+		displayline_t buf;
+		sbuf_t sbuf = { .buf = buf, .size = sizeof buf };
 
 		sbufprintf(&sbuf, "word '");
 
@@ -110,7 +111,7 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 			sbufputchar(&sbuf, *word++);
 
 		sbufprintf(&sbuf, "' not found in %s wordlist", w->name);
-		FATAL("%s", dl);
+		FATAL("%s", buf);
 	}
 
 	return match;
@@ -135,13 +136,14 @@ uint8_t charlist_search(charlist_t *l, char in) {
                 match &= i|(-cthelp_neq(in, l->chars[i])); /* if neq == 1, then -neq = 0xffff */
 
         if (match == -1) {
-		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+		displayline_t buf;
+		sbuf_t sbuf = { .buf = buf, .size = sizeof buf };
 
 		sbufprintf(&sbuf, "illegal character '");
 		sbufputchar(&sbuf, in);
 		sbufprintf(&sbuf, "'  found in %s encoded data", l->name);
 
-                FATAL("%s", dl);
+                FATAL("%s", buf);
         }
 
         return match;
