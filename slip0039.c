@@ -43,6 +43,7 @@ slip0039_t s;                 // the main struct with all the info
 base1024_t b;                 // needed to convert wordlist to and from bits
 slip0039_mnemonic_t mnemonic; // buffer to contain one mnemonic
 pbkdf2_t prng;                // PRNG for shares and part of digests
+displayline_t dl;
 
 // seed for PRNG
 const char *seed = NULL;
@@ -82,7 +83,10 @@ void slip0039_debug_share(const char *path, int index, int space,
 	sbufprintf_base16(&sbuf, buf, n);
 
 	sbufprintf(&sbuf, " %s", title);
+
+	wipememory(&sbuf, sizeof sbuf);
 	DEBUG("%s", dl);
+	wipememory(&dl, sizeof dl);
 }
 
 void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
@@ -296,7 +300,9 @@ void slip0039_print_plaintext(slip0039_t *s) {
         sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
 	sbufprintf_base16(&sbuf, s->plaintext, s->n);
 
+	wipememory(&sbuf, sizeof sbuf);
 	printf("%s\n", dl);
+	wipememory(&dl, sizeof dl);
 }
 
 void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
