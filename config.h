@@ -39,7 +39,7 @@
 // and string terminator)
 #define LINE 	(WORDS*9 + 1)
 
-#define DISPLAYLINE 160
+#define DISPLAYLINE (BLOCKS * 2 * 2 + 64)
 
 #define DIGEST_LEN 4
 

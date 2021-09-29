@@ -74,15 +74,10 @@ void slip0039_debug_share(const char *path, int index, int space,
 
 	while (space--) sbufprintf(&sbuf, " ");
 
-	if (n <= 32) {
-		sbufprintf_base16(&sbuf, buf, n);
-	} else {
-		sbufprintf_base16(&sbuf, buf, 32);
-		sbufprintf(&sbuf, "...");
-	}
+	sbufprintf_base16(&sbuf, buf, n);
 
 	sbufprintf(&sbuf, " %s", title);
-	WHINE("%s", dl);
+	WHINE("debug:%s", dl);
 }
 
 void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
@@ -93,7 +88,7 @@ void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
 		if (m->count) snprintf_strict(count, sizeof(count), "%2d",
 				m->count);
 		else strncpy(count, " ?", 6);
-		WHINE("%s%s  count=%s available=%2d threshold=% 2d %s",
+		WHINE("debug:%s%s  count=%s available=%2d threshold=% 2d %s",
 				path, m->parent?"":"  ", count, m->available,
 				m->threshold,  title);
 
@@ -121,18 +116,18 @@ void slip0039_debug(slip0039_t *s) {
 	if (!debug) return;
 
 	assert(s);
-	WHINE("---START---debug internal slip0039 data----");
-	WHINE("!!! DO NOT USE -d OPTION IN PRODUCTION ENVIRONMENT !!!");
-	if (s->n) WHINE("size of master secret=%ld bytes", s->n);
-	if (s->id != -1) WHINE("Identifier=0x%04x", s->id);
+	WHINE("debug:---START---debug internal slip0039 data----");
+	WHINE("debug:!!! DO NOT USE -d OPTION IN PRODUCTION ENVIRONMENT !!!");
+	if (s->n) WHINE("debug:size of master secret=%ld bytes", s->n);
+	if (s->id != -1) WHINE("debug:Identifier=0x%04x", s->id);
 	if (s->e != -1)
-		WHINE("Iteration exponent=%d (%ld iterations per round)",
+		WHINE("debug:Iteration exponent=%d (%ld iterations per round)",
 				s->e, 2500L<<s->e);
 
 	slip0039_debug_set(&s->root, s, "/", s->title);
 	if (s->plaintext)
 		slip0039_debug_share("/", -3, 2, s->plaintext, s->n, "");
-	WHINE("---END-----debug internal slip0039 data----");
+	WHINE("debug:---END-----debug internal slip0039 data----");
 }
 
 // function that gets called atexit(), so that
