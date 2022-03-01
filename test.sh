@@ -1,7 +1,7 @@
 #!/bin/sh
 # simple script to run the official slip0039
 # test vectors through slip0039
-JQ=/usr/bin/jq
+JQ="`which jq`"
 VECTORS=vectors.json
 if [ ! -x $JQ ]; then
 	echo "executable jq not found"
@@ -12,7 +12,6 @@ if [ ! -r "$VECTORS" ]; then
 	exit 1
 fi
 COUNT=`$JQ length < "$VECTORS"`
-COUNT=40
 PASSED=0
 echo running $COUNT tests
 for i in `seq 1 $COUNT`; do

@@ -176,11 +176,18 @@ int sbufprintf(sbuf_t *s, const char *format, ...) {
 int sbufprintf_base16(sbuf_t *s, const uint8_t *buf, size_t len) {
 	fixnum_t f;
 	fixnum_init(&f, (uint8_t*)buf, len);
-	int ret;
+	int ret = 0;
 
 	for (int nibble = (len<<1) - 1; nibble >= 0; nibble--)
 		ret += sbufprintf(s, "%c", charlist_dereference(&charlist_base16,
 					fixnum_peek(&f, nibble<<2, 4)));
 
 	return ret;
+}
+
+void wipestackmemory(const size_t len) {
+    // only support GCC or C99+ compiler
+    unsigned char fodder[len];
+    if (len > 0)
+		wipememory(fodder, len);
 }

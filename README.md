@@ -50,7 +50,7 @@ etc
 * Data is locked memory so that it does not get swapped out to disk.
 
 * The program is constructed such that the amount of data that is needlessly
-  rearranged an copied around is reduced.
+  rearranged and copied around is reduced.
 
 * The output of the program is deterministic, so that the output can be
   reproduced on multiple machines and it is easy to see that he random data in
@@ -60,8 +60,18 @@ etc
 
 ## Testsuite
 
-The original test-suite is included as vectors.json and can be checked by
-running `./test.sh` or `make test`
+The original test-suite is included as the first 40 entries of vectors.json and can
+be checked by running `./test.sh` or `make test`
+
+Test 41 can detect certain errors in modular arithmetic.
+
+## Portability
+
+The program is known to work on Linux and MacOS. Issues pertaining to MacOS not having mlockall() have been fixed.
+
+## Authors
+
+The project was started by Rik Snel (https://github.com/rsnel/). MacOS compatibilty and various fixes where offered by James Z.M. Gao  (https://github.com/gzm55).
 
 ## Examples
 
@@ -108,8 +118,8 @@ Example split `MS = 000000000000000000000000000000`, `SEED = fdsaludskj` with de
     slip0039:debug:/0/0   b3f38d50c7408577c91e886051bfb68d    (roster)
     slip0039:debug:/0/1   79dbf5fca4c7a260fcdd0c9c3acbdf69    (scared)
     slip0039:debug:/0/2   3ca37d130155cb59a3839b838757645e    (shadow)
-    slip0039:debug:/0/?   ffb04823d369bbc2691db895f41ef4b0 
-    slip0039:debug:/0/S   3598308fb0ee9cd55cde3c699f6a9d54 
+    slip0039:debug:/0/?   ffb04823d369bbc2691db895f41ef4b0
+    slip0039:debug:/0/S   3598308fb0ee9cd55cde3c699f6a9d54
     slip0039:debug:/1/  count=10 available=10 threshold= 5   (benefit)
     slip0039:debug:/1/0   98020ba2166221d3f3a7c18ca4405a40    (ruin)
     slip0039:debug:/1/1   a4c65cd2c5178ae013f8b528c6c6f4ad    (scholar)
@@ -121,11 +131,11 @@ Example split `MS = 000000000000000000000000000000`, `SEED = fdsaludskj` with de
     slip0039:debug:/1/7   3081e47c1bc6d0c48a5e33e6d5633ebb    (swing)
     slip0039:debug:/1/8   72748f024ab840c7eaabc9c637a1ebe9    (teaspoon)
     slip0039:debug:/1/9   45b39808db6fac76a4bbcb25366d686f    (thunder)
-    slip0039:debug:/1/?   0bcf1beb0aaa14a35ddbdc712795a848 
-    slip0039:debug:/1/S   873b207a9511a368b31889c92fdfe04f 
+    slip0039:debug:/1/?   0bcf1beb0aaa14a35ddbdc712795a848
+    slip0039:debug:/1/S   873b207a9511a368b31889c92fdfe04f
     slip0039:debug:/2/  count= 1 available= 1 threshold= 1   (chubby)
     slip0039:debug:/2/0   bbdceebc8a8d4a9e5510a0e465c6f7f7    (romp)
-    slip0039:debug:/2/S   bbdceebc8a8d4a9e5510a0e465c6f7f7 
+    slip0039:debug:/2/S   bbdceebc8a8d4a9e5510a0e465c6f7f7
     slip0039:debug:/3/  count=14 available=14 threshold= 7   (depart)
     slip0039:debug:/3/0   966602de32faefdb9dfb39838e10e8cd    (rumor)
     slip0039:debug:/3/1   1a9b8b4082f5553f9d8e1ad27cb9c78a    (scout)
@@ -141,11 +151,11 @@ Example split `MS = 000000000000000000000000000000`, `SEED = fdsaludskj` with de
     slip0039:debug:/3/B   b9c1837c684983bff4366840ec7071fd    (undergo)
     slip0039:debug:/3/C   d3e1b8d2cb50f3cf23408e66d4e3119e    (valuable)
     slip0039:debug:/3/D   e78e706d8d3fdaac077607c1495ff679    (violence)
-    slip0039:debug:/3/?   87b5ac71bd9c550f90814d5c4b054fe4 
-    slip0039:debug:/3/S   0971836d200977a0737dcda759510dca 
-    slip0039:debug:/?     c282dcebcb07e251d6c4dff4871476c3 
-    slip0039:debug:/S     704f8961a3517062e43073980c32c40a 
-    slip0039:debug:/P     00000000000000000000000000000000 
+    slip0039:debug:/3/?   87b5ac71bd9c550f90814d5c4b054fe4
+    slip0039:debug:/3/S   0971836d200977a0737dcda759510dca
+    slip0039:debug:/?     c282dcebcb07e251d6c4dff4871476c3
+    slip0039:debug:/S     704f8961a3517062e43073980c32c40a
+    slip0039:debug:/P     00000000000000000000000000000000
     slip0039:debug:---END-----internal slip0039 data----
 
 Example Recover with debug output:

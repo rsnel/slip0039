@@ -48,6 +48,11 @@ pbkdf2_t prng;                // PRNG for shares and part of digests
 const char *seed = NULL;
 size_t seed_len = 0;
 
+#define STACK_CLEAR_SIZE 256 * 1024
+#if defined(__APPLE__) && defined(__MACH__)
+const void *stackbase = NULL;
+#endif
+
 // call exit on receiving fatal signals
 void sig_handler(int signum) {
 	FATAL("%s", strsignal(signum));
@@ -127,6 +132,38 @@ void slip0039_debug(slip0039_t *s) {
 	DEBUG("---END-----internal slip0039 data----");
 }
 
+#if defined(__APPLE__) && defined(__MACH__)
+static void _mlock(const void *const p, const char* const var, const size_t len) {
+	if (p && len && mlock(p, len) < 0) {
+		FATAL("failed locking %s(%u) in RAM: %s", var, (unsigned int)len, strerror(errno));
+	}
+}
+static void _munlock(const void *const p, const char* const var, const size_t len) {
+	if (p && len && munlock(p, len) < 0) {
+		WARNING("failed unlocking %s(%u) in RAM: %s", var, (unsigned int)len, strerror(errno));
+	}
+}
+#define mlock_obj(p) do { \
+	void *_p = &p; \
+	_mlock(_p, #p, sizeof(p)); \
+} while (0)
+#define munlock_obj(p) do { \
+	void *_p = &p; \
+	_munlock(_p, #p, sizeof(p)); \
+} while (0)
+#define mlock_ptr(p, len) do { \
+	void *_p = &p; \
+	_mlock(_p, "&" #p, sizeof(p)); \
+	_mlock((p), #p, (len)); \
+} while (0)
+#define munlock_ptr(p, len) do { \
+	void *_p = &p; \
+	_mlock(p, #p, (len)); \
+	wipememory(_p, sizeof(p)); \
+	_mlock(_p, "&" #p, sizeof(p)); \
+} while (0)
+#endif
+
 // function that gets called atexit(), so that
 // sensitive contents are removed from memory
 void wipe() {
@@ -137,6 +174,24 @@ void wipe() {
 	wipememory(dl, sizeof(dl));
 	wipememory(seed, seed_len);
 	pbkdf2_finished(&prng);
+
+#if defined(__APPLE__) && defined(__MACH__)
+	munlock_ptr(stackbase, STACK_CLEAR_SIZE);
+	munlock_obj(s);
+	munlock_obj(mnemonic);
+	munlock_obj(b);
+	munlock_obj(dl);
+	munlock_ptr(seed, seed_len);
+	wipememory(&seed_len, sizeof(seed_len));
+	munlock_obj(seed_len);
+	munlock_obj(prng);
+#else
+	wipememory(&seed, sizeof(seed));
+	wipememory(&seed_len, sizeof(seed_len));
+	if (munlockall() < 0)
+                WARNING("failed locking process in RAM: %s",
+                                strerror(errno));
+#endif
 }
 
 void slip0039_init(slip0039_t *s) {
@@ -227,6 +282,7 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 
 
 			base1024_append_checksum(&b);
+			wipememory(mnemonic, sizeof(mnemonic));
 			base1024_to_string(&b, mnemonic);
 			printf("%s\n", mnemonic);
 
@@ -428,10 +484,10 @@ void slip0039_split(slip0039_set_t *s, size_t n, pbkdf2_t *p) {
         	int no_idx = 2;
 
 		/* compute digest */
-		assert(!s->shares[-2]);
-		s->shares[-2] = s->storage_digest;
-		pbkdf2_generate(p, s->shares[-2] + DIGEST_LEN, n - DIGEST_LEN);
-		digest_compute(s->shares[-2], s->shares[-1], n);
+		assert(!*(s->shares - 2));
+		*(s->shares - 2) = s->storage_digest;
+		pbkdf2_generate(p, *(s->shares - 2) + DIGEST_LEN, n - DIGEST_LEN);
+		digest_compute(*(s->shares - 2), *(s->shares - 1), n);
 
 		/* generate the other required shares randomly */
 		for (uint8_t i = 0; i < s->threshold - 2; i++) {
@@ -493,7 +549,7 @@ void slip0039_recover(slip0039_set_t *s, uint8_t *secret, size_t n) {
 
 		for (int i = -2; i < 0; i++) {
 			assert(!s->shares[i]);
-			s->shares[i] = (i == -2)?s->storage_digest:secret;
+			*(s->shares + i) = (i == -2)?s->storage_digest:secret;
 			lagrange(s, n, no_idx, idx, (uint8_t)i);
 		}
 
@@ -518,10 +574,21 @@ void slip0039_encrypt(slip0039_t *s) {
 }
 
 void boring_stuff() {
+#if defined(__APPLE__) && defined(__MACH__)
+	mlock_ptr(stackbase, STACK_CLEAR_SIZE);
+	mlock_obj(s);
+	mlock_obj(mnemonic);
+	mlock_obj(b);
+	mlock_obj(dl);
+	mlock_obj(seed);
+	mlock_obj(seed_len);
+	mlock_obj(prng);
+#else
         /* lock me into memory; don't leak info to swap */
         if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
                 FATAL("failed locking process in RAM: %s",
                                 strerror(errno));
+#endif
 
 	if (atexit(wipe))
 		FATAL("error setting atexit() handler");
@@ -561,6 +628,9 @@ void parse_options_split(slip0039_t *s, char *arg,
 		assert(!seed && seed_len == 0);
 		seed = arg;
 		seed_len = strlen(seed);
+#if defined(__APPLE__) && defined(__MACH__)
+		mlock_ptr(seed, seed_len);
+#endif
 		if (seed_len < 4) WARNING("specified value for SEED is very "
 				"short, consider using a longer value");
 		sha256(sha, seed, seed_len);
@@ -653,8 +723,13 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-	boring_stuff();
+#if defined(__APPLE__) && defined(__MACH__)
+	// save stackbase for locking stack memory
+	stackbase = (char*)&argc - STACK_CLEAR_SIZE;
+#endif
+
 	verbose_init(argv[0]);
+	boring_stuff();
 
        	slip0039_init(&s);
 	parse_options(&s, argc,argv);
@@ -692,4 +767,6 @@ int main(int argc, char *argv[]) {
 
 		slip0039_print_plaintext(&s);
 	}
+
+	 wipestackmemory(STACK_CLEAR_SIZE);
 }
