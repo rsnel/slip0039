@@ -27,7 +27,7 @@
 
 /* we work in a context where our binary data is processed in chunks
  * of 16 bits, but since we need to account for endianness, we represent
- * out fixnums as arrays of uint8_t's */
+ * our fixnums as arrays of uint8_t's */
 
 typedef struct fixnum_s {
 	uint8_t *limbs; /* limbs stored in big endian order */
@@ -86,8 +86,6 @@ uint16_t fixnum_shl_in(fixnum_t*, uint8_t, uint16_t);
 uint16_t fixnum_shr(fixnum_t*, uint8_t);
 
 uint16_t fixnum_shr_in(fixnum_t*, uint8_t, uint16_t);
-
-uint16_t fixnum_mul_factor(fixnum_t*, const fixnum_factor_t*);
 
 uint16_t fixnum_mul_factor(fixnum_t*, const fixnum_factor_t*);
 
