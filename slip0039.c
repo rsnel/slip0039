@@ -30,19 +30,23 @@
 #include "slip0039.h"
 #include "verbose.h"
 #include "utils.h"
-#include "base1024.h"
+#include "rs1024.h"
 #include "digest.h"
 #include "lagrange.h"
 #include "lrcipher.h"
 #include "wordlists.h"
-#include "charlists.h"
 #include "fixnum.h"
+#include "base.h"
 
 slip0039_mode_t mode = SLIP0039_MODE_NULL;
 slip0039_t s;                 // the main struct with all the info
-base1024_t b;                 // needed to convert wordlist to and from bits
 slip0039_mnemonic_t mnemonic; // buffer to contain one mnemonic
 pbkdf2_t prng;                // PRNG for shares and part of digests
+char input_base16[(BLOCKS<<2)+1+1]; // space for (BLOCKS<<2) nibbles, \n newline and \0
+uint16_t input[BLOCKS<<2];    // space for input
+base_scratch_t bs;	      // scratch space for base encoding
+uint8_t base_scratch_space[(BLOCKS<<1)<<2]; // actual scratch space
+uint8_t slip0039_header[5];
 
 // seed for PRNG
 const char *seed = NULL;
@@ -67,6 +71,7 @@ void slip0039_debug_share(const char *path, int index, int space,
 		const uint8_t *buf, size_t n, const char *title) {
 	char character;
         sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+	memset(dl, 0, sizeof(dl));
 
 	if (index == -3) character = MS_IDENTIFIER;
 	else if (index == -2) character = DIGEST_IDENTIFIER;
@@ -170,26 +175,34 @@ void wipe() {
 	slip0039_debug(&s);
 	wipememory(&s, sizeof(s));
 	wipememory(mnemonic, sizeof(mnemonic));
-	wipememory(&b, sizeof(b));
 	wipememory(dl, sizeof(dl));
 	wipememory(seed, seed_len);
+	wipememory(input_base16, sizeof(input_base16));
+	wipememory(input, sizeof(input));
+	wipememory(&bs, sizeof(bs));
+	wipememory(&slip0039_header, sizeof(slip0039_header));
+	wipememory(base_scratch_space, sizeof(base_scratch_space));
 	pbkdf2_finished(&prng);
 
 #if defined(__APPLE__) && defined(__MACH__)
 	munlock_ptr(stackbase, STACK_CLEAR_SIZE);
 	munlock_obj(s);
 	munlock_obj(mnemonic);
-	munlock_obj(b);
 	munlock_obj(dl);
 	munlock_ptr(seed, seed_len);
 	wipememory(&seed_len, sizeof(seed_len));
 	munlock_obj(seed_len);
 	munlock_obj(prng);
+	munlock_obj(input_base16);
+	munlock_obj(input);
+	munlock_obj(bs);
+	munlock_obj(slip039_header);
+	munlock_obj(base_scratch_space);
 #else
 	wipememory(&seed, sizeof(seed));
 	wipememory(&seed_len, sizeof(seed_len));
 	if (munlockall() < 0)
-                WARNING("failed locking process in RAM: %s",
+                WARNING("failed unlocking process in from RAM: %s",
                                 strerror(errno));
 #endif
 }
@@ -250,81 +263,109 @@ void slip0039_write_member_title(slip0039_t *s, uint8_t i, uint8_t j, uint16_t m
 void slip0039_print_mnemonics(slip0039_t *s) {
 	// these conditions are (?) enfored elsewhere
 	assert(s->n >= 16 && s->n%2 == 0 && s->n <= BLOCKS<<1);
-	base1024_empty(&b);
-	unsigned int padding_bits = ((s->n*8 + 9)/10)*10 - s->n*8;
+	fixnum_t h;
 
-	base1024_write_bits(&b, s->id, 15);
-	base1024_write_bits(&b, s->e, 5);
+	fixnum_init(&h, slip0039_header, 5);
 
-	slip0039_write_title(s, b.words);
+	fixnum_poke(&h, 25, 15, s->id);
+	fixnum_poke(&h, 20, 5, s->e);
 
 	for (uint8_t i = 0; i < s->root.count; i++) {
-		base1024_write_bits(&b, i, 4);
-		base1024_write_bits(&b, s->root.threshold - 1, 4);
-		base1024_write_bits(&b, s->root.count - 1, 4);
-
-		slip0039_write_group_title(s, i, b.words[2]);
+		fixnum_poke(&h, 16, 4, i);
+		fixnum_poke(&h, 12, 4, s->root.threshold - 1);
+		fixnum_poke(&h, 8, 4, s->root.count - 1);
 
 		for (uint8_t j = 0; j < s->members[i].count; j++) {
-			base1024_write_bits(&b, j, 4);
-			base1024_write_bits(&b,
-					s->members[i].threshold - 1, 4);
+			fixnum_poke(&h, 4, 4, j);
+			fixnum_poke(&h, 0, 4, s->members[i].threshold - 1);
 
-			slip0039_write_member_title(s, i, j, b.words[3]);
+			base_encode_buffer(input, 4, &wordlist_slip0039.m, slip0039_header, 5, &bs);
 
-			// write padding
-			base1024_write_bits(&b, 0, padding_bits);
+			if (j == 0) {
+				if (i == 0) slip0039_write_title(s, input);
+				slip0039_write_group_title(s, i, input[2]);
+			}
+			slip0039_write_member_title(s, i, j, input[3]);
 
-			for (int k = 0; k < s->n; k++)
-				base1024_write_bits(&b, s->members[i].shares[j][k], 8);
+			base_encode_buffer(&input[4], (8*s->n + 9)/10, &wordlist_slip0039.m, s->members[i].shares[j], s->n, &bs);
 
-			assert(b.bit_idx == 0);
+			rs1024_add(input, 4 + (8*s->n + 9)/10);
 
-
-			base1024_append_checksum(&b);
 			wipememory(mnemonic, sizeof(mnemonic));
-			base1024_to_string(&b, mnemonic);
+
+			sbuf_t sb = {
+				.buf = mnemonic,
+				.size = sizeof(slip0039_mnemonic_t),
+				.len = 0
+			};
+
+			int k = 0;
+			goto start;
+			while (++k < 4 + (8*s->n + 9)/10 + 3) {
+				sbufprintf(&sb, " ");
+start:
+				sbufwordlist_dereference(&wordlist_slip0039, &sb, input[k]);
+			}
 			printf("%s\n", mnemonic);
 
-			base1024_rewind_and_truncate(&b, 32);
 		}
-		base1024_rewind_and_truncate(&b, 20);
 	}
 }
 
 void slip0039_print_plaintext(slip0039_t *s) {
         sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+	memset(dl, 0, sizeof(dl));
+
 	sbufprintf_base16(&sbuf, s->plaintext, s->n);
 
 	printf("%s\n", dl);
 }
 
 void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
-	base1024_from_string(&b, line, line_number);
-	base1024_verify_checksum(&b, line_number);
+	size_t no_input = 0;
+	fixnum_t h;
 
-        if (b.no_words < 20)
+	assert(sizeof(input)/sizeof(*input) >= WORDS);
+
+	while (*line) {
+		if (no_input == WORDS) FATAL("too many words in mnemomic on line %d, "
+                                        "%d supported at maximum",
+                                        line_number, WORDS);
+
+		input[no_input++] = wordlist_search(&wordlist_slip0039, line, &line);
+	}
+
+	if (!rs1024_verify(input, no_input))
+		FATAL("checksum of mnemonic on line %d is not valid", line_number);
+
+        if (no_input < 20)
 		FATAL("not enough words in mnemonic on line %d, "
 				"minimum 20 words", line_number);
 
-	size_t n = 2*(10*(b.no_words - 7)/16);
-	size_t surplus = 10*(b.no_words - 7)%16;
+	fixnum_init_pattern(&h, slip0039_header, 5, PATTERN_ZERO);
+	base_decode_fixnum(&h, &wordlist_slip0039.m, input, 4);
+
+	size_t n = 2*(10*(no_input - 7)/16);
+	size_t surplus = 10*(no_input - 7)%16;
         if (surplus >= 10) 
                 FATAL("invalid master secret length in mnemonic "
 				"on line %d, padding >= 10", line_number);
 
-	/* read header */
-	uint16_t id = base1024_read_bits(&b, 15);
-	uint8_t e = base1024_read_bits(&b, 5);
+	uint16_t id;
+	uint8_t e, GI, GT, G, I, T;
 
-	uint8_t GI = base1024_read_bits(&b, 4);
-	uint8_t GT = base1024_read_bits(&b, 4) + 1;
-	uint8_t G = base1024_read_bits(&b, 4) + 1;
-	uint8_t I = base1024_read_bits(&b, 4);
-	uint8_t T = base1024_read_bits(&b, 4) + 1;
+	/* read header */
+	id = fixnum_peek(&h, 25, 15);
+	e = fixnum_peek(&h, 20, 5);
+
+	GI = fixnum_peek(&h, 16, 4);
+	GT = fixnum_peek(&h, 12, 4) + 1;
+	G =  fixnum_peek(&h, 8, 4)+ 1;
+	I = fixnum_peek(&h, 4, 4);
+	T = fixnum_peek(&h, 0, 4) + 1;
 
 	if (s->n == 0) { // s is uninitialized
-		slip0039_write_title(s, b.words);
+		slip0039_write_title(s, input);
 		s->id = id;
 		s->e = e;
 		s->root.threshold = GT;
@@ -350,7 +391,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 	slip0039_set_t *m = &s->members[GI];
 	if (!m->threshold) { // new group
-		slip0039_write_group_title(s, GI, b.words[2]);
+		slip0039_write_group_title(s, GI, input[2]);
 		m->threshold = T;
 		m->count = 0; // undefined
 	} else if (m->threshold != T)
@@ -361,64 +402,54 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 		FATAL("share is already loaded in mnemonic on line %d",
 				line_number);
 
-	slip0039_write_member_title(s, GI, I, b.words[3]);
+	slip0039_write_member_title(s, GI, I, input[3]);
 	m->line_numbers[I] = line_number;
-
-	if (base1024_read_bits(&b, surplus))
-		FATAL("invalid (nonzero) padding in mnemonic on line %d",
-				line_number);
 
 	m->shares[I] = m->storage_shares[I];
 
-	for (int i = 0; i < n; i++)
-		m->shares[I][i] = base1024_read_bits(&b, 8);
+	if (base_decode_buffer(m->shares[I], n, &wordlist_slip0039.m, &input[4], no_input - 7)) 
+		FATAL("invalid (nonzero) padding in mnemonic on line %d",
+				line_number);
 
 	slip0039_set_increment_available(m);
 }
 
 /* this function reads a hexadecimal string and interpretes it
  * as binary data (it MUST have an even number of characters */
-void slip0039_add_plaintext(slip0039_t *s, FILE *fp) {
+void slip0039_add_plaintext_base16(slip0039_t *s, FILE *fp) {
 	assert(s && !s->plaintext && !s->n);
+	size_t no_input = 0;
+	const char *cur = input_base16;
+	read_stringLF(input_base16, sizeof(input_base16), fp, "plaintext", 0);
 
-	size_t nibbles = 0;
-	fixnum_t f;
-	int character;
-	fixnum_init(&f, s->storage_plaintext, BLOCKS<<1);
-	do {
-		character = fgetc(fp);
-		if (character == EOF) {
-			if (feof(fp))
-				FATAL("end of file while reading passphrase");
-			else FATAL("error %d reading passphrase: %s",
-					errno, strerror(errno));
-		} else if (character == '\n') break;
-		else fixnum_poke(&f, (f.no_limbs<<3) - (nibbles++<<2) - 4, 4,
-					charlist_search(&charlist_base16, character));
-	} while (1);
+	while (*cur) {
+		if (cur - input_base16 == sizeof(input_base16) - 2)
+			FATAL("size of plaintext is larger than %d bytes", BLOCKS>>1);
 
-	if (nibbles%2) FATAL("odd number of hexadecimal digits given");
-	if (nibbles%4) FATAL("size of plaintext must be a multiple of 16 bits");
-	if (nibbles>>1 < 16) FATAL("size of plaintext must be at least 16 bytes");
+		assert(no_input < BLOCKS<<2);
+		input[no_input++] = wordlist_search(&wordlist_base16, cur, &cur);
+	}
+
+	base_decode_buffer(s->storage_plaintext, no_input>>1, &wordlist_base16.m, input, no_input);
+
+	if (no_input%4) FATAL("size of plaintext must be multiple of 16 bits");
+	if (no_input>>1 < 16) FATAL("size of plaintext must be at least 16 bytes");
 
 	s->plaintext = s->storage_plaintext;
-	s->n = nibbles>>1;
+	s->n = no_input>>1;
 
-	character = fgetc(fp);
+	// try to read one more character, it should set feof since
+	// we don't expect anymore characters
+	fgetc(fp);
+
 	if (!feof(fp)) WARNING("data detected after plaintext on input");
 }
 
 void slip0039_add_mnemonics(slip0039_t *s, FILE *fp) {
-	char *out;
 	int line_number = 0;
 
-	while ((out = fgets(mnemonic, sizeof(mnemonic), fp))) {
+	while (read_stringLF(mnemonic, sizeof(mnemonic), fp, "mnemonic", 1))
 		slip0039_add_mnemonic(s, mnemonic, ++line_number);
-	}
-
-	if (!out && !feof(fp))
-		FATAL("error %d reading from stream: %s",
-				errno, strerror(errno));
 }
 
 void slip0039_add_passphrase(slip0039_t *s, FILE *fp) {
@@ -560,7 +591,6 @@ void slip0039_recover(slip0039_set_t *s, uint8_t *secret, size_t n) {
 void slip0039_decrypt(slip0039_t *s) {
 	assert(s && !s->plaintext && s->root.secret);
 	s->plaintext = s->storage_plaintext;
-	lrcipher_finalize_passphrase(&s->l, s->id);
 	lrcipher_execute(&s->l, s->plaintext, s->root.secret,
 			s->n, 2500L<<s->e, LRCIPHER_DECRYPT);
 }
@@ -568,7 +598,6 @@ void slip0039_decrypt(slip0039_t *s) {
 void slip0039_encrypt(slip0039_t *s) {
 	assert(s && !s->root.secret && s->plaintext);
 	s->root.secret = s->storage_secret;
-	lrcipher_finalize_passphrase(&s->l, s->id);
 	lrcipher_execute(&s->l, s->root.secret, s->plaintext,
 			s->n, 2500L<<s->e, LRCIPHER_ENCRYPT);
 }
@@ -578,11 +607,15 @@ void boring_stuff() {
 	mlock_ptr(stackbase, STACK_CLEAR_SIZE);
 	mlock_obj(s);
 	mlock_obj(mnemonic);
-	mlock_obj(b);
 	mlock_obj(dl);
 	mlock_obj(seed);
 	mlock_obj(seed_len);
 	mlock_obj(prng);
+	mlock_obj(input_base16);
+	mlock_obj(input);
+	mlock_obj(bs);
+	mlock_obj(base_scratch_space);
+	mlock_obj(slip0039_header);
 #else
         /* lock me into memory; don't leak info to swap */
         if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
@@ -730,7 +763,8 @@ int main(int argc, char *argv[]) {
 
 	verbose_init(argv[0]);
 	boring_stuff();
-
+	base_init_scratch(&bs, base_scratch_space, BLOCKS<<1);
+	wordlists_init();
        	slip0039_init(&s);
 	parse_options(&s, argc,argv);
 
@@ -738,8 +772,12 @@ int main(int argc, char *argv[]) {
 	slip0039_add_passphrase(&s, stdin);
 
 	if (mode == SLIP0039_MODE_SPLIT) {
+		/* we should have the ID, this is needed to finish
+		 * initializing lrcipher */
+		lrcipher_finalize_passphrase(&s.l, "shamir", 6, s.id);
+
 		/* read Master Secret (MS) */
-		slip0039_add_plaintext(&s, stdin);
+		slip0039_add_plaintext_base16(&s, stdin);
 
 		/* encrypt plaintext to EMS */
 		slip0039_encrypt(&s);
@@ -753,6 +791,10 @@ int main(int argc, char *argv[]) {
 	} else {
 		/* read mnemonics from stdin (one per line) */
 		slip0039_add_mnemonics(&s, stdin);
+
+		/* we now have the ID, this is needed to finish
+		 * initializing lrcipher */
+		lrcipher_finalize_passphrase(&s.l, "shamir", 6, s.id);
 
 		/* check if EMS can be recovered from
 		 * these shares */

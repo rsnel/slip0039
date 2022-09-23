@@ -21,18 +21,30 @@
 #define SLIP0039_WORDLISTS_H
 
 #include <stdlib.h>
+#include <stdint.h>
+
+#include "fixnum.h"
 
 typedef struct wordlist_s {
 	char *name;
-	size_t no_words, max_word_length;
+	fixnum_multiplier_t m;
+	uint8_t	max_word_length, min_word_length;
 	char **words;
 } wordlist_t;
 
-wordlist_t wordlist_slip0039;
+extern wordlist_t wordlist_slip0039;
 
-wordlist_t wordlist_bip0039_english;
+extern wordlist_t wordlist_bip0039_english;
 
-wordlist_t wordlist_diceware_german;
+extern wordlist_t wordlist_diceware_german;
+
+extern wordlist_t wordlist_base16;
+
+extern wordlist_t wordlist_base58;
+
+extern wordlist_t wordlist_bech32;
+
+void wordlists_init();
 
 #endif /* SLIP0039_WORDLISTS_H */
 

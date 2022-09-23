@@ -39,10 +39,10 @@ void lrcipher_add_passphrase(lrcipher_t *l, const char *passphrase, size_t passp
 	}
 }
 
-void lrcipher_finalize_passphrase(lrcipher_t *l, uint16_t id) {
+void lrcipher_finalize_passphrase(lrcipher_t *l, const char *context, size_t context_len, uint16_t id) {
         uint16_t id_be16 = cpu_to_be16(id);
 	for (uint8_t i = 0; i < 4; i++) {
-		pbkdf2_update_salt(&l->rounds[i], "shamir", 6);
+		pbkdf2_update_salt(&l->rounds[i], context, context_len);
 		pbkdf2_update_salt(&l->rounds[i], &id_be16, 2);
 	}
 }

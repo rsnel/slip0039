@@ -30,6 +30,18 @@ void fixnum_init(fixnum_t *f, uint8_t *limbs, size_t no_limbs) {
 	f->limbs = limbs;
 }
 
+void fixnum_set_buffer(fixnum_t *f, const uint8_t *buffer, size_t buffer_size) {
+	assert(buffer_size <= f->no_limbs);
+	for (size_t i = 0; i < f->no_limbs - buffer_size; i++) f->limbs[i] = 0;
+	memcpy(f->limbs + (f->no_limbs - buffer_size), buffer, buffer_size);
+}
+
+void fixnum_init_buffer(fixnum_t *f, uint8_t *limbs, size_t no_limbs,
+		const uint8_t *buffer, size_t buffer_size) {
+	fixnum_init(f, limbs, no_limbs);
+	fixnum_set_buffer(f, buffer, buffer_size);
+}
+
 void fixnum_set_pattern(fixnum_t *f, fixnum_pattern_t pattern) {
 	uint8_t tmp = 0x01;
 	switch (pattern) {
@@ -42,7 +54,7 @@ void fixnum_set_pattern(fixnum_t *f, fixnum_pattern_t pattern) {
 		case PATTERN_ADD11:
 			for (size_t i = 0; i < f->no_limbs; i++) {
 				f->limbs[i] = tmp;
-				tmp += 0x22;
+				tmp += 0x11;
 			}
 	}
 }
@@ -66,8 +78,8 @@ void fixnum_init_uint16(fixnum_t *f, uint8_t *limbs, size_t no_limbs, uint16_t v
 }
 
 void fixnum_set_fixnum(fixnum_t *dest, const fixnum_t *src) {
-	assert(dest && src && dest->no_limbs == src->no_limbs);
-	memcpy(dest->limbs, src->limbs, dest->no_limbs);
+	assert(dest && src && dest->no_limbs >= src->no_limbs);
+	fixnum_set_buffer(dest, src->limbs, src->no_limbs);
 }
 
 void fixnum_init_fixnum(fixnum_t *out, uint8_t *limbs, size_t no_limbs, const fixnum_t *in) {
@@ -118,6 +130,7 @@ uint16_t fixnum_shl_in(fixnum_t *f, uint8_t shift, uint16_t in) {
 
 uint16_t fixnum_shr(fixnum_t *f, uint8_t shift) {
 	assert(f && f->no_limbs > 0 && shift <= 16);
+	uint8_t origshift = shift;
 	uint16_t carry = 0;
 
 	if (shift >= 8) {
@@ -138,7 +151,7 @@ uint16_t fixnum_shr(fixnum_t *f, uint8_t shift) {
 		f->limbs[idx-1] >>= shift;
 	}
 	
-	return carry;
+	return carry>>(16-origshift);
 }
 
 uint16_t fixnum_shr_in(fixnum_t *f, uint8_t shift, uint16_t in) {
@@ -149,18 +162,23 @@ uint16_t fixnum_shr_in(fixnum_t *f, uint8_t shift, uint16_t in) {
 	return carry;
 }
 
-void fixnum_factor_init(fixnum_factor_t *d, uint8_t *limbs, size_t no_limbs, uint16_t value) {
-	assert(d && value);
-	fixnum_init_uint16(&d->max_left_shift, limbs, no_limbs, value);
-	d->value = value;
-	d->log2 = 0;
-	while (value >>= 1) d->log2++;
+void fixnum_multiplier_init(fixnum_multiplier_t *m, uint16_t value) {
+	assert(m && value);
+	m->value = value;
+	m->p.log2 = 0;
+	while (value >>= 1) m->p.log2++;
+	m->p.pure = cthelp_eq(m->value, 1<<m->p.log2);
+}
+
+void fixnum_divisor_init_from_multiplier(fixnum_divisor_t *d, const fixnum_multiplier_t *m, uint8_t *limbs, size_t no_limbs) {
+	assert(d && m && limbs && no_limbs > 1);
+	d->p = m->p;
+	fixnum_init_uint16(&d->max_left_shift, limbs, no_limbs, m->value);
 	d->max_left_shift.limbs[0] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-2];
 	if (no_limbs > 3) d->max_left_shift.limbs[d->max_left_shift.no_limbs-2] = 0;
 	d->max_left_shift.limbs[1] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-1];
 	if (no_limbs > 2) d->max_left_shift.limbs[d->max_left_shift.no_limbs-1] = 0;
-	fixnum_shl(&d->max_left_shift, 16 - d->log2 - 1);
-	d->pure = cthelp_eq(d->value, 1<<d->log2);
+	fixnum_shl(&d->max_left_shift, 16 - m->p.log2 - 1);
 }
 
 uint32_t fixnum_peek(const fixnum_t *f, size_t offset, uint8_t size) {
@@ -267,8 +285,23 @@ uint16_t fixnum_add_uint16(fixnum_t *f, uint16_t operand) {
 	return carry;
 }
 
+uint16_t fixnum_add_fixnum(fixnum_t *f, const fixnum_t *s, uint8_t mask) {
+	assert(f && s && f->no_limbs > 1 && f->no_limbs == s->no_limbs);
+	uint16_t acc = 0;
+	size_t idx = f->no_limbs;
+
+	while (idx--) {
+		acc = f->limbs[idx] + (s->limbs[idx]&mask) + acc;
+		f->limbs[idx] = acc&0xff;
+		acc >>= 8;
+		assert(acc == 0 || acc == 1);
+	}
+
+	return acc;
+}
+
 uint16_t fixnum_sub_fixnum(fixnum_t *f, const fixnum_t *s, uint8_t mask) {
-	assert(f && s && f->no_limbs && s->no_limbs);
+	assert(f && s && f->no_limbs > 1 && f->no_limbs == s->no_limbs);
 	uint16_t acc = 0;
 	size_t idx = f->no_limbs;
 
@@ -281,11 +314,11 @@ uint16_t fixnum_sub_fixnum(fixnum_t *f, const fixnum_t *s, uint8_t mask) {
 	return acc;
 }
 
-uint16_t fixnum_mul_factor(fixnum_t *f, const fixnum_factor_t *m) {
-	assert(f && m && f->no_limbs >= 2 && f->no_limbs == m->max_left_shift.no_limbs);
+uint16_t fixnum_mul(fixnum_t *f, const fixnum_multiplier_t *m) {
+	assert(f && m && f->no_limbs >= 2);
 
-	if (m->pure)
-		return fixnum_shl(f, m->log2);
+	if (m->p.pure)
+		return fixnum_shl(f, m->p.log2);
 
 	uint8_t low = m->value&0xff, high = m->value>>8;
         uint16_t acc_low = 0, acc_high = 0;
@@ -302,27 +335,27 @@ uint16_t fixnum_mul_factor(fixnum_t *f, const fixnum_factor_t *m) {
 	return acc_high + acc_low;
 }
 
-uint16_t fixnum_div_factor(fixnum_t *f, const fixnum_factor_t *d, fixnum_scratch_t *s) {
+uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s) {
 	assert(f && d && f->no_limbs == d->max_left_shift.no_limbs && f->no_limbs >= 2);
 
 	// s->a is used as a shift register and s->b is brought to zero
-	if (d->pure) 
-		return fixnum_shr(f, d->log2);
+	if (d->p.pure)
+		return fixnum_shr(f, d->p.log2);
 
-	assert(s->a.no_limbs == f->no_limbs && s->b.no_limbs == f->no_limbs);
+	assert(s->a.no_limbs >= f->no_limbs && s->b.no_limbs >= f->no_limbs);
 
 	fixnum_set_fixnum(&s->b, f);
 	fixnum_set_pattern(f, PATTERN_ZERO);
 	fixnum_set_fixnum(&s->a, &d->max_left_shift);
-	size_t bit = (f->no_limbs<<3) - d->log2;
+	size_t bit = (f->no_limbs<<3) - d->p.log2;
 	uint32_t test;
 	uint16_t ret;
 
 	while (bit-- > 0) {
 		fixnum_shl(f, 1);
-		test = (fixnum_peek(&s->b, bit, d->log2 + 2) - d->value)>>31;
+		test = fixnum_sub_fixnum(&s->b, &s->a, 0xff);
 		fixnum_add_uint16(f, 1 - test);
-		fixnum_sub_fixnum(&s->b, &s->a, 0xff+test);
+		fixnum_add_fixnum(&s->b, &s->a, -test);
 		fixnum_shr(&s->a, 1);
 	}
 

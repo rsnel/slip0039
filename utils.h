@@ -24,7 +24,6 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "charlists.h"
 #include "wordlists.h"
 
 #define sizeof_array(a)	(sizeof(a)/sizeof(*a))
@@ -41,6 +40,18 @@
 } while(0)
 #define wipememory(_ptr,_len) wipememory2(_ptr,0,_len)
 
+#define init_error(a, b, c, ...) do { \
+        if (!a##_init_##b(c, ## __VA_ARGS__)) FATAL("initializing " #a); \
+} while (0)
+
+#define initp_fatal_errno(a, b, ...) do { \
+        if (!(a = b(__VA_ARGS__))) FATAL_errno(#b "()"); \
+} while (0)
+
+#define initp_error_errno(a, b, ...) do { \
+        if (!(b = a(__VA_ARGS__))) ERROR_errno(#a "()"); \
+} while (0)
+
 void wipestackmemory(const size_t len);
 
 typedef struct sbuf_s {
@@ -51,17 +62,15 @@ typedef struct sbuf_s {
 
 typedef char displayline_t[DISPLAYLINE];
 
-displayline_t dl;
+extern displayline_t dl;
 
 int wordlist_dereference(wordlist_t*, char *, int, uint16_t);
 
 void sbufwordlist_dereference(wordlist_t*, sbuf_t*, uint16_t);
 
+int wordeq(const char*, const char*, const char**, int);
+
 uint16_t wordlist_search(wordlist_t*, const char*, const char**);
-
-char charlist_dereference(charlist_t*, uint8_t);
-
-uint8_t charlist_search(charlist_t*, char);
 
 int vsnprintf_strict(char*, size_t, const char*, va_list ap);
 
@@ -69,8 +78,12 @@ int snprintf_strict(char*, size_t, const char*, ...);
 
 int sbufprintf(sbuf_t*, const char* format, ...);
 
-int sbufprintf_base16(sbuf_t*, const uint8_t*, size_t);
+void sbufprintf_base16(sbuf_t*, const uint8_t*, size_t);
 
 int memeq(const uint8_t*, const uint8_t*, size_t);
+
+int memzero(const uint8_t*, size_t);
+
+size_t read_stringLF(char*, size_t, FILE*, const char*, int);
 
 #endif /* SLIP0039_UTILS_H */

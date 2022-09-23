@@ -4,7 +4,8 @@ int main(int argc, char *argv[]) {
 	uint8_t limbs_a[BLOCKS], /*limbs_b[BLOCKS],*/ limbs_f[BLOCKS];
 	uint16_t ret;
 	fixnum_t a;//, b;
-	fixnum_factor_t f;
+	wordlists_init();
+	//fixnum_factor_t f;
 	//fixnum_init_uint16(&a, limbs_a, sizeof(limbs_a), 0xffff);
 	fixnum_init_uint16(&a, limbs_a, sizeof(limbs_a), 1);
 	//fixnum_init_pattern(&b, limbs_b, sizeof(limbs_b), PATTERN_ADD11);

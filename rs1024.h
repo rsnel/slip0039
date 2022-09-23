@@ -20,6 +20,7 @@
 #ifndef SLIP0039_RS1024_H
 #define SLIP0039_RS1024_H
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 typedef struct rs1024_state_s {
@@ -40,12 +41,16 @@ void rs1024_init_slip0039(rs1024_state_t*);
 void rs1024_add_value(rs1024_state_t*, uint16_t);
 
 // add array of uint16_t checksum
-void rs1024_add_array(rs1024_state_t*, uint16_t*, size_t);
+void rs1024_add_array(rs1024_state_t*, const uint16_t*, size_t);
 
 // compute checksum of all added uint16_t's
 // use this function to compute the last
 // three words, the pointer uint16_t* must have room
 // for at least three elements
 void rs1024_checksum(rs1024_state_t*, uint16_t*);
+
+bool rs1024_verify(const uint16_t*, size_t);
+
+void rs1024_add(uint16_t*, size_t);
 
 #endif /* SLIP0039_RS1024_H */

@@ -38,10 +38,10 @@ void base_encode_buffer(uint16_t*, size_t, const fixnum_multiplier_t*,
 void base_encode_fixnum(uint16_t*, size_t, const fixnum_multiplier_t*,
 		const fixnum_t*, base_scratch_t*);
 
-void base_decode_buffer(uint8_t*, size_t, const fixnum_multiplier_t*,
+int base_decode_buffer(uint8_t*, size_t, const fixnum_multiplier_t*,
 		const uint16_t*, size_t);
 
-void base_decode_fixnum(fixnum_t*, const fixnum_multiplier_t*,
+int base_decode_fixnum(fixnum_t*, const fixnum_multiplier_t*,
 		const uint16_t*, size_t);
 
 #endif /* SLIP0039_BASE_H */

@@ -7,6 +7,6 @@
 #include "../utils.h"
 #include "../cthelp.h"
 
-void fixnum_factor_show(const fixnum_factor_t*, const char*);
+void fixnum_divisor_show(const fixnum_divisor_t*, const char*);
 
 void fixnum_show(const fixnum_t*, const char*);

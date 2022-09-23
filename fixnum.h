@@ -29,17 +29,30 @@
  * of 16 bits, but since we need to account for endianness, we represent
  * our fixnums as arrays of uint8_t's */
 
+typedef struct fixnum_properties_s {
+	uint8_t pure;
+	uint8_t log2;
+} fixnum_properties_t;
+
 typedef struct fixnum_s {
 	uint8_t *limbs; /* limbs stored in big endian order */
 	size_t no_limbs; /* we need at least 2 limbs */
 } fixnum_t;
 
-typedef struct fixnum_factor_s {
-	fixnum_t max_left_shift;
+typedef struct fixnum_multiplier_s {
 	uint16_t value;
-	uint8_t log2;
-	uint8_t pure; // power of two?
-} fixnum_factor_t;
+	fixnum_properties_t p;
+//	uint8_t pure; // power of two?
+//	uint8_t log2;
+} fixnum_multiplier_t;
+
+typedef struct fixnum_divisor_s {
+	//const fixnum_multiplier_t *m;
+	fixnum_properties_t p;
+	//uint8_t pure; // power of two?
+	//uint8_t log2;
+	fixnum_t max_left_shift;
+} fixnum_divisor_t;
 
 void fixnum_init(fixnum_t*, uint8_t*, size_t);
 
@@ -63,19 +76,22 @@ void fixnum_init_pattern(fixnum_t*, uint8_t*, size_t, fixnum_pattern_t);
 
 void fixnum_init_uint16(fixnum_t*, uint8_t*, size_t, uint16_t);
 
+void fixnum_init_buffer(fixnum_t*, uint8_t*, size_t, const uint8_t*, size_t);
+
 void fixnum_init_fixnum(fixnum_t*, uint8_t*, size_t, const fixnum_t*);
 
-void fixnum_show(const fixnum_t*, const char*);
+void fixnum_multiplier_init(fixnum_multiplier_t*, uint16_t);
 
-void fixnum_factor_init(fixnum_factor_t*, uint8_t*, size_t, uint16_t);
-
-void fixnum_factor_show(const fixnum_factor_t*, const char*);
+void fixnum_divisor_init_from_multiplier(fixnum_divisor_t*, const fixnum_multiplier_t*,
+		uint8_t*, size_t);
 
 uint32_t fixnum_peek(const fixnum_t*, size_t, uint8_t);
 
 void fixnum_poke(fixnum_t*, size_t, uint8_t, uint32_t);
 
 uint16_t fixnum_add_uint16(fixnum_t*, uint16_t);
+
+uint16_t fixnum_add_fixnum(fixnum_t*, const fixnum_t*, uint8_t);
 
 uint16_t fixnum_sub_fixnum(fixnum_t*, const fixnum_t*, uint8_t);
 
@@ -87,10 +103,8 @@ uint16_t fixnum_shr(fixnum_t*, uint8_t);
 
 uint16_t fixnum_shr_in(fixnum_t*, uint8_t, uint16_t);
 
-uint16_t fixnum_mul_factor(fixnum_t*, const fixnum_factor_t*);
+uint16_t fixnum_mul(fixnum_t*, const fixnum_multiplier_t*);
 
-void fixnum_mul_fixnum(fixnum_t*, const fixnum_t*, fixnum_scratch_t*);
-
-uint16_t fixnum_div_factor(fixnum_t*, const fixnum_factor_t*, fixnum_scratch_t*);
+uint16_t fixnum_div(fixnum_t*, const fixnum_divisor_t*, fixnum_scratch_t*);
 
 #endif /* SLIP0039_FIXNUM_H */

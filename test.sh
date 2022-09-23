@@ -21,7 +21,7 @@ for i in `seq 1 $COUNT`; do
 	echo "----------"
 	echo "running test" `echo $TEST | $JQ --raw-output .[0] `
 	# as we are using the Bourne shell, echo does not need
-	# the -e option to interpret \n the wat we want
+	# the -e option to interpret \n the way we want
 	RESULT=`echo "TREZOR\n$MNENOMICS" | ./slip0039 -d`
 	SUCCESS=$?
 	if [ "$SUCCESS" = "1" ]; 

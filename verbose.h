@@ -22,6 +22,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 /* these macros are for textual user readable output, the first argument
  * to each macro must be a double quoted string, so: VERBOSE(msg); is wrong
@@ -43,6 +45,10 @@ extern int quiet;
 } while (0)
 #define BUG(msg,...)            ABORT("fatal:BUG:" msg, ## __VA_ARGS__)
 #define FATAL(msg,...)            ABORT("fatal:" msg, ## __VA_ARGS__)
+#define FATAL_errno(msg,...) \
+        FATAL(msg ": %s", ## __VA_ARGS__ , strerror(errno))
+#define ERROR_errno(msg,...) \
+        ERROR(msg ": %s", ## __VA_ARGS__ , strerror(errno))
 
 void verbose_init(char*);
 

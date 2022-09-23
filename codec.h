@@ -1,4 +1,4 @@
-/* lrcipher.h - interface to the cipher specified in SLIP-0039
+/* codec.h - code to encode/decode data to/from MS
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -17,27 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef SLIP0039_LRCIPHER_H
-#define SLIP0039_LRCIPHER_H
-#include <stdint.h>
-#include <stddef.h>
+#ifndef SLIP0039_CODEC_H
+#define SLIP0039_CODEC_H
 
-#include "pbkdf2.h"
-
-typedef struct lrcipher_s {
-	pbkdf2_t rounds[4];
-} lrcipher_t;
-
-typedef enum lrcypher_dir_e { LRCIPHER_ENCRYPT = 0, LRCIPHER_DECRYPT = 3 } lrcipher_dir_t;
-
-void lrcipher_init(lrcipher_t*);
-
-void lrcipher_add_passphrase(lrcipher_t*, const char*, size_t);
-
-void lrcipher_finalize_passphrase(lrcipher_t*, const char*, size_t, uint16_t);
-
-void lrcipher_execute(lrcipher_t*, unsigned char*,
-		const unsigned char*, size_t, uint64_t, lrcipher_dir_t);
-
-#endif /* SLIP0039_LRCYPER_H */
-
+#endif /* SLIP0039_CODEC_H */

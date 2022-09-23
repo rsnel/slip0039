@@ -62,7 +62,7 @@ void rs1024_add_value(rs1024_state_t *state, uint16_t value) {
 }
 
 void rs1024_add_array(rs1024_state_t *state,
-		uint16_t *data, size_t data_size) {
+		const uint16_t *data, size_t data_size) {
 	for (int i = 0; i < data_size; i++)
 		rs1024_add_value(state, data[i]);
 }
@@ -77,4 +77,20 @@ void rs1024_checksum(rs1024_state_t *state, uint16_t *out) {
 
 	for (int i = 0; i < 3; i++)
 		out[i] = (state->chk>>10*(2-i))&0x3FF;
+}
+
+bool rs1024_verify(const uint16_t *input, size_t no_input) {
+        rs1024_state_t ok = RS1024_INIT, s;
+
+        rs1024_init_slip0039(&s);
+        rs1024_add_array(&s, input, no_input);
+
+        return ok.chk == s.chk;
+}
+
+void rs1024_add(uint16_t *input, size_t no_input) {
+	        rs1024_state_t s;
+        rs1024_init_slip0039(&s);
+        rs1024_add_array(&s, input, no_input);
+        rs1024_checksum(&s, input + no_input);
 }

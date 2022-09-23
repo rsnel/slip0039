@@ -38,7 +38,7 @@ static void base_encode_fixnum_destructive(uint16_t *out, size_t out_size,
                 const fixnum_multiplier_t *m,
                 fixnum_t *in, base_scratch_t *bs) {
 	fixnum_divisor_t d;
-	fixnum_divisor_init(&d, m,  bs->divisor_limbs, in->no_limbs);
+	fixnum_divisor_init_from_multiplier(&d, m,  bs->divisor_limbs, in->no_limbs);
 	for (int i = out_size - 1; i >= 0; i--)
 		out[i] = fixnum_div(in, &d, &bs->s);
 }
@@ -61,26 +61,28 @@ void base_encode_fixnum(uint16_t *out, size_t out_size,
 	base_encode_fixnum_destructive(out, out_size, m, &data, bs);
 }
 
-void base_decode_buffer(uint8_t *out, size_t out_size, const fixnum_multiplier_t *m,
+int base_decode_buffer(uint8_t *out, size_t out_size, const fixnum_multiplier_t *m,
 		const uint16_t *in, size_t in_size) {
 	fixnum_t d;
 	fixnum_init(&d, out, out_size);
-	base_decode_fixnum(&d, m, in, in_size);
+	return base_decode_fixnum(&d, m, in, in_size);
 }
 
-void base_decode_fixnum(fixnum_t *d, const fixnum_multiplier_t *m,
+int base_decode_fixnum(fixnum_t *d, const fixnum_multiplier_t *m,
 		const uint16_t *in, size_t in_size) {
-	int16_t ret;
-	
-	fixnum_set_pattern(d, PATTERN_ZERO);
 	int i = 0;
+
+	fixnum_set_pattern(d, PATTERN_ZERO);
 	goto start;
+
 	do {
-		ret = fixnum_mul(d, m);
-		assert(!ret);
+		if (fixnum_mul(d, m)) return 1; // overflow
 	start:
+		assert(in[i] < m->value);
 		fixnum_add_uint16(d, in[i]);
 	} while (++i < in_size);
+
+	return 0; // ok
 }
 
 
