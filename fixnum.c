@@ -162,7 +162,7 @@ uint16_t fixnum_shr_in(fixnum_t *f, uint8_t shift, uint16_t in) {
 	return carry;
 }
 
-void fixnum_multiplier_init(fixnum_multiplier_t *m, uint16_t value) {
+void fixnum_multiplier16_init(fixnum_multiplier16_t *m, uint16_t value) {
 	assert(m && value);
 	m->value = value;
 	m->p.log2 = 0;
@@ -170,7 +170,7 @@ void fixnum_multiplier_init(fixnum_multiplier_t *m, uint16_t value) {
 	m->p.pure = cthelp_eq(m->value, 1<<m->p.log2);
 }
 
-void fixnum_divisor_init_from_multiplier(fixnum_divisor_t *d, const fixnum_multiplier_t *m, uint8_t *limbs, size_t no_limbs) {
+void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t *d, const fixnum_multiplier16_t *m, uint8_t *limbs, size_t no_limbs) {
 	assert(d && m && limbs && no_limbs > 1);
 	d->p = m->p;
 	fixnum_init_uint16(&d->max_left_shift, limbs, no_limbs, m->value);
@@ -314,7 +314,7 @@ uint16_t fixnum_sub_fixnum(fixnum_t *f, const fixnum_t *s, uint8_t mask) {
 	return acc;
 }
 
-uint16_t fixnum_mul(fixnum_t *f, const fixnum_multiplier_t *m) {
+uint16_t fixnum_mul16(fixnum_t *f, const fixnum_multiplier16_t *m) {
 	assert(f && m && f->no_limbs >= 2);
 
 	if (m->p.pure)

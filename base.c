@@ -35,16 +35,16 @@ void base_init_scratch(base_scratch_t *bs, uint8_t *scratch, size_t max_limbs) {
 }
 
 static void base_encode_fixnum_destructive(uint16_t *out, size_t out_size,
-                const fixnum_multiplier_t *m,
+                const fixnum_multiplier16_t *m,
                 fixnum_t *in, base_scratch_t *bs) {
 	fixnum_divisor_t d;
-	fixnum_divisor_init_from_multiplier(&d, m,  bs->divisor_limbs, in->no_limbs);
+	fixnum_divisor_init_from_multiplier16(&d, m,  bs->divisor_limbs, in->no_limbs);
 	for (int i = out_size - 1; i >= 0; i--)
 		out[i] = fixnum_div(in, &d, &bs->s);
 }
 
 void base_encode_buffer(uint16_t *out, size_t out_size,
-		const fixnum_multiplier_t *m,
+		const fixnum_multiplier16_t *m,
 		const uint8_t *in, size_t in_size, base_scratch_t *bs) {
 	assert(bs->max_limbs >= in_size);
         fixnum_t d;
@@ -53,7 +53,7 @@ void base_encode_buffer(uint16_t *out, size_t out_size,
 }
 
 void base_encode_fixnum(uint16_t *out, size_t out_size,
-		const fixnum_multiplier_t *m,
+		const fixnum_multiplier16_t *m,
 		const fixnum_t *in, base_scratch_t *bs) {
 	assert(out && m && m->value> 1 && in && bs && in->no_limbs <= bs->max_limbs);
 	fixnum_t data;
@@ -61,14 +61,14 @@ void base_encode_fixnum(uint16_t *out, size_t out_size,
 	base_encode_fixnum_destructive(out, out_size, m, &data, bs);
 }
 
-int base_decode_buffer(uint8_t *out, size_t out_size, const fixnum_multiplier_t *m,
+int base_decode_buffer(uint8_t *out, size_t out_size, const fixnum_multiplier16_t *m,
 		const uint16_t *in, size_t in_size) {
 	fixnum_t d;
 	fixnum_init(&d, out, out_size);
 	return base_decode_fixnum(&d, m, in, in_size);
 }
 
-int base_decode_fixnum(fixnum_t *d, const fixnum_multiplier_t *m,
+int base_decode_fixnum(fixnum_t *d, const fixnum_multiplier16_t *m,
 		const uint16_t *in, size_t in_size) {
 	int i = 0;
 
@@ -76,7 +76,7 @@ int base_decode_fixnum(fixnum_t *d, const fixnum_multiplier_t *m,
 	goto start;
 
 	do {
-		if (fixnum_mul(d, m)) return 1; // overflow
+		if (fixnum_mul16(d, m)) return 1; // overflow
 	start:
 		assert(in[i] < m->value);
 		fixnum_add_uint16(d, in[i]);

@@ -39,12 +39,10 @@ typedef struct fixnum_s {
 	size_t no_limbs; /* we need at least 2 limbs */
 } fixnum_t;
 
-typedef struct fixnum_multiplier_s {
+typedef struct fixnum_multiplier16_s {
 	uint16_t value;
 	fixnum_properties_t p;
-//	uint8_t pure; // power of two?
-//	uint8_t log2;
-} fixnum_multiplier_t;
+} fixnum_multiplier16_t;
 
 typedef struct fixnum_divisor_s {
 	//const fixnum_multiplier_t *m;
@@ -80,9 +78,9 @@ void fixnum_init_buffer(fixnum_t*, uint8_t*, size_t, const uint8_t*, size_t);
 
 void fixnum_init_fixnum(fixnum_t*, uint8_t*, size_t, const fixnum_t*);
 
-void fixnum_multiplier_init(fixnum_multiplier_t*, uint16_t);
+void fixnum_multiplier16_init(fixnum_multiplier16_t*, uint16_t);
 
-void fixnum_divisor_init_from_multiplier(fixnum_divisor_t*, const fixnum_multiplier_t*,
+void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t*, const fixnum_multiplier16_t*,
 		uint8_t*, size_t);
 
 uint32_t fixnum_peek(const fixnum_t*, size_t, uint8_t);
@@ -103,7 +101,7 @@ uint16_t fixnum_shr(fixnum_t*, uint8_t);
 
 uint16_t fixnum_shr_in(fixnum_t*, uint8_t, uint16_t);
 
-uint16_t fixnum_mul(fixnum_t*, const fixnum_multiplier_t*);
+uint16_t fixnum_mul16(fixnum_t*, const fixnum_multiplier16_t*);
 
 uint16_t fixnum_div(fixnum_t*, const fixnum_divisor_t*, fixnum_scratch_t*);
 

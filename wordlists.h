@@ -27,7 +27,7 @@
 
 typedef struct wordlist_s {
 	char *name;
-	fixnum_multiplier_t m;
+	fixnum_multiplier16_t m;
 	uint8_t	max_word_length, min_word_length;
 	char **words;
 } wordlist_t;
