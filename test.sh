@@ -3,7 +3,7 @@
 # test vectors through slip0039
 JQ="`which jq`"
 VECTORS=vectors.json
-if [ ! -x $JQ ]; then
+if [ ! -x "$JQ" ]; then
 	echo "executable jq not found"
 	exit 1
 fi
