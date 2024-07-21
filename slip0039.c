@@ -575,7 +575,7 @@ void slip0039_recover(slip0039_set_t *s, uint8_t *secret, size_t n) {
 		s->secret = secret;
 		memcpy(s->secret, s->shares[idx[0]], n);
 	} else {
-		// compute digest share (uint8_t)-2 = 254 
+		// compute digest share (uint8_t)-2 = 254
 		// and secret share (uint8_t)-1 = 255
 
 		for (int i = -2; i < 0; i++) {
@@ -639,7 +639,7 @@ void boring_stuff() {
 	signal(SIGUSR2, sig_handler);
 }
 
-unsigned long int parse_number(const char *arg, const char *name, 
+unsigned long int parse_number(const char *arg, const char *name,
 		unsigned long int min, unsigned long int max,
 		char **end, int empty) {
 	unsigned long int ret = strtoul(arg, end, 0);

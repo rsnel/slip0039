@@ -30,20 +30,20 @@ typedef struct slip0039_set_s {
 	int line_numbers[MAX_SHARES];
 	char names[MAX_SHARES][23];
 
-	/* we allow for an undefined value for the number  
+	/* we allow for an undefined value for the number
 	 * of members, because the total amount of members
 	 * in a group cannot be determined from the input  */
 	uint8_t count;       /* total members (0x00=undef) */
 	uint8_t available;   /* available members          */
         uint8_t threshold;   /* required members           */
-	
+
 	/* x-coordinate is (uint8_t) cast of index         */
 	uint8_t *digest;     /* index -2 (=(int8_t)254)    */
 	uint8_t *secret;     /* index -1 (=(int8_t)255)    */
 	uint8_t *shares[MAX_SHARES]; /* 0 <= index < 16            */
 
-	/* static storage for shares, digest and secret   
-	 * this storage can be addressed in the same way 
+	/* static storage for shares, digest and secret
+	 * this storage can be addressed in the same way
 	 * as the pointers above                           */
 	uint8_t storage_digest[BLOCKS<<1];
 	uint8_t storage_shares[MAX_SHARES][BLOCKS<<1];

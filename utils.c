@@ -67,7 +67,7 @@ int wordeq(const char *unknown, const char *target, const char **end, int req_te
 		boolean |= cthelp_neq(*unknown, ' ')&cthelp_neq(*unknown, '\0');
 		unknown += (cthelp_neq(*unknown, ' ') - 1)&1;
 	}
-	
+
 	// set *end to point to the value after the last letter of the word
 	// if there is a match (if there is a match *end should be NULL, if there is
 	// no match, end is not modified
@@ -114,7 +114,7 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 
         for (int i = 0; i < w->m.value; i++)
                 match &= i|(-(wordeq(word, w->words[i], end, w->max_word_length != w->min_word_length)));
-	
+
 	if (match == -1) {
 		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
 
