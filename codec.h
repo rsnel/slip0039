@@ -20,4 +20,21 @@
 #ifndef SLIP0039_CODEC_H
 #define SLIP0039_CODEC_H
 
+#include <stddef.h>
+#include <stdint.h>
+#include "shashtbl.h"
+#include "lrcipher.h"
+
+typedef struct {
+	shashtbl_elt_t elt;
+	void (*encode)(uint8_t *out, size_t *n, lrcipher_t*, uint16_t*, size_t, const char *in);
+	void (*decode)(char *out, size_t out_size, lrcipher_t*, uint16_t*, size_t, const uint8_t *in, size_t n);
+} codec_t;
+
+void codec_init();
+
+extern codec_t *codec;
+
+codec_t *codec_find(const char*);
+
 #endif /* SLIP0039_CODEC_H */

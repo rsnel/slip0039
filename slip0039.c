@@ -29,6 +29,7 @@
 
 #include "slip0039.h"
 #include "verbose.h"
+#include "codec.h"
 #include "utils.h"
 #include "rs1024.h"
 #include "digest.h"
@@ -287,7 +288,10 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 			}
 			slip0039_write_member_title(s, i, j, input[3]);
 
-			base_encode_buffer(&input[4], (8*s->n + 9)/10, &wordlist_slip0039.m, s->members[i].shares[j], s->n, &bs);
+			base_encode_buffer(&input[4], (8*s->n + 9)/10,
+					&wordlist_slip0039.m,
+					s->members[i].shares[j],
+					s->n, &bs);
 
 			rs1024_add(input, 4 + (8*s->n + 9)/10);
 
@@ -312,11 +316,9 @@ start:
 	}
 }
 
-void slip0039_print_plaintext(slip0039_t *s) {
-        sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
-	memset(dl, 0, sizeof(dl));
-
-	sbufprintf_base16(&sbuf, s->plaintext, s->n);
+void slip0039_print_plaintext(slip0039_t *s, codec_t *c) {
+	(*c->decode)(dl, sizeof(dl), &s->l, input, sizeof(input)/sizeof(*input),
+			s->plaintext, s->n);
 
 	printf("%s\n", dl);
 }
@@ -384,7 +386,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 				"on line %d", line_number);
 	}
 
-	if (GI >= s->root.count) 
+	if (GI >= s->root.count)
 		 FATAL("group index too large in mnemonic on line %d, "
 				 "number of groups is %d, group index is %d",
 			line_number, s->root.count, GI);
@@ -414,14 +416,14 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 	slip0039_set_increment_available(m);
 }
 
-/* this function reads a hexadecimal string and interpretes it
- * as binary data (it MUST have an even number of characters */
-void slip0039_add_plaintext_base16(slip0039_t *s, FILE *fp) {
+void slip0039_add_plaintext(slip0039_t *s, codec_t *c) {
 	assert(s && !s->plaintext && !s->n);
-	size_t no_input = 0;
-	const char *cur = input_base16;
-	read_stringLF(input_base16, sizeof(input_base16), fp, "plaintext", 0);
+	//size_t no_input = 0;
+	//const char *cur = input_base16;
+	read_stringLF(input_base16, sizeof(input_base16), stdin, "plaintext", 0);
 
+	(c->encode)(s->storage_plaintext, &s->n, &s->l, input, sizeof(input)/sizeof(*input), input_base16);
+	/*
 	while (*cur) {
 		if (cur - input_base16 == sizeof(input_base16) - 2)
 			FATAL("size of plaintext is larger than %d bytes", BLOCKS>>1);
@@ -435,14 +437,16 @@ void slip0039_add_plaintext_base16(slip0039_t *s, FILE *fp) {
 	if (no_input%4) FATAL("size of plaintext must be multiple of 16 bits");
 	if (no_input>>1 < 16) FATAL("size of plaintext must be at least 16 bytes");
 
+	*/
+	//s->n = no_input>>1;
+
 	s->plaintext = s->storage_plaintext;
-	s->n = no_input>>1;
 
 	// try to read one more character, it should set feof since
 	// we don't expect anymore characters
-	fgetc(fp);
+	fgetc(stdin);
 
-	if (!feof(fp)) WARNING("data detected after plaintext on input");
+	if (!feof(stdin)) WARNING("data detected after plaintext on input");
 }
 
 void slip0039_add_mnemonics(slip0039_t *s, FILE *fp) {
@@ -473,7 +477,7 @@ void slip0039_add_passphrase(slip0039_t *s, FILE *fp) {
 }
 
 /* must be called after EMS is computed */
-void init_prng_pbkdf2(pbkdf2_t *p) {
+void init_prng_pbkdf2(pbkdf2_t *p, slip0039_t *s, const char *seed, size_t seed_len) {
 	/* initialize PRNG based on PBKDF2 with EMS and SEED
 	 * as password and a description of the way the secret
 	 * must be split as the first salt
@@ -483,15 +487,15 @@ void init_prng_pbkdf2(pbkdf2_t *p) {
 	 *                       \_______________/  1 <= i <= G
 	 *
 	 * all numbers are encoded as 8 bit integers */
-	assert(s.root.secret);
+	assert(s->root.secret);
 	pbkdf2_init(p);
-	pbkdf2_update_password(p, s.root.secret, s.n);
+	pbkdf2_update_password(p, s->root.secret, s->n);
 	pbkdf2_update_password(p, seed, seed_len);
-	pbkdf2_update_salt_uint8(p, s.e);
-	pbkdf2_update_salt_uint8(p, s.root.threshold);
-	pbkdf2_update_salt_uint8(p, s.root.count);
-	for (uint8_t i = 0; i < s.root.count; i++) {
-		slip0039_set_t *set = &s.members[i];
+	pbkdf2_update_salt_uint8(p, s->e);
+	pbkdf2_update_salt_uint8(p, s->root.threshold);
+	pbkdf2_update_salt_uint8(p, s->root.count);
+	for (uint8_t i = 0; i < s->root.count; i++) {
+		slip0039_set_t *set = &s->members[i];
 		pbkdf2_update_salt_uint8(p, set->threshold);
 		pbkdf2_update_salt_uint8(p, set->count);
 	}
@@ -704,10 +708,16 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 	int optind = 1;
 
 	while (argc > optind) {
-		char *arg = argv[optind];
+		char *arg = argv[optind++];
 		if (!strcmp(arg, "-d")) debug = 1;
 		else if (!strcmp(arg, "-q")) quiet = 1;
-		else if (mode == SLIP0039_MODE_RECOVER) FATAL("no arguments "
+		else if (!strcmp(arg, "-c")) {
+			if (argc > optind + 1) {
+				codec = codec_find(argv[optind]);
+				if (!codec) FATAL("codec %s not available", argv[optind]);
+				optind++;
+			} else FATAL("option -c given, but no argument supplied");
+		} else if (mode == SLIP0039_MODE_RECOVER) FATAL("no arguments "
 				"must be given after \"recover\"");
 		else if (mode == SLIP0039_MODE_SPLIT)
 			parse_options_split(s, arg, &state, &max_T);
@@ -720,8 +730,6 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 			else FATAL("first non-option argument must be "
 					"\"recover\" or \"split\"");
 		}
-
-		optind++;
 	}
 
 	// set mode to 'recover' if no mode is specified
@@ -762,6 +770,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 	verbose_init(argv[0]);
+	codec_init();
 	boring_stuff();
 	base_init_scratch(&bs, base_scratch_space, BLOCKS<<1);
 	wordlists_init();
@@ -777,12 +786,12 @@ int main(int argc, char *argv[]) {
 		lrcipher_finalize_passphrase(&s.l, "shamir", 6, s.id);
 
 		/* read Master Secret (MS) */
-		slip0039_add_plaintext_base16(&s, stdin);
+		slip0039_add_plaintext(&s, codec);
 
 		/* encrypt plaintext to EMS */
 		slip0039_encrypt(&s);
 
-		init_prng_pbkdf2(&prng);
+		init_prng_pbkdf2(&prng, &s, seed, seed_len);
 
 		/* calculate all shares */
 		slip0039_split(&s.root, s.n, &prng);
@@ -807,7 +816,7 @@ int main(int argc, char *argv[]) {
 		/* decrypt EMS to MS */
 		slip0039_decrypt(&s);
 
-		slip0039_print_plaintext(&s);
+		slip0039_print_plaintext(&s, codec);
 	}
 
 	 wipestackmemory(STACK_CLEAR_SIZE);
