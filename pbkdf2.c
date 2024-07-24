@@ -68,7 +68,7 @@ void pbkdf2_finalize_salt(pbkdf2_t *p, uint64_t iterations) {
 	assert(p->iterations > 0);
 }
 
-static void helper(pbkdf2_t *p) { 
+static void helper(pbkdf2_t *p) {
 	uint8_t sha[SHA256_LEN];
 	hmac_t h = p->salt;
 	hmac_update_data_uint32be(&h, p->index++);
