@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef INCLUDE_TAGMEISTER_SHASHTBL_H
-#define INCLUDE_TAGMEISTER_SHASHTBL_H 1
+#ifndef SLIP0039_SHASHTBL_H
+#define SLIP0039_SHASHTBL_H 1
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -67,4 +67,4 @@ void *shashtbl_iterator(shashtbl_t*, void *(*)(void*, void*), void*);
 
 size_t shashtbl_get_count(shashtbl_t*);
 
-#endif /* INCLUDE_TAGMEISTER_SHASHTBL_H */
+#endif /* SLIP0039_SHASHTBL_H */
