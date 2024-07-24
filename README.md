@@ -53,7 +53,7 @@ etc
   rearranged and copied around is reduced.
 
 * The output of the program is deterministic, so that the output can be
-  reproduced on multiple machines and it is easy to see that he random data in
+  reproduced on multiple machines and it is easy to see that the random data in
   the shares and in the second part of the digest share contains no information.
 
 * Sensitive data should be handled in constant time.
