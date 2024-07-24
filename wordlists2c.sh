@@ -55,8 +55,9 @@ format_wordlist() {
 		fatal "file $FILENAME has $NUM lines, when $3 lines were expected"
 	fi
 
-	MAX_WORD_LENGTH=`awk -vmax=0 'length($0) > max {max = length($0)} END {print max}' < "$FILENAME"`
-	MIN_WORD_LENGTH=`awk -vmin=255 'length($0) < min {min = length($0)} END {print min}' < "$FILENAME"`
+	# use LANG=C to get the bytecount of word lenght instead of character count
+	MAX_WORD_LENGTH=`LANG=C awk -vmax=0 'length($0) > max {max = length($0)} END {print max}' < "$FILENAME"`
+	MIN_WORD_LENGTH=`LANG=C awk -vmin=255 'length($0) < min {min = length($0)} END {print min}' < "$FILENAME"`
 	echo
 	echo wordlist_t wordlist_$1 = {
 	echo "\t.name = \"$1\","
@@ -85,6 +86,8 @@ format_wordlist bip0039_english \
 	2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda 2048
 format_wordlist diceware_german \
 	86eaf47b43df1c7f926b1d2f4cc724141de626c601a32562f28ec204fb3b9607 7776
+format_wordlist diceware_dutch \
+	7086f199c1366aff1f48257c9861574b485ad3763442adcaf4fbbd16bce5276c 7776
 format_wordlist base16 \
 	0bedb386a64d361e65bdf47702cdde4ad44491960c28589bdedd29916a0581d6 16
 format_wordlist base58 \

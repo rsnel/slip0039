@@ -36,7 +36,11 @@ extern wordlist_t wordlist_slip0039;
 
 extern wordlist_t wordlist_bip0039_english;
 
+// provided by Benjamin Tenne under the terms of the GNU GPL
 extern wordlist_t wordlist_diceware_german;
+
+// provided by Bart Van den Eynde under the GFDL
+extern wordlist_t wordlist_diceware_dutch;
 
 extern wordlist_t wordlist_base16;
 
