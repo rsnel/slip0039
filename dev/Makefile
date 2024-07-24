@@ -1,6 +1,8 @@
 LDLIBS=-lm
 
-all: tfixnum 16tothe32 lrperm twordlist ta prob basetest wordeq lrprng probsim
+all: tfixnum 16tothe32 lrperm twordlist ta prob basetest wordeq lrprng probsim fakedist
+
+fakedist:
 
 lrprng: lrprng.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlists.c ../verbose.c
 

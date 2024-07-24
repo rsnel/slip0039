@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
 	const char *buf = code;
 	while (*buf) {
-		fixnum_mul(&a, &wordlist_base16.m);
+		fixnum_mul16(&a, &wordlist_base16.m);
 		int idx = wordlist_search(&wordlist_base16, buf, &buf);
 		assert(idx != -1);
 		fixnum_add_uint16(&a, idx);
