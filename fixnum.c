@@ -150,7 +150,7 @@ uint16_t fixnum_shr(fixnum_t *f, uint8_t shift) {
 		f->limbs[idx] |= (f->limbs[idx-1]&mask)<<(8 - shift);
 		f->limbs[idx-1] >>= shift;
 	}
-	
+
 	return carry>>(16-origshift);
 }
 
@@ -218,7 +218,7 @@ uint32_t fixnum_peek(const fixnum_t *f, size_t offset, uint8_t size) {
 			out |= (f->limbs[offset_limb-2]<<(ssize[0]+ssize[1]))&(0xffff>>(16-size));
 		}
 	}
-	
+
 	return out;
 }
 

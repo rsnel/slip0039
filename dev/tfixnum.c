@@ -1,14 +1,18 @@
 #include "dev.h"
 
 int main(int argc, char *argv[]) {
-	uint8_t limbs_a[BLOCKS], /*limbs_b[BLOCKS],*/ limbs_f[BLOCKS];
+	uint8_t limbs_a[BLOCKS], limbs_b[BLOCKS], limbs_f[BLOCKS];
 	uint16_t ret;
-	fixnum_t a;//, b;
+	fixnum_t a, b;
+	fixnum_multiplier16_t m;
+	fixnum_divisor_t d;
 	wordlists_init();
+	fixnum_multiplier16_init(&m, 7);
+	fixnum_divisor_init_from_multiplier16(&d, &m, limbs_f, BLOCKS);
 	//fixnum_factor_t f;
 	//fixnum_init_uint16(&a, limbs_a, sizeof(limbs_a), 0xffff);
 	fixnum_init_uint16(&a, limbs_a, sizeof(limbs_a), 1);
-	//fixnum_init_pattern(&b, limbs_b, sizeof(limbs_b), PATTERN_ADD11);
+	fixnum_init_pattern(&b, limbs_b, sizeof(limbs_b), PATTERN_ZERO);
 	//fixnum_set_uint16(&b, 3);
 	//fixnum_add_uint16(&a, 1);
 	//fixnum_show(&b, "b");

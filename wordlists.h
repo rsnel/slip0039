@@ -24,9 +24,11 @@
 #include <stdint.h>
 
 #include "fixnum.h"
+#include "shashtbl.h"
 
 typedef struct wordlist_s {
-	char *name;
+	shashtbl_elt_t elt;
+	const char *family;
 	fixnum_multiplier16_t m;
 	uint8_t	max_word_length, min_word_length;
 	char **words;
@@ -34,7 +36,13 @@ typedef struct wordlist_s {
 
 extern wordlist_t wordlist_slip0039;
 
+extern wordlist_t *wordlist;
+
+extern wordlist_t wordlist_base16;
+/*
 extern wordlist_t wordlist_bip0039_english;
+
+extern wordlist_t wordlist_bip0039_spanish;
 
 // provided by Benjamin Tenne under the terms of the GNU GPL
 extern wordlist_t wordlist_diceware_german;
@@ -42,11 +50,11 @@ extern wordlist_t wordlist_diceware_german;
 // provided by Bart Van den Eynde under the GFDL
 extern wordlist_t wordlist_diceware_dutch;
 
-extern wordlist_t wordlist_base16;
 
 extern wordlist_t wordlist_base58;
 
 extern wordlist_t wordlist_bech32;
+*/
 
 void wordlists_init();
 

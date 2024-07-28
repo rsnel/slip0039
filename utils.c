@@ -123,7 +123,12 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 		while (*word != '\0' && *word != ' ' && *word != '\n')
 			sbufputchar(&sbuf, *word++);
 
-		sbufprintf(&sbuf, "' not found in %s wordlist", w->name);
+		if (*w->elt.key == '\0') {
+			sbufprintf(&sbuf, "' not found in the %s wordlist", w->family);
+		} else {
+			sbufprintf(&sbuf, "' not found in the %s wordlist of language %s", w->family, w->elt.key);
+
+		}
 		FATAL("%s", dl);
 	}
 

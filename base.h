@@ -33,15 +33,15 @@ typedef struct base_scratch_s {
 void base_init_scratch(base_scratch_t*, uint8_t*, size_t);
 
 void base_encode_buffer(uint16_t*, size_t, const fixnum_multiplier16_t*,
-		const uint8_t*, size_t, base_scratch_t*);
+		const uint8_t*, size_t, base_scratch_t*, uint8_t);
 
 void base_encode_fixnum(uint16_t*, size_t, const fixnum_multiplier16_t*,
-		const fixnum_t*, base_scratch_t*);
+		const fixnum_t*, base_scratch_t*, uint8_t);
 
 int base_decode_buffer(uint8_t*, size_t, const fixnum_multiplier16_t*,
-		const uint16_t*, size_t);
+		const uint16_t*, size_t, uint8_t);
 
 int base_decode_fixnum(fixnum_t*, const fixnum_multiplier16_t*,
-		const uint16_t*, size_t);
+		const uint16_t*, size_t, uint8_t);
 
 #endif /* SLIP0039_BASE_H */

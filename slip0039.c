@@ -38,12 +38,14 @@
 #include "wordlists.h"
 #include "fixnum.h"
 #include "base.h"
+#include "shashtbl.h"
 
 slip0039_mode_t mode = SLIP0039_MODE_NULL;
 slip0039_t s;                 // the main struct with all the info
 slip0039_mnemonic_t mnemonic; // buffer to contain one mnemonic
 pbkdf2_t prng;                // PRNG for shares and part of digests
-char input_base16[(BLOCKS<<2)+1+1]; // space for (BLOCKS<<2) nibbles, \n newline and \0
+char input_base16[LINE]; // space for (BLOCKS<<2) nibbles, \n newline and \0
+//char input_base16[(BLOCKS<<2)+1+1]; // space for (BLOCKS<<2) nibbles, \n newline and \0
 uint16_t input[BLOCKS<<2];    // space for input
 base_scratch_t bs;	      // scratch space for base encoding
 uint8_t base_scratch_space[(BLOCKS<<1)<<2]; // actual scratch space
@@ -280,7 +282,7 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 			fixnum_poke(&h, 4, 4, j);
 			fixnum_poke(&h, 0, 4, s->members[i].threshold - 1);
 
-			base_encode_buffer(input, 4, &wordlist_slip0039.m, slip0039_header, 5, &bs);
+			base_encode_buffer(input, 4, &wordlist_slip0039.m, slip0039_header, 5, &bs, 0);
 
 			if (j == 0) {
 				if (i == 0) slip0039_write_title(s, input);
@@ -291,7 +293,7 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 			base_encode_buffer(&input[4], (8*s->n + 9)/10,
 					&wordlist_slip0039.m,
 					s->members[i].shares[j],
-					s->n, &bs);
+					s->n, &bs, 0);
 
 			rs1024_add(input, 4 + (8*s->n + 9)/10);
 
@@ -318,7 +320,7 @@ start:
 
 void slip0039_print_plaintext(slip0039_t *s, codec_t *c) {
 	(*c->decode)(dl, sizeof(dl), &s->l, input, sizeof(input)/sizeof(*input),
-			s->plaintext, s->n);
+			s->plaintext, s->n, wordlist, &bs);
 
 	printf("%s\n", dl);
 }
@@ -345,7 +347,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 				"minimum 20 words", line_number);
 
 	fixnum_init_pattern(&h, slip0039_header, 5, PATTERN_ZERO);
-	base_decode_fixnum(&h, &wordlist_slip0039.m, input, 4);
+	base_decode_fixnum(&h, &wordlist_slip0039.m, input, 4, 0);
 
 	size_t n = 2*(10*(no_input - 7)/16);
 	size_t surplus = 10*(no_input - 7)%16;
@@ -409,7 +411,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 	m->shares[I] = m->storage_shares[I];
 
-	if (base_decode_buffer(m->shares[I], n, &wordlist_slip0039.m, &input[4], no_input - 7)) 
+	if (base_decode_buffer(m->shares[I], n, &wordlist_slip0039.m, &input[4], no_input - 7, 0))
 		FATAL("invalid (nonzero) padding in mnemonic on line %d",
 				line_number);
 
@@ -418,27 +420,13 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 void slip0039_add_plaintext(slip0039_t *s, codec_t *c) {
 	assert(s && !s->plaintext && !s->n);
-	//size_t no_input = 0;
-	//const char *cur = input_base16;
-	read_stringLF(input_base16, sizeof(input_base16), stdin, "plaintext", 0);
 
-	(c->encode)(s->storage_plaintext, &s->n, &s->l, input, sizeof(input)/sizeof(*input), input_base16);
-	/*
-	while (*cur) {
-		if (cur - input_base16 == sizeof(input_base16) - 2)
-			FATAL("size of plaintext is larger than %d bytes", BLOCKS>>1);
+	read_stringLF(input_base16, sizeof(input_base16), stdin,
+			"plaintext", 0);
 
-		assert(no_input < BLOCKS<<2);
-		input[no_input++] = wordlist_search(&wordlist_base16, cur, &cur);
-	}
-
-	base_decode_buffer(s->storage_plaintext, no_input>>1, &wordlist_base16.m, input, no_input);
-
-	if (no_input%4) FATAL("size of plaintext must be multiple of 16 bits");
-	if (no_input>>1 < 16) FATAL("size of plaintext must be at least 16 bytes");
-
-	*/
-	//s->n = no_input>>1;
+	(c->encode)(s->storage_plaintext, &s->n, &s->l,
+			input, sizeof(input)/sizeof(*input),
+			input_base16, wordlist);
 
 	s->plaintext = s->storage_plaintext;
 
@@ -712,9 +700,18 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 		if (!strcmp(arg, "-d")) debug = 1;
 		else if (!strcmp(arg, "-q")) quiet = 1;
 		else if (!strcmp(arg, "-c")) {
-			if (argc > optind + 1) {
+			if (argc > optind) {
+				char *separator = strchr(argv[optind], ':');
+				if (separator) *separator = '\0';
 				codec = codec_find(argv[optind]);
 				if (!codec) FATAL("codec %s not available", argv[optind]);
+				if (!separator) wordlist = shashtbl_search_elt_bykey(
+						&codec->wordlists, codec->default_language);
+				else wordlist = shashtbl_search_elt_bykey(
+						&codec->wordlists,++separator);
+				if (!wordlist)
+					FATAL("wordlist \"%s\" not found for codec %s",
+							separator, argv[optind]);
 				optind++;
 			} else FATAL("option -c given, but no argument supplied");
 		} else if (mode == SLIP0039_MODE_RECOVER) FATAL("no arguments "

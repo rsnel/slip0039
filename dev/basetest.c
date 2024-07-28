@@ -25,21 +25,21 @@ int main(int argc, char *argv[]) {
 	verbose_init(argv[0]);
 	fixnum_multiplier16_init(&m, 59);
 	base_init_scratch(&bs, base_scratch_space, BLOCKS<<1);
-	
-	base_encode_buffer(out1, 4, &m, in1, 3, &bs);
+
+	base_encode_buffer(out1, 4, &m, in1, 3, &bs, 0);
 	for (int i = 0; i < 4; i++) printf("out[%d]=%d\n", i, out1[i]);
-	base_decode_buffer(in1, 3, &m, out1, 4);
+	base_decode_buffer(in1, 3, &m, out1, 4, 0);
 	for (int i = 0; i < 3; i++) printf("in[%d]=%02x\n", i, in1[i]);
 
 	fixnum_multiplier16_init(&m, 10);
 	for (int i = 0; i < 4; i++) printf("in[%d]=%02x\n", i, in2[i]);
-	base_encode_buffer(out2, 10, &m, in2, 4, &bs);
+	base_encode_buffer(out2, 10, &m, in2, 4, &bs, 0);
 	for (int i = 0; i < 10; i++) printf("out[%d]=%d\n", i, out2[i]);
-	base_decode_buffer(in2, 4, &m, out2, 10);
+	base_decode_buffer(in2, 4, &m, out2, 10, 0);
 	for (int i = 0; i < 4; i++) printf("in[%d]=%02x\n", i, in2[i]);
 
 	fixnum_multiplier16_init(&m, 1024);
-	base_encode_buffer(out3, 4, &m, in3, 5, &bs);
+	base_encode_buffer(out3, 4, &m, in3, 5, &bs, 0);
 	for (int i = 0; i < 4; i++) printf("out[%d]=%02x\n", i, out3[i]);
 
 }

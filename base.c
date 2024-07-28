@@ -36,40 +36,42 @@ void base_init_scratch(base_scratch_t *bs, uint8_t *scratch, size_t max_limbs) {
 
 static void base_encode_fixnum_destructive(uint16_t *out, size_t out_size,
                 const fixnum_multiplier16_t *m,
-                fixnum_t *in, base_scratch_t *bs) {
+                fixnum_t *in, base_scratch_t *bs, uint8_t shift) {
 	fixnum_divisor_t d;
 	fixnum_divisor_init_from_multiplier16(&d, m,  bs->divisor_limbs, in->no_limbs);
+	fixnum_shr(in, shift);
 	for (int i = out_size - 1; i >= 0; i--)
 		out[i] = fixnum_div(in, &d, &bs->s);
 }
 
 void base_encode_buffer(uint16_t *out, size_t out_size,
 		const fixnum_multiplier16_t *m,
-		const uint8_t *in, size_t in_size, base_scratch_t *bs) {
+		const uint8_t *in, size_t in_size,
+		base_scratch_t *bs, uint8_t shift) {
 	assert(bs->max_limbs >= in_size);
         fixnum_t d;
 	fixnum_init_buffer(&d, bs->data_limbs, in_size, in, in_size);
-	base_encode_fixnum_destructive(out, out_size, m, &d, bs);
+	base_encode_fixnum_destructive(out, out_size, m, &d, bs, shift);
 }
 
 void base_encode_fixnum(uint16_t *out, size_t out_size,
 		const fixnum_multiplier16_t *m,
-		const fixnum_t *in, base_scratch_t *bs) {
+		const fixnum_t *in, base_scratch_t *bs, uint8_t shift) {
 	assert(out && m && m->value> 1 && in && bs && in->no_limbs <= bs->max_limbs);
 	fixnum_t data;
 	fixnum_init_fixnum(&data, bs->data_limbs, in->no_limbs, in);
-	base_encode_fixnum_destructive(out, out_size, m, &data, bs);
+	base_encode_fixnum_destructive(out, out_size, m, &data, bs, shift);
 }
 
 int base_decode_buffer(uint8_t *out, size_t out_size, const fixnum_multiplier16_t *m,
-		const uint16_t *in, size_t in_size) {
+		const uint16_t *in, size_t in_size, uint8_t shift) {
 	fixnum_t d;
 	fixnum_init(&d, out, out_size);
-	return base_decode_fixnum(&d, m, in, in_size);
+	return base_decode_fixnum(&d, m, in, in_size, shift);
 }
 
 int base_decode_fixnum(fixnum_t *d, const fixnum_multiplier16_t *m,
-		const uint16_t *in, size_t in_size) {
+		const uint16_t *in, size_t in_size, uint8_t shift) {
 	int i = 0;
 
 	fixnum_set_pattern(d, PATTERN_ZERO);
@@ -81,6 +83,8 @@ int base_decode_fixnum(fixnum_t *d, const fixnum_multiplier16_t *m,
 		assert(in[i] < m->value);
 		fixnum_add_uint16(d, in[i]);
 	} while (++i < in_size);
+
+	fixnum_shl(d, shift);
 
 	return 0; // ok
 }

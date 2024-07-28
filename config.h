@@ -39,7 +39,9 @@
 // and string terminator)
 #define LINE 	(WORDS*9 + 1)
 
-#define DISPLAYLINE 160
+
+//#define DISPLAYLINE 160
+#define DISPLAYLINE 256
 
 #define DIGEST_LEN 4
 
