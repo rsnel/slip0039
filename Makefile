@@ -18,7 +18,7 @@ endif
 wordlists.c: wordlists/wordlist_slip0039.txt wordlists/wordlist_bip39_english.txt \
 	wordlists/wordlist_diceware_dutch.txt wordlists/wordlist_bip39_spanish.txt \
 	wordlists/wordlist_diceware_german.txt wordlists/wordlist_base16.txt \
-	wordlists/wordlist_base58.txt wordlists/wordlist_bech32.txt \
+	wordlists/wordlist_base58.txt wordlists/wordlist_diceware_english.txt \
 	wordlists2c.sh
 	sh wordlists2c.sh > wordlists.c
 

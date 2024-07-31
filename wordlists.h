@@ -52,8 +52,6 @@ extern wordlist_t wordlist_diceware_dutch;
 
 
 extern wordlist_t wordlist_base58;
-
-extern wordlist_t wordlist_bech32;
 */
 
 void wordlists_init();

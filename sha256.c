@@ -11,11 +11,8 @@
  *
  * This file comes from https://ccodearchive.net/info/crypto/sha256.html
  *
- * Additions HMAC & PBKDF2 Copyright 2020 Rik Snel, also made available
- * under the MIT softare licence.
- *
  * ------
- * 
+ *
  * This file is part of slip0039.
  *
  * slip0039 is free software: you can redistribute it and/or modify

@@ -31,7 +31,7 @@
 
 typedef struct fixnum_properties_s {
 	uint8_t pure;
-	uint8_t log2;
+	uint16_t log2;
 } fixnum_properties_t;
 
 typedef struct fixnum_s {
@@ -45,10 +45,7 @@ typedef struct fixnum_multiplier16_s {
 } fixnum_multiplier16_t;
 
 typedef struct fixnum_divisor_s {
-	//const fixnum_multiplier_t *m;
 	fixnum_properties_t p;
-	//uint8_t pure; // power of two?
-	//uint8_t log2;
 	fixnum_t max_left_shift;
 } fixnum_divisor_t;
 
@@ -62,11 +59,19 @@ typedef struct fixnum_scratch_s {
 	fixnum_t a, b;
 } fixnum_scratch_t;
 
+void fixnum_printf(const fixnum_t*);
+
+void fixnum_show(const fixnum_t*, const char*);
+
+void fixnum_divisor_show(const fixnum_divisor_t*, const char*);
+
 void fixnum_scratch_init(fixnum_scratch_t*, uint8_t*, size_t, uint8_t*, size_t);
 
 void fixnum_set_pattern(fixnum_t*, fixnum_pattern_t);
 
 void fixnum_set_uint16(fixnum_t*, uint16_t);
+
+void fixnum_set_buffer(fixnum_t*, const uint8_t*, size_t);
 
 void fixnum_set_fixnum(fixnum_t*, const fixnum_t*);
 
@@ -80,8 +85,11 @@ void fixnum_init_fixnum(fixnum_t*, uint8_t*, size_t, const fixnum_t*);
 
 void fixnum_multiplier16_init(fixnum_multiplier16_t*, uint16_t);
 
-void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t*, const fixnum_multiplier16_t*,
-		uint8_t*, size_t);
+void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t*,
+		const fixnum_multiplier16_t*, uint8_t*, size_t);
+
+void fixnum_divisor_init_from_fixnum(fixnum_divisor_t*,
+		const fixnum_t*, uint8_t*, size_t);
 
 uint32_t fixnum_peek(const fixnum_t*, size_t, uint8_t);
 
@@ -90,6 +98,8 @@ void fixnum_poke(fixnum_t*, size_t, uint8_t, uint32_t);
 uint16_t fixnum_add_uint16(fixnum_t*, uint16_t);
 
 uint16_t fixnum_add_fixnum(fixnum_t*, const fixnum_t*, uint8_t);
+
+uint16_t fixnum_sub_uint16(fixnum_t*, uint16_t);
 
 uint16_t fixnum_sub_fixnum(fixnum_t*, const fixnum_t*, uint8_t);
 
@@ -103,6 +113,10 @@ uint16_t fixnum_shr_in(fixnum_t*, uint8_t, uint16_t);
 
 uint16_t fixnum_mul16(fixnum_t*, const fixnum_multiplier16_t*);
 
-uint16_t fixnum_div(fixnum_t*, const fixnum_divisor_t*, fixnum_scratch_t*);
+uint16_t fixnum_popcnt(const fixnum_t*);
+
+uint16_t fixnum_div(fixnum_t*, const fixnum_divisor_t*, fixnum_scratch_t*, int);
+
+uint16_t fixnum_calc_log2(const fixnum_t*);
 
 #endif /* SLIP0039_FIXNUM_H */

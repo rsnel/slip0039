@@ -41,7 +41,7 @@
 
 
 //#define DISPLAYLINE 160
-#define DISPLAYLINE 256
+#define DISPLAYLINE 1024
 
 #define DIGEST_LEN 4
 

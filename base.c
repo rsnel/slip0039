@@ -41,7 +41,7 @@ static void base_encode_fixnum_destructive(uint16_t *out, size_t out_size,
 	fixnum_divisor_init_from_multiplier16(&d, m,  bs->divisor_limbs, in->no_limbs);
 	fixnum_shr(in, shift);
 	for (int i = out_size - 1; i >= 0; i--)
-		out[i] = fixnum_div(in, &d, &bs->s);
+		out[i] = fixnum_div(in, &d, &bs->s, 0);
 }
 
 void base_encode_buffer(uint16_t *out, size_t out_size,

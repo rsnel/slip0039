@@ -1,4 +1,4 @@
-/* fixnum.c - a constant time bignum implementation for base encoding 
+/* fixnum.c - a constant time bignum implementation for base encoding
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -23,6 +23,7 @@
 
 #include "fixnum.h"
 #include "cthelp.h"
+#include "utils.h"
 
 void fixnum_init(fixnum_t *f, uint8_t *limbs, size_t no_limbs) {
 	assert(f && no_limbs > 0 && limbs);
@@ -40,6 +41,26 @@ void fixnum_init_buffer(fixnum_t *f, uint8_t *limbs, size_t no_limbs,
 		const uint8_t *buffer, size_t buffer_size) {
 	fixnum_init(f, limbs, no_limbs);
 	fixnum_set_buffer(f, buffer, buffer_size);
+}
+
+void fixnum_printf(const fixnum_t *f) {
+        char c[2];
+        for (int nibble = (f->no_limbs<<1) - 1; nibble >= 0; nibble--) {
+                memset(c, 0, sizeof(c));
+                wordlist_dereference(&wordlist_base16, c, sizeof(c), fixnum_peek(f, nibble<<2, 4));
+                putchar(c[0]);
+        }
+}
+
+void fixnum_show(const fixnum_t *f, const char *name) {
+        printf("%s: ", name);
+        fixnum_printf(f);
+        printf("\n");
+}
+
+void fixnum_divisor_show(const fixnum_divisor_t *d, const char *name) {
+        printf("log2=%d pure=%d ", d->p.log2, d->p.pure);
+        fixnum_show(&d->max_left_shift, "mls");
 }
 
 void fixnum_set_pattern(fixnum_t *f, fixnum_pattern_t pattern) {
@@ -171,7 +192,7 @@ void fixnum_multiplier16_init(fixnum_multiplier16_t *m, uint16_t value) {
 }
 
 void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t *d, const fixnum_multiplier16_t *m, uint8_t *limbs, size_t no_limbs) {
-	assert(d && m && limbs && no_limbs > 1);
+	assert(d && m && limbs && no_limbs > 1 && m->value > 1);
 	d->p = m->p;
 	fixnum_init_uint16(&d->max_left_shift, limbs, no_limbs, m->value);
 	d->max_left_shift.limbs[0] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-2];
@@ -179,6 +200,50 @@ void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t *d, const fixnum_mul
 	d->max_left_shift.limbs[1] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-1];
 	if (no_limbs > 2) d->max_left_shift.limbs[d->max_left_shift.no_limbs-1] = 0;
 	fixnum_shl(&d->max_left_shift, 16 - m->p.log2 - 1);
+}
+
+// a nice implementation of John Bollinger: https://stackoverflow.com/a/51388846
+static uint16_t popcnt_helper(uint8_t n) {
+        n = (n&0x55) + ((n>>1)&0x55);
+        n = (n&0x33) + ((n>>2)&0x33);
+        n = (n&0x0f) + ((n>>4)&0x0f);
+        return n;
+}
+
+uint16_t fixnum_popcnt(const fixnum_t *f) {
+	assert(f && f->limbs && f->no_limbs > 0);
+
+	uint16_t n;
+
+	for (int i = 0; i < f->no_limbs; i++) {
+		n += popcnt_helper(f->limbs[i]);
+	}
+
+	return n;
+}
+
+void fixnum_divisor_init_from_fixnum(fixnum_divisor_t *d, const fixnum_t *in, uint8_t *limbs, size_t no_limbs) {
+	assert(d && in && limbs && no_limbs > 1);
+	uint16_t popcnt = fixnum_popcnt(in);
+
+	// we dont want the divisor to be 0
+	assert(popcnt > 0);
+	d->p.pure = (popcnt == 1);
+	fixnum_init_fixnum(&d->max_left_shift, limbs, no_limbs, in);
+
+	fixnum_set_fixnum(&d->max_left_shift, in);
+
+	uint16_t msb = d->p.log2 = 8*no_limbs - 1;
+
+	// now check if the last bit is 1 and shift left until it is, we calculate log2
+	// and compute the max left shifted value
+	while (!fixnum_peek(&d->max_left_shift, msb, 1)) {
+		d->p.log2--;
+		fixnum_shl(&d->max_left_shift, 1);
+	}
+
+	// we want the divisor to be at least 2
+	assert(d->p.log2);
 }
 
 uint32_t fixnum_peek(const fixnum_t *f, size_t offset, uint8_t size) {
@@ -285,6 +350,29 @@ uint16_t fixnum_add_uint16(fixnum_t *f, uint16_t operand) {
 	return carry;
 }
 
+uint16_t fixnum_sub_uint16(fixnum_t *f, uint16_t operand) {
+	assert(f && f->no_limbs >= 2);
+	uint16_t acc;
+	uint8_t carry;
+	size_t idx = f->no_limbs - 2;
+
+	acc = f->limbs[f->no_limbs-1] - (operand&0xff);
+	f->limbs[f->no_limbs-1] = acc&0xff;
+	carry = acc>>15;
+
+	acc = f->limbs[f->no_limbs-2] - (operand>>8) - carry;
+	f->limbs[f->no_limbs-2] = acc&0xff;
+	carry = acc>>15;
+
+	while (idx-- > 0) {
+		acc = f->limbs[idx] - carry;
+		f->limbs[idx] = acc&0xff;
+		carry = acc>>15;
+	}
+
+	return carry;
+}
+
 uint16_t fixnum_add_fixnum(fixnum_t *f, const fixnum_t *s, uint8_t mask) {
 	assert(f && s && f->no_limbs > 1 && f->no_limbs == s->no_limbs);
 	uint16_t acc = 0;
@@ -335,16 +423,24 @@ uint16_t fixnum_mul16(fixnum_t *f, const fixnum_multiplier16_t *m) {
 	return acc_high + acc_low;
 }
 
-uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s) {
+uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s, int dividendmaxplus1) {
 	assert(f && d && f->no_limbs == d->max_left_shift.no_limbs && f->no_limbs >= 2);
+	assert(dividendmaxplus1 == 0 || dividendmaxplus1 == 1);
+
+	for (int i = 0; i < f->no_limbs; i++)
+		f->limbs[i] &= -(1 - dividendmaxplus1);
 
 	// s->a is used as a shift register and s->b is brought to zero
 	if (d->p.pure)
-		return fixnum_shr(f, d->p.log2);
+		return fixnum_shr_in(f, d->p.log2, dividendmaxplus1);
 
 	assert(s->a.no_limbs >= f->no_limbs && s->b.no_limbs >= f->no_limbs);
 
+	//printf("f->no_limbs=%ld\n", f->no_limbs);
 	fixnum_set_fixnum(&s->b, f);
+	if (s->b.no_limbs > f->no_limbs && dividendmaxplus1) s->b.limbs[s->b.no_limbs - f->no_limbs - 1] = 1;
+	//fixnum_show(&s->b, "starttest");
+
 	fixnum_set_pattern(f, PATTERN_ZERO);
 	fixnum_set_fixnum(&s->a, &d->max_left_shift);
 	size_t bit = (f->no_limbs<<3) - d->p.log2;
@@ -353,10 +449,14 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s)
 
 	while (bit-- > 0) {
 		fixnum_shl(f, 1);
-		test = fixnum_sub_fixnum(&s->b, &s->a, 0xff);
+		test = fixnum_sub_fixnum(&s->b, &s->a, 0xff)&(1 - dividendmaxplus1);
+		//fixnum_show(&s->b, "test");
 		fixnum_add_uint16(f, 1 - test);
 		fixnum_add_fixnum(&s->b, &s->a, -test);
 		fixnum_shr(&s->a, 1);
+		//fixnum_show(&s->a, "remove");
+		//fixnum_show(f, "quotient");
+		dividendmaxplus1 = 0;
 	}
 
 	ret = s->b.limbs[s->b.no_limbs-1] + (s->b.limbs[s->b.no_limbs-2]<<8);
@@ -365,3 +465,14 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s)
 
 	return ret;
 }
+
+uint16_t fixnum_calc_log2(const fixnum_t *f) {
+	int bits = f->no_limbs*8;
+	uint16_t log2 = 0xffff;
+	for (int i = 0; i < bits; i++) {
+		if (fixnum_peek(f, i, 1)) log2 = i;
+	}
+	assert(log2 != 0xffff);
+	return log2;
+}
+

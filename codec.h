@@ -30,7 +30,7 @@
 typedef struct {
 	shashtbl_elt_t elt;
 	const char *info;
-	void (*encode)(uint8_t *out, size_t *n, lrcipher_t*, uint16_t*, size_t, const char *in, wordlist_t*);
+	void (*encode)(uint8_t *out, size_t *n, lrcipher_t*, uint16_t*, size_t, const char *in, wordlist_t*, const char*, size_t, base_scratch_t*);
 	void (*decode)(char *out, size_t out_size, lrcipher_t*, uint16_t*, size_t, const uint8_t *in, size_t n, wordlist_t *w, base_scratch_t*);
 	const char *default_language;
 	shashtbl_t wordlists;

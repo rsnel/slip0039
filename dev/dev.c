@@ -1,6 +1,7 @@
 #include <string.h>
 #include "dev.h"
 
+#if 0
 void fixnum_divisor_show(const fixnum_divisor_t *d, const char *name) {
         printf("log2=%d pure=%d ", d->p.log2, d->p.pure);
         fixnum_show(&d->max_left_shift, "mls");
@@ -20,4 +21,4 @@ void fixnum_show(const fixnum_t *f, const char *name) {
         fixnum_printf(f);
         printf("\n");
 }
-
+#endif

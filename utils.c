@@ -113,7 +113,7 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 	*end = NULL;
 
         for (int i = 0; i < w->m.value; i++)
-                match &= i|(-(wordeq(word, w->words[i], end, w->max_word_length != w->min_word_length)));
+                match &= i|(-(wordeq(word, w->words[i], end,w->max_word_length != w->min_word_length)));
 
 	if (match == -1) {
 		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };

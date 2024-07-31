@@ -46,13 +46,13 @@ slip0039_mnemonic_t mnemonic; // buffer to contain one mnemonic
 pbkdf2_t prng;                // PRNG for shares and part of digests
 char input_base16[LINE]; // space for (BLOCKS<<2) nibbles, \n newline and \0
 //char input_base16[(BLOCKS<<2)+1+1]; // space for (BLOCKS<<2) nibbles, \n newline and \0
-uint16_t input[BLOCKS<<2];    // space for input
+uint16_t input[BLOCKS<<3];    // space for input
 base_scratch_t bs;	      // scratch space for base encoding
 uint8_t base_scratch_space[(BLOCKS<<1)<<2]; // actual scratch space
 uint8_t slip0039_header[5];
 
 // seed for PRNG
-const char *seed = NULL;
+char seed[512];
 size_t seed_len = 0;
 
 #define STACK_CLEAR_SIZE 256 * 1024
@@ -426,7 +426,7 @@ void slip0039_add_plaintext(slip0039_t *s, codec_t *c) {
 
 	(c->encode)(s->storage_plaintext, &s->n, &s->l,
 			input, sizeof(input)/sizeof(*input),
-			input_base16, wordlist);
+			input_base16, wordlist, seed, seed_len, &bs);
 
 	s->plaintext = s->storage_plaintext;
 
@@ -435,6 +435,22 @@ void slip0039_add_plaintext(slip0039_t *s, codec_t *c) {
 	fgetc(stdin);
 
 	if (!feof(stdin)) WARNING("data detected after plaintext on input");
+}
+
+void slip0039_add_seed(slip0039_t *s) {
+	uint8_t sha[SHA256_LEN];
+
+	// now read the seed for the prng
+	seed_len = read_stringLF(seed, sizeof(seed), stdin, "seed", 0);
+#if defined(__APPLE__) && defined(__MACH__)
+	mlock_ptr(seed, seed_len);
+#endif
+	if (seed_len < 64) WARNING("specified value for SEED is very "
+				"short, consider using a longer value of at least 64 alphanumeric bytes");
+	sha256(sha, seed, seed_len);
+       	// drop MSB to get 15 bits
+	s->id = 0x7fff&((sha[0]<<8) + sha[1]);
+
 }
 
 void slip0039_add_mnemonics(slip0039_t *s, FILE *fp) {
@@ -648,21 +664,12 @@ void parse_options_split(slip0039_t *s, char *arg,
 		slip0039_parse_state_t *state, int *max_T) {
 	char *end;
 
-	if (*state == SLIP0039_PARSE_STATE_SEED) {
-		uint8_t sha[SHA256_LEN];
+	/*if (*state == SLIP0039_PARSE_STATE_SEED) {
 		assert(!seed && seed_len == 0);
 		seed = arg;
 		seed_len = strlen(seed);
-#if defined(__APPLE__) && defined(__MACH__)
-		mlock_ptr(seed, seed_len);
-#endif
-		if (seed_len < 4) WARNING("specified value for SEED is very "
-				"short, consider using a longer value");
-		sha256(sha, seed, seed_len);
-	       	// drop MSB to get 15 bits
-		s->id = 0x7fff&((sha[0]<<8) + sha[1]);
 		*state = SLIP0039_PARSE_STATE_EXP;
-	} else if (*state == SLIP0039_PARSE_STATE_EXP) {
+	} else*/ if (*state == SLIP0039_PARSE_STATE_EXP) {
 		s->e = parse_number(arg, "iteration exponent", 0, 32, &end, 1);
 		*state = SLIP0039_PARSE_STATE_GT;
 	} else if (*state == SLIP0039_PARSE_STATE_GT) {
@@ -691,7 +698,7 @@ void parse_options_split(slip0039_t *s, char *arg,
 }
 
 void parse_options(slip0039_t *s, int argc, char *argv[]) {
-	slip0039_parse_state_t state = SLIP0039_PARSE_STATE_SEED;
+	slip0039_parse_state_t state = SLIP0039_PARSE_STATE_EXP;
 	int max_T = 0;
 	int optind = 1;
 
@@ -705,8 +712,11 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 				if (separator) *separator = '\0';
 				codec = codec_find(argv[optind]);
 				if (!codec) FATAL("codec %s not available", argv[optind]);
-				if (!separator) wordlist = shashtbl_search_elt_bykey(
+				if (!separator) {
+					wordlist = shashtbl_search_elt_bykey(
 						&codec->wordlists, codec->default_language);
+					assert(wordlist); // the default should be available
+				}
 				else wordlist = shashtbl_search_elt_bykey(
 						&codec->wordlists,++separator);
 				if (!wordlist)
@@ -778,11 +788,14 @@ int main(int argc, char *argv[]) {
 	slip0039_add_passphrase(&s, stdin);
 
 	if (mode == SLIP0039_MODE_SPLIT) {
+		/* read seed for encoding on second line of stdin */
+		slip0039_add_seed(&s);
+
 		/* we should have the ID, this is needed to finish
 		 * initializing lrcipher */
 		lrcipher_finalize_passphrase(&s.l, "shamir", 6, s.id);
 
-		/* read Master Secret (MS) */
+		/* read Master Secret (MS) and seed */
 		slip0039_add_plaintext(&s, codec);
 
 		/* encrypt plaintext to EMS */

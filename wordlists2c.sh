@@ -105,20 +105,18 @@ format_wordlist slip0039 "" \
 #    https://github.com/bitcoin/bips/raw/master/bip-0039/english.txt
 format_wordlist bip39 english \
 	2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda 2048
-# disabled due to UTF8 woes
-#format_wordlist bip39 spanish \
-#	46846a5a0139d1e3cb77293e521c2865f7bcdb82c44e8d0a06a2cd0ecba48c0b 2048
+format_wordlist bip39 spanish \
+	46846a5a0139d1e3cb77293e521c2865f7bcdb82c44e8d0a06a2cd0ecba48c0b 2048
+format_wordlist diceware english \
+	5bd86896c6a1ebae137970f4bdc5b084b037ef7792fa4934477bef4748e930f0 7776
 format_wordlist diceware german \
 	86eaf47b43df1c7f926b1d2f4cc724141de626c601a32562f28ec204fb3b9607 7776
-# disabled due to UTF8 woes
-#format_wordlist diceware dutch \
-#	7086f199c1366aff1f48257c9861574b485ad3763442adcaf4fbbd16bce5276c 7776
+format_wordlist diceware dutch \
+	7086f199c1366aff1f48257c9861574b485ad3763442adcaf4fbbd16bce5276c 7776
 format_wordlist base16 "" \
 	0bedb386a64d361e65bdf47702cdde4ad44491960c28589bdedd29916a0581d6 16
 format_wordlist base58 "" \
 	7c67430686b77fac7051d8ea4372dcc02884533134544a3355caa5967a0687d1 58
-format_wordlist bech32 "" \
-	cf0555e8aab8ffc79a19bbc1eb492f27e0d93f35a931cf31be665c9921032ed4 32
 
 #echo $DECL
 

@@ -1,5 +1,5 @@
 /* pbkdf2.c - implementation of PBKDF2_HMAC_SHA256
- * 
+ *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
  * This file is part of slip0039.

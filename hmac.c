@@ -1,5 +1,5 @@
 /* hmac.c - implementation of HMAC_SHA256
- * 
+ *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
  * This file is part of slip0039.
@@ -56,7 +56,7 @@ static void finish_processing_key(hmac_t *h) {
 		sha256_done(&h->ctx, sha, SHA256_LEN);
 		memcpy(h->buf, sha, SHA256_LEN);
 		h->size = SHA256_LEN;
-		
+
 		// reinit h->ctx
 		sha256_init(&h->ctx);
 	}
@@ -96,7 +96,7 @@ void hmac_done(hmac_t *h, uint8_t *sha, size_t size) {
 	sha256_done(&h->ctx, sha, size);
 	wipememory(h, sizeof(*h));
 }
-	
+
 void hmac(uint8_t *sha, size_t sha_size, const void *k, size_t k_size, const void *p, size_t p_size)
 {
 	hmac_t h;

@@ -4,7 +4,7 @@
 
 `$ slip0039 [ -d ] [ -q ] recover`
 
-`$ slip0039 [ -d ] [ -q ] split <SEED> <EXP> <GT> <XofY>..`
+`$ slip0039 [ -d ] [ -q ] split <EXP> <GT> <XofY>..`
 
 option `-d` (debug) displays the shares, secrets and digests in the known groups
 at program exit
@@ -26,18 +26,20 @@ are
 ### Mode `split`
 
 in mode split, the first line of standard input is also the passphrase, the
-second line of standard input should be the master secret in hex
+second line of standard input should be entropy for the PRNG and the third line should be the master secret
 
-on the commandline the `SEED`, the iteration `EXP`onent and the specifications of
+on the commandline the iteration `EXP`onent and the specifications of
 groups must be given
 
 the `ID` is the low 15 bits of the first 2 bytes of SHA256 of `SEED`
 
-shares and the `n - 4` bytes of the digest share are computed with PBKDF2 with the
-`EMS || SEED` as password and other parameters that decide the structure of the
-split as salt. If `SEED` is not kept secret, then an adversary that already knows
-`EMS`, can use it to guess the structure of the split i.e. how many shares each
-group has.
+shares and the `n - 4` bytes of the digest share are computed with PBKDF2 with
+the `EMS || SEED` as password and other parameters that decide the structure of
+the split as salt. If `SEED` is not kept secret, then an adversary that already
+knows `EMS`, can use it to guess the structure of the split i.e. how many
+shares each group has. Also when a codec is used that needs some random data, like diceware, the correctness of the passphrase can be proven if one knows the `SEED`. Treat is as confidential as the secret and the passphrase.
+
+All data supplied to this program on standard input should be treated as highly confidential. `SEED` should be destroyed after a single use
 
 The first `XofY` reflects the distribution of shares in the first group.
 The second `XofY` reflects the distribution of shares in the second group.
@@ -72,6 +74,22 @@ The program is known to work on Linux and MacOS. Issues pertaining to MacOS not 
 ## Authors
 
 The project was started by Rik Snel (https://github.com/rsnel/). MacOS compatibilty and various fixes where offered by James Z.M. Gao  (https://github.com/gzm55).
+
+The sha256 code is copyright (c) 2014 The Bitcoin Core developers under the MIT license.
+
+The utf8 code is:
+
+* Copyright (c) 2014-2021 Steven G. Johnson, Jiahao Chen, Peter Colberg, Tony Kelman, Scott P. Jones, and other contributors.
+
+* Copyright (c) 2009 Public Software Group e. V., Berlin, Germany
+
+under the MIT license.
+
+Wordlists:
+
+diceware English
+
+diceware German
 
 ## Examples
 
