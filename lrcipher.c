@@ -28,7 +28,7 @@
 void lrcipher_init(lrcipher_t *l) {
 	assert(l);
 	for (uint8_t i = 0; i < 4; i++) {
-		pbkdf2_init(&l->rounds[i]);
+		pbkdf2_init(&l->rounds[i], HASH_SHA256);
 		pbkdf2_update_password(&l->rounds[i], &i, 1);
 	}
 }

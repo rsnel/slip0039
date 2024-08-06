@@ -1,4 +1,4 @@
-/* hmac.h - interface to HMAC_SHA256
+/* hmac.h - interface to HMAC
  * 
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -19,16 +19,18 @@
  */
 #ifndef SLIP0039_HMAC_H
 #define SLIP0039_HMAC_H
-#include "sha256.h"
+#include "hash.h"
 
 typedef struct hmac_s {
 	int state; // 0: key_plain, 1: key_hash, 2: data
-	struct sha256_ctx ctx; 
-	unsigned char buf[SHA256_BLOCKSIZE];
+	hash_type_t type;
+	hash_t h;
+	unsigned char buf[HASH_MAX_BLOCKSIZE];
+	//unsigned char buf[SHA256_BLOCKSIZE];
 	size_t size;
 } hmac_t;
 
-void hmac_init(hmac_t*);
+void hmac_init(hmac_t*, hash_type_t);
 
 void hmac_update_key(hmac_t*, const void*, size_t);
 
@@ -38,6 +40,6 @@ void hmac_update_data_uint32be(hmac_t*, uint32_t);
 
 void hmac_done(hmac_t*, uint8_t*, size_t);
 
-void hmac(uint8_t *sha, size_t, const void*, size_t, const void*, size_t);
+void hmac(uint8_t *sha, size_t, const void*, size_t, const void*, size_t, hash_type_t);
 
 #endif /* SLIP0039_HMAC_H */

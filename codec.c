@@ -84,7 +84,7 @@ static void bip39_encode(uint8_t *out, size_t *n,
 
 	*n = 4*no_input/3;
 
-	sha256(s, out, *n);
+	hash(s, sizeof(scratch), out, *n, HASH_SHA256);
 
 	uint8_t checksum = (*s)&(0xff<<(8 - no_input/3));
 
@@ -107,7 +107,7 @@ static void bip39_decode(char *out, size_t out_size, lrcipher_t *l,
 			      /* after the plaintext */
 
 	// calculate the checksum
-	sha256(((uint8_t*)in) + n, in, n);
+	hash(((uint8_t*)in) + n, n, in, n, HASH_SHA256);
 
 	base_encode_buffer(scratch, n/4*3, &w->m, in, n + 1, bs, 8 - n/4);
 
@@ -231,7 +231,7 @@ static void diceware_encode(uint8_t *out, size_t *n,
 	fixnum_show(&h, "quotient");
 
 	fixnum_show(&g, "random before");
-	pbkdf2(s, "select", 6, seed, seed_len, 1, *n);
+	pbkdf2(s, "select", 6, seed, seed_len, 1, *n, HASH_SHA256);
 	fixnum_show(&g, "random after");
 
 	//fixnum_multiplier16_t p;

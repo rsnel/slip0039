@@ -1,4 +1,4 @@
-/* hmac.c - implementation of HMAC_SHA256
+/* hmac.c - implementation of HMAC
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -24,19 +24,20 @@
 #include "utils.h"
 #include "endian.h"
 
-void hmac_init(hmac_t *h) {
+void hmac_init(hmac_t *h, hash_type_t type) {
 	h->state = 0;
-	sha256_init(&h->ctx);
+	h->type = type;
+	hash_init(&h->h, type);
 	h->size = 0;
 }
 
 void hmac_update_key(hmac_t *h, const void *buf, size_t size) {
 	assert(h->state != 2);
 	if (h->state == 0) {
-		if (size + h->size > SHA256_BLOCKSIZE) {
-			/* key has gotten longer than 64 bytes,
-			 * use sha256 to hash it to 32 bytes */
-			sha256_update(&h->ctx, h->buf, h->size);
+		if (size + h->size > h->h.f->blocksize) {
+			/* key has gotten longer than the blocksize
+			 * of the selected hashfunction, reduce it */
+			hash_update(&h->h, h->buf, h->size);
 			h->state = 1;
 		} else {
 			memcpy(h->buf + h->size, buf, size);
@@ -45,35 +46,35 @@ void hmac_update_key(hmac_t *h, const void *buf, size_t size) {
 	}
 	/* fallthrough in the case that h->state is set to 1 */
 	if (h->state == 1) {
-		sha256_update(&h->ctx, buf, size);
+		hash_update(&h->h, buf, size);
 	}
 }
 
 static void finish_processing_key(hmac_t *h) {
 	assert(h->state != 2);
 	if (h->state == 1) {
-		uint8_t sha[SHA256_LEN];
-		sha256_done(&h->ctx, sha, SHA256_LEN);
-		memcpy(h->buf, sha, SHA256_LEN);
-		h->size = SHA256_LEN;
+		uint8_t sha[h->h.f->len];
+		hash_finalize(&h->h, sha, h->h.f->len);
+		memcpy(h->buf, sha, h->h.f->len);
+		h->size = h->h.f->len;
 
-		// reinit h->ctx
-		sha256_init(&h->ctx);
+		// reinit h->h
+		hash_init(&h->h, h->type);
 	}
 
 	// set remainder of buffer to zero
-	memset(h->buf + h->size, 0, SHA256_BLOCKSIZE - h->size);
+	memset(h->buf + h->size, 0, h->h.f->blocksize - h->size);
 
 	// do XOR for ipad
-	for (int i = 0; i < SHA256_BLOCKSIZE; i++) h->buf[i] ^= 0x36;
+	for (int i = 0; i < h->h.f->blocksize; i++) h->buf[i] ^= 0x36;
 
-	sha256_update(&h->ctx, h->buf, SHA256_BLOCKSIZE);
+	hash_update(&h->h, h->buf, h->h.f->blocksize);
 	h->state = 2;
 }
 
 void hmac_update_data(hmac_t *h, const void *buf, size_t size) {
 	if (h->state != 2) finish_processing_key(h);
-	sha256_update(&h->ctx, buf, size);
+	hash_update(&h->h, buf, size);
 }
 
 void hmac_update_data_uint32be(hmac_t *h, uint32_t val) {
@@ -82,26 +83,26 @@ void hmac_update_data_uint32be(hmac_t *h, uint32_t val) {
 }
 
 void hmac_done(hmac_t *h, uint8_t *sha, size_t size) {
-	uint8_t buf[SHA256_LEN];
+	uint8_t buf[h->h.f->len];
 	if (h->state != 2) finish_processing_key(h);
-	sha256_done(&h->ctx, buf, SHA256_LEN);
+	hash_finalize(&h->h, buf, h->h.f->len);
 
 	// remove XOR for ipad and do XOR for opad
-	for (int i = 0; i < SHA256_BLOCKSIZE; i++)
+	for (int i = 0; i < h->h.f->blocksize; i++)
 		h->buf[i] ^= 0x36^0x5c;
 
-	sha256_init(&h->ctx);
-	sha256_update(&h->ctx, h->buf, SHA256_BLOCKSIZE);
-	sha256_update(&h->ctx, buf, SHA256_LEN);
-	sha256_done(&h->ctx, sha, size);
+	hash_init(&h->h, h->type);
+	hash_update(&h->h, h->buf, h->h.f->blocksize);
+	hash_update(&h->h, buf, h->h.f->len);
+	hash_finalize(&h->h, sha, size);
 	wipememory(h, sizeof(*h));
 }
 
-void hmac(uint8_t *sha, size_t sha_size, const void *k, size_t k_size, const void *p, size_t p_size)
+void hmac(uint8_t *sha, size_t sha_size, const void *k, size_t k_size, const void *p, size_t p_size, hash_type_t type)
 {
 	hmac_t h;
 
-	hmac_init(&h);
+	hmac_init(&h, type);
 	hmac_update_key(&h, k, k_size);
 	hmac_update_data(&h, p, p_size);
 	hmac_done(&h, sha, sha_size);

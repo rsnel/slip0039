@@ -447,7 +447,7 @@ void slip0039_add_seed(slip0039_t *s) {
 #endif
 	if (seed_len < 64) WARNING("specified value for SEED is very "
 				"short, consider using a longer value of at least 64 alphanumeric bytes");
-	sha256(sha, seed, seed_len);
+	hash(sha, SHA256_LEN, seed, seed_len, HASH_SHA256);
        	// drop MSB to get 15 bits
 	s->id = 0x7fff&((sha[0]<<8) + sha[1]);
 
@@ -492,7 +492,7 @@ void init_prng_pbkdf2(pbkdf2_t *p, slip0039_t *s, const char *seed, size_t seed_
 	 *
 	 * all numbers are encoded as 8 bit integers */
 	assert(s->root.secret);
-	pbkdf2_init(p);
+	pbkdf2_init(p, HASH_SHA256);
 	pbkdf2_update_password(p, s->root.secret, s->n);
 	pbkdf2_update_password(p, seed, seed_len);
 	pbkdf2_update_salt_uint8(p, s->e);

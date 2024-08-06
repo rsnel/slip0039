@@ -1,4 +1,4 @@
-/* sha256.h - interface to (HMAC_)SHA256 and PBKDF2
+/* sha256.h - interface to SHA256
  *
  * ------
  *
@@ -8,11 +8,6 @@
  * Copyright (c) 2014 The Bitcoin Core developers
  * Distributed under the MIT software license, see the accompanying
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.
- *
- * This file comes from https://ccodearchive.net/info/crypto/sha256.html
- *
- * Additions HMAC & PBKDF2 Copyright 2020 Rik Snel, also made available
- * under the MIT softare licence.
  *
  * ------
  * 
@@ -35,10 +30,9 @@
 #define SLIP0039_SHA256_H
 #include <stdint.h>
 #include <stdlib.h>
-#include "config.h"
 
 #define SHA256_LEN		32
-#define SHA256_BLOCKSIZE 	64
+#define SHA256_BLOCKSIZE	64
 
 /**
  * struct sha256_ctx - structure to store running context for sha256
@@ -117,8 +111,6 @@ void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size);
  * Note that @ctx is *destroyed* by this, and must be reinitialized.
  * To avoid that, pass a copy instead.
  */
-void sha256_done(struct sha256_ctx *sha256, uint8_t *sha, size_t size);
-
-void sha256(uint8_t*, const void*, size_t);
+void sha256_finalize(struct sha256_ctx *sha256, uint8_t *sha, size_t size);
 
 #endif /* SLIP0039_SHA256_H */

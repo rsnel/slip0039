@@ -177,7 +177,7 @@ static void add(struct sha256_ctx *ctx, const void *p, size_t len) {
 		data += 64;
 		len -= 64;
 	}
-	    
+
 	if (len) {
 		/* Fill the buffer with what remains. */
 		memcpy(ctx->buf.u8 + bufsize, data, len);
@@ -195,10 +195,12 @@ void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size) {
 	add(ctx, p, size);
 }
 
-void sha256_done(struct sha256_ctx *ctx, uint8_t *sha, size_t size) {
+void sha256_finalize(struct sha256_ctx *ctx, uint8_t *sha, size_t size) {
 	static const unsigned char pad[64] = {0x80};
 	uint64_t sizedesc;
 	size_t i;
+
+	assert(size%4 == 0 && size <= SHA256_LEN);
 
 	sizedesc = cpu_to_be64((uint64_t)ctx->bytes << 3);
 	/* Add '1' bit to terminate, then all 0 bits, up to next block - 8. */
@@ -211,11 +213,4 @@ void sha256_done(struct sha256_ctx *ctx, uint8_t *sha, size_t size) {
 		((uint32_t*)sha)[i] = cpu_to_be32(ctx->s[i]);
 
 	invalidate_sha256(ctx);
-}
-
-void sha256(uint8_t *out, const void *in, size_t in_size) {
-	struct sha256_ctx ctx;
-	sha256_init(&ctx);
-	sha256_update(&ctx, in, in_size);
-	sha256_done(&ctx, out, SHA256_LEN);
 }

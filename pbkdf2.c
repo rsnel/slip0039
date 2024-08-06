@@ -1,4 +1,4 @@
-/* pbkdf2.c - implementation of PBKDF2_HMAC_SHA256
+/* pbkdf2.c - implementation of PBKDF2_HMAC
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -20,19 +20,18 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include "sha256.h"
 #include "pbkdf2.h"
 #include "endian.h"
 #include "utils.h"
 
-void pbkdf2_init(pbkdf2_t *p) {
+void pbkdf2_init(pbkdf2_t *p, hash_type_t type) {
 	assert(p);
-	assert(SHA256_LEN%8 == 0);
 	p->state = 0;
 	p->index = 1;
 	p->generated = 0;
-	hmac_init(&p->pw);
-	p->tmp_offset = SHA256_LEN;
+	hmac_init(&p->pw, type);
+	assert(p->pw.h.f->len%8 == 0);
+	p->tmp_offset = p->pw.h.f->len;
 }
 
 void pbkdf2_update_password(pbkdf2_t *p, const void *buf, size_t size) {
@@ -69,16 +68,16 @@ void pbkdf2_finalize_salt(pbkdf2_t *p, uint64_t iterations) {
 }
 
 static void helper(pbkdf2_t *p) {
-	uint8_t sha[SHA256_LEN];
+	uint8_t sha[p->pw.h.f->len];
 	hmac_t h = p->salt;
 	hmac_update_data_uint32be(&h, p->index++);
-	hmac_done(&h, sha, SHA256_LEN);
-	memcpy(p->tmp, sha, SHA256_LEN);
+	hmac_done(&h, sha, p->pw.h.f->len);
+	memcpy(p->tmp, sha, p->pw.h.f->len);
 	for (int i = 1; i < p->iterations; i++) {
 		h = p->pw;
-		hmac_update_data(&h, sha, SHA256_LEN);
-		hmac_done(&h, sha, SHA256_LEN);
-		for (int j = 0; j < SHA256_LEN/8; j++)
+		hmac_update_data(&h, sha, p->pw.h.f->len);
+		hmac_done(&h, sha, p->pw.h.f->len);
+		for (int j = 0; j < p->pw.h.f->len/8; j++)
 			((uint64_t*)p->tmp)[j] ^= ((uint64_t*)sha)[j];
 	}
 	p->tmp_offset = 0;
@@ -87,10 +86,10 @@ static void helper(pbkdf2_t *p) {
 void pbkdf2_generate(pbkdf2_t *p, void *buf, size_t dkLen) {
 	size_t len;
 	assert(p->state == 2);
-	assert(p->tmp_offset <= SHA256_LEN && p->tmp_offset >= 0);
+	assert(p->tmp_offset <= p->pw.h.f->len && p->tmp_offset >= 0);
 	while (dkLen > 0) {
-		if (p->tmp_offset == SHA256_LEN) helper(p);
-		len = (dkLen > SHA256_LEN - p->tmp_offset)?(SHA256_LEN - p->tmp_offset):dkLen;
+		if (p->tmp_offset == p->pw.h.f->len) helper(p);
+		len = (dkLen > p->pw.h.f->len - p->tmp_offset)?(p->pw.h.f->len - p->tmp_offset):dkLen;
 		memcpy(buf, p->tmp + p->tmp_offset, len);
 		dkLen -= len;
 		buf += len;
@@ -110,9 +109,9 @@ void pbkdf2_done(pbkdf2_t *p, void *buf, size_t dkLen, uint64_t iterations) {
 }
 
 void pbkdf2(void *buf, const void *password, size_t password_size,
-		const void *salt, size_t salt_size, uint64_t iterations, size_t dkLen) {
+		const void *salt, size_t salt_size, uint64_t iterations, size_t dkLen, hash_type_t type) {
 	pbkdf2_t p;
-	pbkdf2_init(&p);
+	pbkdf2_init(&p, type);
 	pbkdf2_update_password(&p, password, password_size);
 	pbkdf2_update_salt(&p, salt, salt_size);
 	pbkdf2_done(&p, buf, dkLen, iterations);

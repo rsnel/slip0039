@@ -1,4 +1,4 @@
-/* pbk2df.h - interface to PBKDF2_HMAC_SHA256
+/* pbk2df.h - interface to PBKDF2_HMAC
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -27,12 +27,12 @@ typedef struct pbkdf2_s {
 	int state; // 0: password, 1: salt, 2: output
 	hmac_t pw, salt;
 	uint64_t iterations;
-	unsigned char tmp[SHA256_LEN];
+	unsigned char tmp[HASH_MAX_LEN];
 	size_t tmp_offset, generated;
 	uint32_t index;
 } pbkdf2_t;
 
-void pbkdf2_init(pbkdf2_t*);
+void pbkdf2_init(pbkdf2_t*, hash_type_t);
 
 void pbkdf2_update_password(pbkdf2_t*, const void*, size_t);
 
@@ -48,6 +48,6 @@ void pbkdf2_finished(pbkdf2_t*);
 
 void pbkdf2_done(pbkdf2_t*, void*, size_t, uint64_t);
 
-void pbkdf2(void *, const void*, size_t, const void*, size_t, uint64_t, size_t);
+void pbkdf2(void *, const void*, size_t, const void*, size_t, uint64_t, size_t, hash_type_t);
 
 #endif /* SLIP0039_PBKDF2_H */

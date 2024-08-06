@@ -1,4 +1,4 @@
-/* shamir.c - implementation shamir splitting and recovery
+/* digest.c - implementation of computing and verifying digest
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -27,11 +27,11 @@
 void digest_verify(const uint8_t *digest, const uint8_t *secret, size_t n) {
 	assert(digest && secret && n >= 16);
 	uint8_t computed[DIGEST_LEN];
-	
+
 	// compute HMAC-SHA256 with last n - 4 bytes of digest share (254)
 	// as key and the secret share (255) as data
 	hmac(computed, DIGEST_LEN, digest + DIGEST_LEN,
-			n - DIGEST_LEN, secret, n);
+			n - DIGEST_LEN, secret, n, HASH_SHA256);
 
 	if (!memeq(digest, computed, DIGEST_LEN)) FATAL("digest failed");
 }
@@ -39,5 +39,5 @@ void digest_verify(const uint8_t *digest, const uint8_t *secret, size_t n) {
 void digest_compute(uint8_t *digest, const uint8_t *secret, size_t n) {
 	assert(digest && secret && n >= 16);
 	hmac(digest, DIGEST_LEN, digest + DIGEST_LEN,
-			n - DIGEST_LEN, secret, n);
+			n - DIGEST_LEN, secret, n, HASH_SHA256);
 }

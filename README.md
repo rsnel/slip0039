@@ -2,9 +2,9 @@
 
 ## Usage
 
-`$ slip0039 [ -d ] [ -q ] recover`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] recover`
 
-`$ slip0039 [ -d ] [ -q ] split <EXP> <GT> <XofY>..`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] split <EXP> <GT> <XofY>..`
 
 option `-d` (debug) displays the shares, secrets and digests in the known groups
 at program exit
@@ -15,6 +15,25 @@ option `-q` (quiet) shuts up warnings
     ? means 'digest'
     S means 'secret'
     P means 'plaintext' (decrypted secret)
+
+option `-c` specifies the encoding of the master secret
+
+* `rawhex`: this is the default codec, it stores 16 bytes of data or more in
+  increments of 2 bytes with a default maximum of 64 bytes
+
+* `bip39`: use this codec to store a valid bip39 wordlist from 12 to 24
+  words in increments of 3 words
+
+  - `english` is the default wordlist for this codec
+
+  - `spanish` is also supported, but UTF-8 normalization is not yet supported
+
+* `diceware': this codec can store a diceware passphrase of at least 9 words,
+  if you want to store a 10 word passphrase, you should randomly select an
+  extra word an store it as an 11 word passphrase; etc, the system notifies
+  you if it needs an extra word, please take care to actually select an random
+  word, otherwise the result of the correct passphrase is discernable from
+  a random passphrase
 
 ### Mode `recover` (default when no mode is specified)
 

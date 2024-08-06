@@ -11,13 +11,13 @@ echo "TREZOR\n$OUT\n" | ./slip0039 -c base16
 #echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:english
 echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch
 
-#OUT=$(echo -n "TREZOR\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split lkjsfkjdsh 1 1 1of1)
-#echo "TREZOR\n$OUT\n" | ./slip0039 -c bip39
-#OUT=$(echo -n "TREZOR\n0000000000000000000000000000000000000000000000000000000000000000\n" | ./slip0039 split lkjsfkjdsh 1 1 1of1)
-#echo "TREZOR\n$OUT\n" | ./slip0039 -c bip39:spanish
-#OUT=$(echo -n "TREZOR\n00000000000000000000000000000000\n" | ./slip0039 split lkjsfkjdsh 1 1 1of1)
-#echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware
-#OUT=$(echo -n "TREZOR\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split lkjsfkjdsh 1 1 1of1)
-#OUT=$(echo -n "TREZOR\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split lkjsfkjdsh 1 1 1of1)
-#echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch
+OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split 1 1 1of1)
+echo "TREZOR\n$OUT\n" | ./slip0039 -c bip39
+OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n0000000000000000000000000000000000000000000000000000000000000000\n" | ./slip0039 split 1 1 1of1)
+echo "TREZOR\n$OUT\n" | ./slip0039 -c bip39:spanish
+OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n00000000000000000000000000000000\n" | ./slip0039 split 1 1 1of1)
+echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware
+OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split 1 1 1of1)
+OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split 1 1 1of1)
+echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch
 
