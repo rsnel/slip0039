@@ -214,3 +214,12 @@ void sha256_finalize(struct sha256_ctx *ctx, uint8_t *sha, size_t size) {
 
 	invalidate_sha256(ctx);
 }
+
+void sha256d_finalize(struct sha256_ctx *ctx, uint8_t *sha, size_t size) {
+	uint8_t tmp[SHA256_LEN];
+	sha256_finalize(ctx, tmp, SHA256_LEN);
+	sha256_init(ctx);
+	sha256_update(ctx, tmp, SHA256_LEN);
+	wipememory(tmp, sizeof(tmp));
+	sha256_finalize(ctx, sha, size);
+}

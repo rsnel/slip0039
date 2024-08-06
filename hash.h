@@ -42,10 +42,11 @@ typedef struct hash_function_s {
 	size_t len, blocksize;
 } hash_function_t;
 
-extern hash_function_t hash_functions[2];
+extern hash_function_t hash_functions[];
 
 typedef enum hash_type_e {
 	HASH_SHA256 = 0,
+	HASH_SHA256D,
 	HASH_SHA512
 } hash_type_t;
 

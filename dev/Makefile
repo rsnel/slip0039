@@ -4,7 +4,7 @@ all: tfixnum 16tothe32 lrperm twordlist ta prob basetest wordeq lrprng probsim f
 
 fakedist:
 
-sha512test: sha512test.c ../sha512.c ../hmac.c ../sha256.c ../hash.c ../pbkdf2.c
+sha512test: sha512test.c ../sha512.c ../hmac.c ../sha256.c ../hash.c ../pbkdf2.c ../base.c ../fixnum.c ../wordlists.c ../shashtbl.c ../llist.c ../codec.c ../verbose.c ../utils.c ../lrcipher.c ../verbose.c
 
 lrprng: lrprng.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlists.c ../verbose.c ../codec.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
 

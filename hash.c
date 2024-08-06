@@ -20,10 +20,17 @@
 #include "hash.h"
 #include "utils.h"
 
-hash_function_t hash_functions[2] = { {
+hash_function_t hash_functions[] = {
+	{
 		.init = (void (*)(void*))sha256_init,
 		.update = (void (*)(void*, const void*, size_t))sha256_update,
 		.finalize = (void (*)(void*, uint8_t*, size_t))sha256_finalize,
+		.len = SHA256_LEN,
+		.blocksize = SHA256_BLOCKSIZE
+	}, {
+		.init = (void (*)(void*))sha256_init,
+		.update = (void (*)(void*, const void*, size_t))sha256_update,
+		.finalize = (void (*)(void*, uint8_t*, size_t))sha256d_finalize,
 		.len = SHA256_LEN,
 		.blocksize = SHA256_BLOCKSIZE
 	}, {

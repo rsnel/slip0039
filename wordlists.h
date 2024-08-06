@@ -50,9 +50,9 @@ extern wordlist_t wordlist_diceware_german;
 // provided by Bart Van den Eynde under the GFDL
 extern wordlist_t wordlist_diceware_dutch;
 
+*/
 
 extern wordlist_t wordlist_base58;
-*/
 
 void wordlists_init();
 

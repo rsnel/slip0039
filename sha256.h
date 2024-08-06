@@ -113,4 +113,7 @@ void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size);
  */
 void sha256_finalize(struct sha256_ctx *sha256, uint8_t *sha, size_t size);
 
+// finalize and do another sha256
+void sha256d_finalize(struct sha256_ctx *sha256, uint8_t *sha, size_t size);
+
 #endif /* SLIP0039_SHA256_H */
