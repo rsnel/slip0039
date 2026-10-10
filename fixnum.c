@@ -213,7 +213,7 @@ static uint16_t popcnt_helper(uint8_t n) {
 uint16_t fixnum_popcnt(const fixnum_t *f) {
 	assert(f && f->limbs && f->no_limbs > 0);
 
-	uint16_t n;
+	uint16_t n = 0;
 
 	for (int i = 0; i < f->no_limbs; i++) {
 		n += popcnt_helper(f->limbs[i]);

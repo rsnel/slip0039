@@ -46,7 +46,7 @@ extern hash_function_t hash_functions[];
 
 typedef enum hash_type_e {
 	HASH_SHA256 = 0,
-	HASH_SHA256D,
+	HASH_SHA256D, /* double sha256, as in bitcoin */
 	HASH_SHA512
 } hash_type_t;
 
