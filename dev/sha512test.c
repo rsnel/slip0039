@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
 
 	base_encode_buffer(bla, 111, &wordlist_base58.m, bip32, 82, &bs, 0);
 	for (int i = 0; i < 111; i++) {
-		const char *str = wordlist_base58.words[bla[i]];
-		printf("%s", str); //wordlist_base58.words[bla[i]]);
+		//const char *str = wordlist_base58.words[bla[i]];
+		printf("%s", wordlist_base58.words[bla[i]]);
 		//printf("[%3d]=%d %s\n", i, bla[i], str); //wordlist_base58.words[bla[i]]);
 		//printf("[%3d]=%d %s\n", i, bla[i], wordlist_base58.words[bla[i]]);
 	}
