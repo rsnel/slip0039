@@ -1,6 +1,6 @@
-/* hash.h - interface to SHA256/SHA512...
+/* hash.h - generic interface to SHA256, SHA256D and SHA512
  *
- * ------
+ * Copyright 2024 Rik Snel <rik@snel.it>
  *
  * This file is part of slip0039.
  *

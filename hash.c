@@ -1,4 +1,6 @@
-/* hash.c - implementation generic hash interface
+/* hash.c - implementation of the generic hash interface
+ *
+ * Copyright 2024 Rik Snel <rik@snel.it>
  *
  * This file is part of slip0039.
  *
