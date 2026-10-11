@@ -23,12 +23,12 @@
 
 static void helper(slip0039_set_t *s, int no_idx,
 		uint8_t *idx, uint8_t x, size_t offset) {
-	// if (id)x == 255,254, then our array index should be -1,-2,
-	// so we cast the x-coordinate to (signed) int8_t
+	// x-coordinates 254 and 255 are the digest and the secret,
+	// SLIP0039_SLOT() maps every x-coordinate to its slot
 	uint8_t sum = 0;
 	for (int i = 0; i < no_idx; i++) {
-		assert(s->shares[(int8_t)idx[i]]);
-		uint8_t prod = s->shares[(int8_t)idx[i]][offset];
+		assert(s->slots[SLIP0039_SLOT(idx[i])]);
+		uint8_t prod = s->slots[SLIP0039_SLOT(idx[i])][offset];
 		for (int j = 0; j < no_idx; j++) {
 			if (i == j) continue;
 
@@ -38,7 +38,7 @@ static void helper(slip0039_set_t *s, int no_idx,
 		}
 		sum = gf256_add(sum, prod);
 	}
-	s->shares[(int8_t)x][offset] = sum;
+	s->slots[SLIP0039_SLOT(x)][offset] = sum;
 }
 
 void lagrange(slip0039_set_t *s, size_t n,

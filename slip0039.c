@@ -120,9 +120,9 @@ void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
 	}
 
 	for (int i = -2; i < 0; i++)
-		if (*(m->shares + i))
+		if (m->slots[SLIP0039_SLOT(i)])
 			slip0039_debug_share(path, i, m->parent?0:2,
-					m->shares[i], s->n, "");
+					m->slots[SLIP0039_SLOT(i)], s->n, "");
 }
 
 void slip0039_debug(slip0039_t *s) {
@@ -523,10 +523,10 @@ void slip0039_split(slip0039_set_t *s, size_t n, pbkdf2_t *p) {
         	int no_idx = 2;
 
 		/* compute digest */
-		assert(!*(s->shares - 2));
-		*(s->shares - 2) = s->storage_digest;
-		pbkdf2_generate(p, *(s->shares - 2) + DIGEST_LEN, n - DIGEST_LEN);
-		digest_compute(*(s->shares - 2), *(s->shares - 1), n);
+		assert(!s->digest);
+		s->digest = s->storage_digest;
+		pbkdf2_generate(p, s->digest + DIGEST_LEN, n - DIGEST_LEN);
+		digest_compute(s->digest, s->secret, n);
 
 		/* generate the other required shares randomly */
 		for (uint8_t i = 0; i < s->threshold - 2; i++) {
@@ -587,8 +587,9 @@ void slip0039_recover(slip0039_set_t *s, uint8_t *secret, size_t n) {
 		// and secret share (uint8_t)-1 = 255
 
 		for (int i = -2; i < 0; i++) {
-			assert(!s->shares[i]);
-			*(s->shares + i) = (i == -2)?s->storage_digest:secret;
+			assert(!s->slots[SLIP0039_SLOT(i)]);
+			s->slots[SLIP0039_SLOT(i)] =
+				(i == -2)?s->storage_digest:secret;
 			lagrange(s, n, no_idx, idx, (uint8_t)i);
 		}
 

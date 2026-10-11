@@ -37,10 +37,18 @@ typedef struct slip0039_set_s {
 	uint8_t available;   /* available members          */
         uint8_t threshold;   /* required members           */
 
-	/* x-coordinate is (uint8_t) cast of index         */
-	uint8_t *digest;     /* index -2 (=(int8_t)254)    */
-	uint8_t *secret;     /* index -1 (=(int8_t)255)    */
-	uint8_t *shares[MAX_SHARES]; /* 0 <= index < 16            */
+	/* slots[] overlaps digest, secret and shares[], so
+	 * that the share with x-coordinate x can be found
+	 * at slots[SLIP0039_SLOT(x)]; use slots[] only where
+	 * a loop or lagrange runs over x = 254, 255, 0..15 */
+	union {
+		struct {
+			uint8_t *digest;     /* x = 254, slot 0     */
+			uint8_t *secret;     /* x = 255, slot 1     */
+			uint8_t *shares[MAX_SHARES]; /* x = 0..15, slot 2..17 */
+		};
+		uint8_t *slots[MAX_SHARES + 2];
+	};
 
 	/* static storage for shares, digest and secret
 	 * this storage can be addressed in the same way
@@ -48,6 +56,22 @@ typedef struct slip0039_set_s {
 	uint8_t storage_digest[BLOCKS<<1];
 	uint8_t storage_shares[MAX_SHARES][BLOCKS<<1];
 } slip0039_set_t;
+
+/* index in slots[] of the share with x-coordinate x, since
+ * (uint8_t)(254 + 2) = 0 and (uint8_t)(255 + 2) = 1, this
+ * also works for x = -2 and x = -1 */
+#define SLIP0039_SLOT(x) ((uint8_t)((x) + 2))
+
+/* verify at compile time that slots[] overlaps the named fields */
+_Static_assert(offsetof(slip0039_set_t, digest) ==
+		offsetof(slip0039_set_t, slots) +
+		SLIP0039_SLOT(254)*sizeof(uint8_t*), "digest not in slot 0");
+_Static_assert(offsetof(slip0039_set_t, secret) ==
+		offsetof(slip0039_set_t, slots) +
+		SLIP0039_SLOT(255)*sizeof(uint8_t*), "secret not in slot 1");
+_Static_assert(offsetof(slip0039_set_t, shares) ==
+		offsetof(slip0039_set_t, slots) +
+		SLIP0039_SLOT(0)*sizeof(uint8_t*), "shares not in slot 2");
 
 typedef struct slip0039_s {
         size_t n;    /* size of secret in bytes */
