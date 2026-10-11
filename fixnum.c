@@ -394,8 +394,12 @@ void fixnum_poke(fixnum_t *f, size_t offset, uint8_t size, uint32_t in) {
 
 	f->limbs[offset_limb] &= ~smask[0];
 	f->limbs[offset_limb] |= in<<offset_bit;
+	// the size of the value is public, so we may branch on it; the
+	// limbs before limb 0 must not be touched
+	if (!ssize[1]) return;
 	f->limbs[offset_limb-1] &= ~smask[1];
 	f->limbs[offset_limb-1] |= in>>(8-offset_bit);
+	if (!ssize[2]) return;
 	f->limbs[offset_limb-2] &= ~smask[2];
 	f->limbs[offset_limb-2] |= in>>(16-offset_bit);
 }
@@ -496,6 +500,27 @@ uint16_t fixnum_mul16(fixnum_t *f, const fixnum_multiplier16_t *m) {
 	return acc_high + acc_low;
 }
 
+/* division by a pure divisor 2^log2 with log2 < 8*no_limbs; fixnum_shr()
+ * can shift at most 16 bits at a time, so we shift in steps; returns
+ * the lowest 16 bits of the remainder */
+static uint16_t fixnum_div_pure(fixnum_t *f, const fixnum_divisor_t *d,
+		int dividendmaxplus1) {
+	assert(d->p.pure && d->p.log2 > 0 && d->p.log2 < f->no_limbs<<3);
+	// if the dividend is 2^(8*no_limbs), f is 0, so is the remainder
+	uint16_t ret = fixnum_peek(f, 0, d->p.log2 < 16 ? d->p.log2 : 16);
+
+	for (uint16_t left = d->p.log2; left > 0; ) {
+		uint8_t shift = left > 16 ? 16 : left;
+		fixnum_shr(f, shift);
+		left -= shift;
+	}
+
+	// 2^(8*no_limbs)/2^log2 = 2^(8*no_limbs - log2)
+	fixnum_poke(f, (f->no_limbs<<3) - d->p.log2, 1, dividendmaxplus1);
+
+	return ret;
+}
+
 uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 		fixnum_scratch_t *s, int dividendmaxplus1) {
 	assert(f && d && f->no_limbs == d->max_left_shift.no_limbs &&
@@ -505,9 +530,10 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 	for (size_t i = 0; i < f->no_limbs; i++)
 		f->limbs[i] &= -(1 - dividendmaxplus1);
 
+	// the divisor is public, so we may branch on it
+	if (d->p.pure) return fixnum_div_pure(f, d, dividendmaxplus1);
+
 	// s->a is used as a shift register and s->b is brought to zero
-	if (d->p.pure)
-		return fixnum_shr_in(f, d->p.log2, dividendmaxplus1);
 
 	assert(s->a.no_limbs >= f->no_limbs && s->b.no_limbs >= f->no_limbs);
 
@@ -538,7 +564,9 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 
 	ret = s->b.limbs[s->b.no_limbs-1] + (s->b.limbs[s->b.no_limbs-2]<<8);
 
-	s->b.limbs[s->b.no_limbs-1] = s->b.limbs[s->b.no_limbs-2] = 0;
+	// s->b holds the remainder, which may be secret; if the divisor
+	// is larger than 2^16, more than the lowest 2 limbs are nonzero
+	wipememory(s->b.limbs, s->b.no_limbs);
 
 	return ret;
 }
