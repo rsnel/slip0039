@@ -58,11 +58,11 @@ static void feistel_round(lrcipher_t *l, uint8_t *L,
 	pbkdf2_update_salt(&p, R, size);
 	pbkdf2_done(&p, tmp, size, iterations);
 
-	if (!xchg) for (int i = 0; i < size; i++) {
+	if (!xchg) for (size_t i = 0; i < size; i++) {
 		tmp[i] ^= L[i];
 		L[i] = R[i];
 		R[i] = tmp[i];
-	} else for (int i = 0; i < size; i++) {
+	} else for (size_t i = 0; i < size; i++) {
 		// do this, so we don't have to switch
 		// L and R at the end of lrcipher
 		L[i] ^= tmp[i];

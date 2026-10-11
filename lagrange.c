@@ -43,7 +43,7 @@ static void lagrange_byte(slip0039_set_t *s, int no_idx,
 
 void lagrange(slip0039_set_t *s, size_t n,
 		int no_idx, uint8_t *idx, uint8_t x) {
-	for (int i = 0; i < n; i++)
+	for (size_t i = 0; i < n; i++)
 		lagrange_byte(s, no_idx, idx, x, i);
 }
 

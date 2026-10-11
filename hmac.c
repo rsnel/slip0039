@@ -66,7 +66,7 @@ static void finish_processing_key(hmac_t *h) {
 	memset(h->buf + h->size, 0, h->h.f->blocksize - h->size);
 
 	// do XOR for ipad
-	for (int i = 0; i < h->h.f->blocksize; i++) h->buf[i] ^= 0x36;
+	for (size_t i = 0; i < h->h.f->blocksize; i++) h->buf[i] ^= 0x36;
 
 	hash_update(&h->h, h->buf, h->h.f->blocksize);
 	h->state = 2;
@@ -88,7 +88,7 @@ void hmac_done(hmac_t *h, uint8_t *sha, size_t size) {
 	hash_finalize(&h->h, buf, h->h.f->len);
 
 	// remove XOR for ipad and do XOR for opad
-	for (int i = 0; i < h->h.f->blocksize; i++)
+	for (size_t i = 0; i < h->h.f->blocksize; i++)
 		h->buf[i] ^= 0x36^0x5c;
 
 	hash_init(&h->h, h->type);

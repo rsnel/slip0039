@@ -118,7 +118,7 @@ static void bip39_decode(char *out, size_t out_size, lrcipher_t *l,
 
 	base_encode_buffer(scratch, n/4*3, &w->m, in, n + 1, bs, 8 - n/4);
 
-	int k = 0;
+	size_t k = 0;
 	goto start;
 	while (++k < n/4*3) {
 		sbuf_printf(&sbuf, " ");
@@ -178,8 +178,8 @@ static void diceware_encode(uint8_t *out, size_t *n,
 
 		scratch[no_input++] = wordlist_search(w, in, &in);
 	}
-	for (int i = 0; i < no_input; i++) {
-		printf("scratch[%d]=%d\n", i, scratch[i]);
+	for (size_t i = 0; i < no_input; i++) {
+		printf("scratch[%zu]=%d\n", i, scratch[i]);
 	}
 	uint16_t log2 = fixnum_calc_log2(&f);
 	printf("log2=%d\n", log2);
@@ -213,7 +213,7 @@ static void diceware_encode(uint8_t *out, size_t *n,
 	printf("h.no_limbs=%ld\n", h.no_limbs);
 
 	// recompute max
-	for (int i = 0; i < no_input; i++)
+	for (size_t i = 0; i < no_input; i++)
 		fixnum_mul16(&h, &w->m);
 
 	fixnum_sub_uint16(&h, 1);
@@ -330,8 +330,8 @@ static void diceware_decode(char *out, size_t out_size, lrcipher_t *l,
 	bs->s.b.no_limbs = restore_limbs_b;
 
 	printf("no_words=%d, n=%ld\n", no_words, n);
-	for (int i = 0; i < n; i++) {
-		printf("in[%d] = %d\n", i, in[i]);
+	for (size_t i = 0; i < n; i++) {
+		printf("in[%zu] = %d\n", i, in[i]);
 	}
 	base_encode_buffer(scratch, no_words, &w->m, bs->s.a.limbs, n, bs, 0);
 
@@ -390,7 +390,7 @@ codec_t *codec = &codecs_array[0];
 
 void codec_init() {
 	shashtbl_init_simple(&codecs, 4, 1);
-	for (int i = 0; i < no_codecs; i++) {
+	for (size_t i = 0; i < no_codecs; i++) {
 		shashtbl_add_elt(&codecs, &codecs_array[i]);
 		shashtbl_init_simple(&codecs_array[i].wordlists, 4, 1);
 	}

@@ -93,8 +93,8 @@ void sbuf_wordlist_dereference(wordlist_t *w, sbuf_t *s, uint16_t idx) {
 int vsnprintf_strict(char *str, size_t size, const char *format, va_list ap) {
 	int ret = vsnprintf(str, size, format, ap);
 
-	if (ret >= size) BUG("buffer too small");
-	else if (ret < 0) FATAL("error writing to buffer");
+	if (ret < 0) FATAL("error writing to buffer");
+	else if ((size_t)ret >= size) BUG("buffer too small");
 
 	return ret;
 }

@@ -73,11 +73,11 @@ static void pbkdf2_next_block(pbkdf2_t *p) {
 	hmac_update_data_uint32be(&h, p->index++);
 	hmac_done(&h, sha, p->pw.h.f->len);
 	memcpy(p->tmp, sha, p->pw.h.f->len);
-	for (int i = 1; i < p->iterations; i++) {
+	for (uint64_t i = 1; i < p->iterations; i++) {
 		h = p->pw;
 		hmac_update_data(&h, sha, p->pw.h.f->len);
 		hmac_done(&h, sha, p->pw.h.f->len);
-		for (int j = 0; j < p->pw.h.f->len/8; j++)
+		for (size_t j = 0; j < p->pw.h.f->len/8; j++)
 			((uint64_t*)p->tmp)[j] ^= ((uint64_t*)sha)[j];
 	}
 	p->tmp_offset = 0;

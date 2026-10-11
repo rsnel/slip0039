@@ -221,7 +221,7 @@ uint16_t fixnum_popcnt(const fixnum_t *f) {
 
 	uint16_t n = 0;
 
-	for (int i = 0; i < f->no_limbs; i++) {
+	for (size_t i = 0; i < f->no_limbs; i++) {
 		n += popcnt8(f->limbs[i]);
 	}
 
@@ -302,7 +302,7 @@ void fixnum_poke(fixnum_t *f, size_t offset, uint8_t size, uint32_t in) {
 	}
 	assert(offset + size <= (f->no_limbs<<3));
 	assert(size <= 17); // use 17 as max, same as peek
-	assert(in < 1<<size);
+	assert(in < (uint32_t)1<<size);
 
 	size_t offset_limb = f->no_limbs - 1 - (offset>>3);
 	uint8_t offset_bit = offset%8;
@@ -438,7 +438,7 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 			f->no_limbs >= 2);
 	assert(dividendmaxplus1 == 0 || dividendmaxplus1 == 1);
 
-	for (int i = 0; i < f->no_limbs; i++)
+	for (size_t i = 0; i < f->no_limbs; i++)
 		f->limbs[i] &= -(1 - dividendmaxplus1);
 
 	// s->a is used as a shift register and s->b is brought to zero

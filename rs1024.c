@@ -55,7 +55,7 @@ void rs1024_add_value(rs1024_state_t *state, uint16_t value) {
 
 	state->chk = ((state->chk&0xfffff)<<10)^value;
 
-	for (int i = 0; i < sizeof_array(gen); i++) {
+	for (size_t i = 0; i < sizeof_array(gen); i++) {
 		/* constant time version of: if ((b>>i)&1) chk ^= gen[i]; */
 		state->chk ^= gen[i]&(-((b>>i)&1));
 	}
@@ -63,7 +63,7 @@ void rs1024_add_value(rs1024_state_t *state, uint16_t value) {
 
 void rs1024_add_array(rs1024_state_t *state,
 		const uint16_t *data, size_t data_size) {
-	for (int i = 0; i < data_size; i++)
+	for (size_t i = 0; i < data_size; i++)
 		rs1024_add_value(state, data[i]);
 }
 

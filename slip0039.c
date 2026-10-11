@@ -311,7 +311,7 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 				.len = 0
 			};
 
-			int k = 0;
+			size_t k = 0;
 			goto start;
 			while (++k < 4 + (8*s->n + 9)/10 + 3) {
 				sbuf_printf(&sb, " ");
@@ -704,7 +704,7 @@ void parse_options_split(slip0039_t *s, char *arg,
 		if (x == 1 && y > 1)
 			WARNING("X == 1, according to the spec, "
 					"Y SHOULD also be 1");
-		if (x > *max_T) *max_T = x;
+		if ((int)x > *max_T) *max_T = x;
 		s->members[s->root.count].count = y;
 		s->members[s->root.count].threshold = x;
 		s->root.count++;
