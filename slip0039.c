@@ -81,7 +81,7 @@ void slip0039_debug_share(const char *path, int index, int space,
 	else if (index == -1) character = EMS_IDENTIFIER;
 	else if (index >= 0 && index < 10) character = '0' + index;
 	else if (index >= 10 && index < 16) character = 'A' + index - 10;
-	else assert(0);
+	else BUG("invalid share index %d", index);
 
 	sbuf_printf(&sbuf, "%s%c   ", path, character);
 
