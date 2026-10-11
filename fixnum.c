@@ -272,9 +272,6 @@ void fixnum_mul_fixnum(fixnum_t *f, const fixnum_t *s, fixnum_scratch_t *sc) {
 			}
 			overflow |= carry;
 		}
-
-		wipememory(sc->a.limbs, sc->a.no_limbs);
-		wipememory(sc->b.limbs, sc->b.no_limbs);
 	}
 
 	if (overflow) BUG("overflow in fixnum_mul_fixnum()");
@@ -564,9 +561,7 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 
 	ret = s->b.limbs[s->b.no_limbs-1] + (s->b.limbs[s->b.no_limbs-2]<<8);
 
-	// s->b holds the remainder, which may be secret; if the divisor
-	// is larger than 2^16, more than the lowest 2 limbs are nonzero
-	wipememory(s->b.limbs, s->b.no_limbs);
+	s->b.limbs[s->b.no_limbs-1] = s->b.limbs[s->b.no_limbs-2] = 0;
 
 	return ret;
 }

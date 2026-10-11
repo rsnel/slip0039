@@ -114,8 +114,8 @@ uint16_t fixnum_shr_in(fixnum_t*, uint8_t, uint16_t);
 uint16_t fixnum_mul16(fixnum_t*, const fixnum_multiplier16_t*);
 
 /* f = f*s; f and s must have the same number of limbs, s may be f;
- * the scratch space must have at least f->no_limbs limbs in a and b
- * and is brought to zero afterwards; overflow is a BUG() */
+ * the scratch space must have at least f->no_limbs limbs in a and b,
+ * it holds copies of both multiplicands afterwards; overflow is a BUG() */
 void fixnum_mul_fixnum(fixnum_t*, const fixnum_t*, fixnum_scratch_t*);
 
 uint16_t fixnum_popcnt(const fixnum_t*);
