@@ -51,6 +51,10 @@ base_scratch_t bs;	      // scratch space for base encoding
 uint8_t base_scratch_space[(BLOCKS<<1)<<2]; // actual scratch space
 uint8_t slip0039_header[5];
 
+/* the modular DTE may give a guesser that tries passphrases a factor
+ * of at most 1 + gain over plain guessing, see honey_extra_bits() */
+double gain = 0.01;
+
 // seed for PRNG
 char seed[512];
 size_t seed_len = 0;
@@ -741,6 +745,21 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 						separator, argv[optind]);
 				optind++;
 			} else FATAL("option -c given, but no argument "
+					"supplied");
+		} else if (!strcmp(arg, "--gain")) {
+			if (argc > optind) {
+				char *end;
+				gain = strtod(argv[optind], &end);
+				// the negation also rejects NaN
+				if (*argv[optind] == '\0' || *end != '\0' ||
+						!(gain >= 1.0/(1ULL<<62) &&
+							gain <= 1))
+					FATAL("invalid value \"%s\" for --gain, "
+							"it must be a number "
+							"between 2^-62 and 1",
+							argv[optind]);
+				optind++;
+			} else FATAL("option --gain given, but no argument "
 					"supplied");
 		} else if (mode == SLIP0039_MODE_RECOVER) FATAL("no arguments "
 				"must be given after \"recover\"");

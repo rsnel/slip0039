@@ -2,9 +2,9 @@
 
 ## Usage
 
-`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] recover`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] recover`
 
-`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] split <EXP> <GT> <XofY>..`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] split <EXP> <GT> <XofY>..`
 
 option `-d` (debug) displays the shares, secrets and digests in the known groups
 at program exit
@@ -34,6 +34,22 @@ option `-c` specifies the encoding of the master secret
   you if it needs an extra word, please take care to actually select a random
   word, otherwise the result of the correct passphrase is discernible from
   a random passphrase
+
+option `--gain GAIN` bounds the advantage an attacker gets from the way
+structured secrets (like a diceware passphrase) are encoded, the default is
+`0.01`; the option is parsed, but not yet used by any codec
+
+An attacker with a list of q equally likely passphrases can decrypt with all
+of them and gets q plausible secrets. If the encoding were perfect, the best
+the attacker could do is pick one at random, which is right with probability
+1/q. The encoding used here is very slightly uneven, which lets the attacker
+do a little better: right with probability at most (1 + GAIN)/q. Each halving
+of GAIN costs one extra bit in the stored secret: `0.01` needs 7 bits on top
+of the size of the data and `0.001` needs 10. The default `0.01` amounts to
+losing about 0.014 bits of passphrase strength, once, however many passphrases
+the attacker tries, which is negligible compared to the strength of any
+reasonable passphrase. Because the secret grows in steps of 16 bits, a
+stricter value often does not change the length of the shares at all.
 
 ### Mode `recover` (default when no mode is specified)
 
