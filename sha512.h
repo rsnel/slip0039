@@ -44,10 +44,10 @@ struct sha512_ctx {
 	size_t bytes;
 };
 
-void sha512_init(struct sha512_ctx *ctx);
+void sha512_init(struct sha512_ctx*);
 
-void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size);
+void sha512_update(struct sha512_ctx*, const void*, size_t);
 
-void sha512_finalize(struct sha512_ctx *ctx, uint8_t *sha512, size_t size);
+void sha512_finalize(struct sha512_ctx*, uint8_t*, size_t);
 
 #endif // SLIP0039_SHA512_H

@@ -52,7 +52,7 @@
 	if (!(b = a(__VA_ARGS__))) ERROR_errno(#a "()"); \
 } while (0)
 
-void wipestackmemory(const size_t len);
+void wipestackmemory(const size_t);
 
 typedef struct sbuf_s {
 	char *buf;

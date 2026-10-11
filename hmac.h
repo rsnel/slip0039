@@ -40,7 +40,7 @@ void hmac_update_data_uint32be(hmac_t*, uint32_t);
 
 void hmac_done(hmac_t*, uint8_t*, size_t);
 
-void hmac(uint8_t *sha, size_t, const void*, size_t, const void*, size_t,
+void hmac(uint8_t*, size_t, const void*, size_t, const void*, size_t,
 		hash_type_t);
 
 #endif /* SLIP0039_HMAC_H */
