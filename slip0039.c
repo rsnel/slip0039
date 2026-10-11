@@ -26,6 +26,10 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 
 #include "slip0039.h"
 #include "verbose.h"
@@ -62,6 +66,12 @@ int pre_may_2024 = 0;
 // seed for PRNG
 char seed[512];
 size_t seed_len = 0;
+
+// buffers for stdin and stdout, so that the passphrase, seed, secret
+// and mnemonics that pass through stdio end up in static storage that
+// we can wipe, instead of in buffers that libc allocates on the heap
+char stdin_buffer[BUFSIZ];
+char stdout_buffer[BUFSIZ];
 
 #define STACK_CLEAR_SIZE 256 * 1024
 #if defined(__APPLE__) && defined(__MACH__)
@@ -179,9 +189,9 @@ static void munlock_var(const void *const p, const char *const var,
 } while (0)
 #define munlock_ptr(p, len) do { \
 	void *_p = &p; \
-	mlock_var(p, #p, (len)); \
+	munlock_var(p, #p, (len)); \
 	wipememory(_p, sizeof(p)); \
-	mlock_var(_p, "&" #p, sizeof(p)); \
+	munlock_var(_p, "&" #p, sizeof(p)); \
 } while (0)
 #endif
 
@@ -189,6 +199,18 @@ static void munlock_var(const void *const p, const char *const var,
 // sensitive contents are removed from memory
 void wipe() {
 	slip0039_debug(&s);
+
+	/* exit() flushes the streams after the atexit() handlers have
+	 * run, so we flush stdout now, before we wipe its buffer */
+	fflush(stdout);
+	wipememory(stdin_buffer, sizeof(stdin_buffer));
+	wipememory(stdout_buffer, sizeof(stdout_buffer));
+
+	/* we may have been called from FATAL(), deep in the call stack,
+	 * clear the part of the stack that functions that have already
+	 * returned have used */
+	wipestackmemory(STACK_CLEAR_SIZE);
+
 	wipememory(&s, sizeof(s));
 	wipememory(mnemonic, sizeof(mnemonic));
 	wipememory(dl, sizeof(dl));
@@ -212,8 +234,10 @@ void wipe() {
 	munlock_obj(input_base16);
 	munlock_obj(input);
 	munlock_obj(bs);
-	munlock_obj(slip039_header);
+	munlock_obj(slip0039_header);
 	munlock_obj(base_scratch_space);
+	munlock_obj(stdin_buffer);
+	munlock_obj(stdout_buffer);
 #else
 	wipememory(&seed, sizeof(seed));
 	wipememory(&seed_len, sizeof(seed_len));
@@ -659,6 +683,26 @@ void slip0039_encrypt(slip0039_t *s) {
 }
 
 void boring_stuff() {
+	/* let stdio use our static buffers, this must be done
+	 * before any input or output takes place on these streams */
+	if (setvbuf(stdin, stdin_buffer, _IOFBF, sizeof(stdin_buffer)) ||
+			setvbuf(stdout, stdout_buffer, _IOFBF,
+				sizeof(stdout_buffer)))
+		FATAL("failed to set buffers for stdin and stdout");
+
+	/* a core dump would contain all secrets, mlock() does not
+	 * prevent that, so we disable core dumps */
+	struct rlimit no_core = { .rlim_cur = 0, .rlim_max = 0 };
+	if (setrlimit(RLIMIT_CORE, &no_core) < 0)
+		FATAL("failed to disable core dumps: %s", strerror(errno));
+#if defined(__linux__)
+	/* this also prevents core dumps if RLIMIT_CORE is ignored,
+	 * because the kernel pipes them to a helper program */
+	if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0)
+		FATAL("failed to make process non-dumpable: %s",
+				strerror(errno));
+#endif
+
 #if defined(__APPLE__) && defined(__MACH__)
 	mlock_ptr(stackbase, STACK_CLEAR_SIZE);
 	mlock_obj(s);
@@ -672,6 +716,8 @@ void boring_stuff() {
 	mlock_obj(bs);
 	mlock_obj(base_scratch_space);
 	mlock_obj(slip0039_header);
+	mlock_obj(stdin_buffer);
+	mlock_obj(stdout_buffer);
 #else
 	/* lock me into memory; don't leak info to swap */
 	if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
@@ -863,7 +909,7 @@ void slip0039_finalize_passphrase(slip0039_t *s) {
 int main(int argc, char *argv[]) {
 #if defined(__APPLE__) && defined(__MACH__)
 	// save stackbase for locking stack memory
-	stackbase = (char*)&argc - STACK_CLEAR_SIZE;
+	stackbase = (const void*)((uintptr_t)&argc - STACK_CLEAR_SIZE);
 #endif
 
 	verbose_init(argv[0]);
@@ -919,5 +965,5 @@ int main(int argc, char *argv[]) {
 		slip0039_print_plaintext(&s, codec);
 	}
 
-	 wipestackmemory(STACK_CLEAR_SIZE);
+	/* the stack is cleared by wipe(), which is called by exit() */
 }
