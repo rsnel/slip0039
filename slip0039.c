@@ -708,7 +708,7 @@ void parse_options_split(slip0039_t *s, char *arg,
 		s->members[s->root.count].count = y;
 		s->members[s->root.count].threshold = x;
 		s->root.count++;
-	} else assert(0);
+	} else BUG("invalid parse state %d", *state);
 }
 
 void parse_options(slip0039_t *s, int argc, char *argv[]) {
