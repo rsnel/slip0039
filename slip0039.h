@@ -83,14 +83,14 @@ typedef struct slip0039_s {
 	uint8_t *plaintext;
 	uint8_t storage_secret[BLOCKS<<1], storage_plaintext[BLOCKS<<1];
 
-	// cipher state is initialized with the passphrase
+	/* cipher state is initialized with the passphrase */
 	lrcipher_t l;
 
-	// the title consists of the first two words (which
-	// should be the same in all mnemonics in the input)
-	// with some formatting, so that the function that
-	// displays this struct can be simplified
-	char title[22]; // first two words
+	/* the title consists of the first two words (which
+	 * should be the same in all mnemonics in the input)
+	 * with some formatting, so that the function that
+	 * displays this struct can be simplified          */
+	char title[22];      /* first two words            */
 } slip0039_t;
 
 typedef char slip0039_mnemonic_t[LINE];

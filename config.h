@@ -47,12 +47,12 @@
 
 #define MAX_SHARES 16
 
-// in this implementation, the shares are indexed by an 8 bit
-// integer, such that -1 == (int8_t)255 and -2 == (int8_t)254
-// (255 and 254 are the x-coordinates of the secret and the digest)
-// therefore we only support up to 254 shares, this is sufficient
-// because the standard only allows for up to 16 shares
-// the shares are numbered from 0, so the 254th share has index 253
+// in this implementation, the x-coordinates of the shares are 8 bit
+// integers, 255 and 254 are the x-coordinates of the secret and the
+// digest (see SLIP0039_SLOT() in slip0039.h), therefore we only support
+// up to 254 shares, this is sufficient because the standard only
+// allows for up to 16 shares; the shares are numbered from 0, so the
+// 254th share has x-coordinate 253
 #if MAX_SHARES > 254
 #error "MAX_SHARES must be < 255"
 #endif
