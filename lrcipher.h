@@ -28,7 +28,10 @@ typedef struct lrcipher_s {
 	pbkdf2_t rounds[4];
 } lrcipher_t;
 
-typedef enum lrcypher_dir_e { LRCIPHER_ENCRYPT = 0, LRCIPHER_DECRYPT = 3 } lrcipher_dir_t;
+typedef enum lrcipher_dir_e {
+	LRCIPHER_ENCRYPT = 0,
+	LRCIPHER_DECRYPT = 3
+} lrcipher_dir_t;
 
 void lrcipher_init(lrcipher_t*);
 

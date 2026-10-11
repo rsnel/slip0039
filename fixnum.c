@@ -44,23 +44,24 @@ void fixnum_init_buffer(fixnum_t *f, uint8_t *limbs, size_t no_limbs,
 }
 
 void fixnum_printf(const fixnum_t *f) {
-        char c[2];
-        for (int nibble = (f->no_limbs<<1) - 1; nibble >= 0; nibble--) {
-                memset(c, 0, sizeof(c));
-                wordlist_dereference(&wordlist_base16, c, sizeof(c), fixnum_peek(f, nibble<<2, 4));
-                putchar(c[0]);
-        }
+	char c[2];
+	for (int nibble = (f->no_limbs<<1) - 1; nibble >= 0; nibble--) {
+		memset(c, 0, sizeof(c));
+		wordlist_dereference(&wordlist_base16, c, sizeof(c),
+				fixnum_peek(f, nibble<<2, 4));
+		putchar(c[0]);
+	}
 }
 
 void fixnum_show(const fixnum_t *f, const char *name) {
-        printf("%s: ", name);
-        fixnum_printf(f);
-        printf("\n");
+	printf("%s: ", name);
+	fixnum_printf(f);
+	printf("\n");
 }
 
 void fixnum_divisor_show(const fixnum_divisor_t *d, const char *name) {
-        printf("log2=%d pure=%d ", d->p.log2, d->p.pure);
-        fixnum_show(&d->max_left_shift, "mls");
+	printf("log2=%d pure=%d ", d->p.log2, d->p.pure);
+	fixnum_show(&d->max_left_shift, "mls");
 }
 
 void fixnum_set_pattern(fixnum_t *f, fixnum_pattern_t pattern) {
@@ -92,7 +93,8 @@ void fixnum_set_uint16(fixnum_t *f, uint16_t val) {
 	f->limbs[f->no_limbs-2] = val>>8;
 }
 
-void fixnum_init_uint16(fixnum_t *f, uint8_t *limbs, size_t no_limbs, uint16_t val) {
+void fixnum_init_uint16(fixnum_t *f, uint8_t *limbs, size_t no_limbs,
+		uint16_t val) {
 	assert(no_limbs >= 2);
 	fixnum_init(f, limbs, no_limbs);
 	fixnum_set_uint16(f, val);
@@ -103,7 +105,8 @@ void fixnum_set_fixnum(fixnum_t *dest, const fixnum_t *src) {
 	fixnum_set_buffer(dest, src->limbs, src->no_limbs);
 }
 
-void fixnum_init_fixnum(fixnum_t *out, uint8_t *limbs, size_t no_limbs, const fixnum_t *in) {
+void fixnum_init_fixnum(fixnum_t *out, uint8_t *limbs, size_t no_limbs,
+		const fixnum_t *in) {
 	assert(out && in && in->no_limbs == no_limbs);
 	fixnum_init(out, limbs, no_limbs);
 	fixnum_set_fixnum(out, in);
@@ -127,7 +130,7 @@ uint16_t fixnum_shl(fixnum_t *f, uint8_t shift) {
 		shift -= 8;
 	}
 
-        uint8_t	mask = 0xff<<(8 - shift);
+	uint8_t mask = 0xff<<(8 - shift);
 
 	carry <<= shift;
 	carry |= (f->limbs[0]&mask)<<(8 - shift);
@@ -191,23 +194,26 @@ void fixnum_multiplier16_init(fixnum_multiplier16_t *m, uint16_t value) {
 	m->p.pure = cthelp_eq(m->value, 1<<m->p.log2);
 }
 
-void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t *d, const fixnum_multiplier16_t *m, uint8_t *limbs, size_t no_limbs) {
+void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t *d,
+		const fixnum_multiplier16_t *m, uint8_t *limbs,
+		size_t no_limbs) {
 	assert(d && m && limbs && no_limbs > 1 && m->value > 1);
 	d->p = m->p;
-	fixnum_init_uint16(&d->max_left_shift, limbs, no_limbs, m->value);
-	d->max_left_shift.limbs[0] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-2];
-	if (no_limbs > 3) d->max_left_shift.limbs[d->max_left_shift.no_limbs-2] = 0;
-	d->max_left_shift.limbs[1] = d->max_left_shift.limbs[d->max_left_shift.no_limbs-1];
-	if (no_limbs > 2) d->max_left_shift.limbs[d->max_left_shift.no_limbs-1] = 0;
-	fixnum_shl(&d->max_left_shift, 16 - m->p.log2 - 1);
+	fixnum_t *mls = &d->max_left_shift;
+	fixnum_init_uint16(mls, limbs, no_limbs, m->value);
+	mls->limbs[0] = mls->limbs[mls->no_limbs-2];
+	if (no_limbs > 3) mls->limbs[mls->no_limbs-2] = 0;
+	mls->limbs[1] = mls->limbs[mls->no_limbs-1];
+	if (no_limbs > 2) mls->limbs[mls->no_limbs-1] = 0;
+	fixnum_shl(mls, 16 - m->p.log2 - 1);
 }
 
 // a nice implementation of John Bollinger: https://stackoverflow.com/a/51388846
 static uint16_t popcnt_helper(uint8_t n) {
-        n = (n&0x55) + ((n>>1)&0x55);
-        n = (n&0x33) + ((n>>2)&0x33);
-        n = (n&0x0f) + ((n>>4)&0x0f);
-        return n;
+	n = (n&0x55) + ((n>>1)&0x55);
+	n = (n&0x33) + ((n>>2)&0x33);
+	n = (n&0x0f) + ((n>>4)&0x0f);
+	return n;
 }
 
 uint16_t fixnum_popcnt(const fixnum_t *f) {
@@ -222,7 +228,8 @@ uint16_t fixnum_popcnt(const fixnum_t *f) {
 	return n;
 }
 
-void fixnum_divisor_init_from_fixnum(fixnum_divisor_t *d, const fixnum_t *in, uint8_t *limbs, size_t no_limbs) {
+void fixnum_divisor_init_from_fixnum(fixnum_divisor_t *d, const fixnum_t *in,
+		uint8_t *limbs, size_t no_limbs) {
 	assert(d && in && limbs && no_limbs > 1);
 	uint16_t popcnt = fixnum_popcnt(in);
 
@@ -235,8 +242,8 @@ void fixnum_divisor_init_from_fixnum(fixnum_divisor_t *d, const fixnum_t *in, ui
 
 	uint16_t msb = d->p.log2 = 8*no_limbs - 1;
 
-	// now check if the last bit is 1 and shift left until it is, we calculate log2
-	// and compute the max left shifted value
+	// now check if the last bit is 1 and shift left until it is,
+	// we calculate log2 and compute the max left shifted value
 	while (!fixnum_peek(&d->max_left_shift, msb, 1)) {
 		d->p.log2--;
 		fixnum_shl(&d->max_left_shift, 1);
@@ -278,9 +285,11 @@ uint32_t fixnum_peek(const fixnum_t *f, size_t offset, uint8_t size) {
 
 	uint32_t out = (f->limbs[offset_limb]>>offset_bit)&(0xff>>(8-ssize[0]));
 	if (ssize[1]) {
-		out |= (f->limbs[offset_limb-1]<<ssize[0])&(0xffff>>(16-ssize[0]-ssize[1]));
+		out |= (f->limbs[offset_limb-1]<<ssize[0])&
+			(0xffff>>(16-ssize[0]-ssize[1]));
 		if (ssize[2]) {
-			out |= (f->limbs[offset_limb-2]<<(ssize[0]+ssize[1]))&(0xffff>>(16-size));
+			out |= (f->limbs[offset_limb-2]<<(ssize[0]+ssize[1]))&
+				(0xffff>>(16-size));
 		}
 	}
 
@@ -409,7 +418,7 @@ uint16_t fixnum_mul16(fixnum_t *f, const fixnum_multiplier16_t *m) {
 		return fixnum_shl(f, m->p.log2);
 
 	uint8_t low = m->value&0xff, high = m->value>>8;
-        uint16_t acc_low = 0, acc_high = 0;
+	uint16_t acc_low = 0, acc_high = 0;
 	size_t idx = f->no_limbs;
 
 	while (idx-- > 0) {
@@ -423,8 +432,10 @@ uint16_t fixnum_mul16(fixnum_t *f, const fixnum_multiplier16_t *m) {
 	return acc_high + acc_low;
 }
 
-uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s, int dividendmaxplus1) {
-	assert(f && d && f->no_limbs == d->max_left_shift.no_limbs && f->no_limbs >= 2);
+uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
+		fixnum_scratch_t *s, int dividendmaxplus1) {
+	assert(f && d && f->no_limbs == d->max_left_shift.no_limbs &&
+			f->no_limbs >= 2);
 	assert(dividendmaxplus1 == 0 || dividendmaxplus1 == 1);
 
 	for (int i = 0; i < f->no_limbs; i++)
@@ -438,7 +449,8 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s,
 
 	//printf("f->no_limbs=%ld\n", f->no_limbs);
 	fixnum_set_fixnum(&s->b, f);
-	if (s->b.no_limbs > f->no_limbs && dividendmaxplus1) s->b.limbs[s->b.no_limbs - f->no_limbs - 1] = 1;
+	if (s->b.no_limbs > f->no_limbs && dividendmaxplus1)
+		s->b.limbs[s->b.no_limbs - f->no_limbs - 1] = 1;
 	//fixnum_show(&s->b, "starttest");
 
 	fixnum_set_pattern(f, PATTERN_ZERO);
@@ -449,7 +461,8 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d, fixnum_scratch_t *s,
 
 	while (bit-- > 0) {
 		fixnum_shl(f, 1);
-		test = fixnum_sub_fixnum(&s->b, &s->a, 0xff)&(1 - dividendmaxplus1);
+		test = fixnum_sub_fixnum(&s->b, &s->a, 0xff)&
+			(1 - dividendmaxplus1);
 		//fixnum_show(&s->b, "test");
 		fixnum_add_uint16(f, 1 - test);
 		fixnum_add_fixnum(&s->b, &s->a, -test);

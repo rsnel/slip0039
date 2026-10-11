@@ -98,8 +98,8 @@ void hmac_done(hmac_t *h, uint8_t *sha, size_t size) {
 	wipememory(h, sizeof(*h));
 }
 
-void hmac(uint8_t *sha, size_t sha_size, const void *k, size_t k_size, const void *p, size_t p_size, hash_type_t type)
-{
+void hmac(uint8_t *sha, size_t sha_size, const void *k, size_t k_size,
+		const void *p, size_t p_size, hash_type_t type) {
 	hmac_t h;
 
 	hmac_init(&h, type);

@@ -51,15 +51,16 @@ int memeq(const uint8_t *a, const uint8_t *b, size_t n) {
 // check if unknown string is equal to target, comparison
 // time should not depend on the length of unknown,
 // unknown can be terminated by SPC or by LF
-int wordeq(const char *unknown, const char *target, const char **end, int req_terminator) {
-        int eq = 0, boolean;
+int wordeq(const char *unknown, const char *target, const char **end,
+		int req_terminator) {
+	int eq = 0, boolean;
 
 	do {
-                eq |= (*unknown)^(*target);
+		eq |= (*unknown)^(*target);
 
 		// increment pointer if current value is not SPC or NUL
 		unknown += cthelp_neq(*unknown, ' ')&cthelp_neq(*unknown, '\0');
-        } while (*(++target));
+	} while (*(++target));
 
 	boolean = cthelp_neq(eq, 0);
 
@@ -68,12 +69,12 @@ int wordeq(const char *unknown, const char *target, const char **end, int req_te
 		unknown += (cthelp_neq(*unknown, ' ') - 1)&1;
 	}
 
-	// set *end to point to the value after the last letter of the word
-	// if there is a match (if there is a match *end should be NULL, if there is
-	// no match, end is not modified
+	// set *end to point to the value after the last letter of the
+	// word if there is a match (if there is a match *end should be
+	// NULL, if there is no match, end is not modified
 	*end = (void*)((((long int)unknown)&(boolean - 1))|(long int)*end);
 
-        return boolean;
+	return boolean;
 }
 
 // escape unprintable char as \ooo so that error messages
@@ -105,15 +106,17 @@ int wordlist_dereference(wordlist_t *w, char *buf, int buf_size, uint16_t idx) {
 
 void sbufwordlist_dereference(wordlist_t *w, sbuf_t *s, uint16_t idx) {
 	assert(s);
-	s->len += wordlist_dereference(w, s->buf + s->len, s->size - s->len, idx);
+	s->len += wordlist_dereference(w, s->buf + s->len,
+			s->size - s->len, idx);
 }
 
 uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 	int match = -1; /* 0xffffffff */
 	*end = NULL;
 
-        for (int i = 0; i < w->m.value; i++)
-                match &= i|(-(wordeq(word, w->words[i], end,w->max_word_length != w->min_word_length)));
+	for (int i = 0; i < w->m.value; i++)
+		match &= i|(-(wordeq(word, w->words[i], end,
+				w->max_word_length != w->min_word_length)));
 
 	if (match == -1) {
 		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
@@ -124,10 +127,12 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 			sbufputchar(&sbuf, *word++);
 
 		if (*w->elt.key == '\0') {
-			sbufprintf(&sbuf, "' not found in the %s wordlist", w->family);
+			sbufprintf(&sbuf, "' not found in the %s wordlist",
+					w->family);
 		} else {
-			sbufprintf(&sbuf, "' not found in the %s wordlist of language %s", w->family, w->elt.key);
-
+			sbufprintf(&sbuf, "' not found in the %s wordlist "
+					"of language %s", w->family,
+					w->elt.key);
 		}
 		FATAL("%s", dl);
 	}
@@ -156,7 +161,8 @@ int sbufprintf(sbuf_t *s, const char *format, ...) {
 	va_list ap;
 	va_start(ap, format);
 
-	s->len += (ret = vsnprintf_strict(s->buf + s->len, s->size - s->len, format, ap));
+	s->len += (ret = vsnprintf_strict(s->buf + s->len,
+				s->size - s->len, format, ap));
 
 	return ret;
 }
@@ -166,21 +172,23 @@ void sbufprintf_base16(sbuf_t *s, const uint8_t *buf, size_t len) {
 	fixnum_init(&f, (uint8_t*)buf, len);
 
 	for (int nibble = (len<<1) - 1; nibble >= 0; nibble--)
-		sbufwordlist_dereference(&wordlist_base16, s, fixnum_peek(&f, nibble<<2, 4));
+		sbufwordlist_dereference(&wordlist_base16, s,
+				fixnum_peek(&f, nibble<<2, 4));
 }
 
 void wipestackmemory(const size_t len) {
-    // only support GCC or C99+ compiler
-    unsigned char fodder[len];
-    if (len > 0)
+	// only support GCC or C99+ compiler
+	unsigned char fodder[len];
+	if (len > 0)
 		wipememory(fodder, len);
 }
 
-// read \n delimited string from FILE* and return lenght of string that was read
-// without the terminating \0
+// read \n delimited string from FILE* and return length of string that
+// was read without the terminating \0
 // eof_acceptable means: if we encounter EOF when we try to read the first
 // character of input, we don't complain and return an empty string
-size_t read_stringLF(char *buf, size_t size, FILE *fp, const char *desc, int eof_acceptable) {
+size_t read_stringLF(char *buf, size_t size, FILE *fp, const char *desc,
+		int eof_acceptable) {
 	assert(size > 0);
 	int c;
 	size_t i = 0;
@@ -189,12 +197,15 @@ size_t read_stringLF(char *buf, size_t size, FILE *fp, const char *desc, int eof
 		if (c == EOF) {
 			if (feof(fp)) {
 				if (i == 0 && eof_acceptable) break;
-				else FATAL("EOF encountered before \\n while reading %s", desc);
+				else FATAL("EOF encountered before \\n while "
+						"reading %s", desc);
 			}
-			else FATAL("error %d reading %s: %s", errno, desc, strerror(errno));
+			else FATAL("error %d reading %s: %s", errno, desc,
+					strerror(errno));
 		}
 		if (c == '\n') break;
-		if (i == size - 1) FATAL("buffer full before encountering \\n while reading %s", desc);
+		if (i == size - 1) FATAL("buffer full before encountering \\n "
+				"while reading %s", desc);
 		buf[i++] = c;
 	}
 	buf[i] = '\0';

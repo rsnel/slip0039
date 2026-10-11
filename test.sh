@@ -16,13 +16,13 @@ PASSED=0
 echo running $COUNT tests
 for i in `seq 1 $COUNT`; do
 	TEST=`$JQ .[$i-1] < $VECTORS`
-	MNENOMICS=`echo $TEST | $JQ -r ".[1] | .[]"`
+	MNEMONICS=`echo $TEST | $JQ -r ".[1] | .[]"`
 	SECRET=`echo $TEST | $JQ -r ".[2]"`
 	echo "----------"
 	echo "running test" `echo $TEST | $JQ --raw-output .[0] `
 	# as we are using the Bourne shell, echo does not need
 	# the -e option to interpret \n the way we want
-	RESULT=`echo "TREZOR\n$MNENOMICS" | ./slip0039 -d`
+	RESULT=`echo "TREZOR\n$MNEMONICS" | ./slip0039 -d`
 	SUCCESS=$?
 	if [ "$SUCCESS" = "1" ]; 
 		then if [ "$SECRET" = "" ]; then

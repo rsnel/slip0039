@@ -23,10 +23,16 @@
 #include "utils.h"
 #include "llist.h"
 
-#define ASSERT_SANE_LLIST_INFO() assert(li && li->freer && li->size > sizeof(void*))
-#define ASSERT_SANE_LLIST() assert(l && (!l->info || (l->info->freer && l->info->size > sizeof(void*))) && ((l->count == 0 && !l->head) || (l->count > 0 && l->head)))
+#define ASSERT_SANE_LLIST_INFO() \
+	assert(li && li->freer && li->size > sizeof(void*))
+#define ASSERT_SANE_LLIST() \
+	assert(l && (!l->info || (l->info->freer && \
+			l->info->size > sizeof(void*))) && \
+			((l->count == 0 && !l->head) || \
+			 (l->count > 0 && l->head)))
 
-llist_info_t *llist_info_init_default(llist_info_t *li, size_t size, void(*freer)(void*)) {
+llist_info_t *llist_info_init_default(llist_info_t *li, size_t size,
+		void (*freer)(void*)) {
 	assert(li);
 	li->size = size;
 	li->freer = freer;
@@ -52,7 +58,8 @@ llist_t *llist_init_default(llist_t *l, llist_info_t *li) {
 	return l;
 }
 
-llist_t *llist_init_info(llist_t *l, llist_info_t *li, size_t size, void (*freer)(void*)) {
+llist_t *llist_init_info(llist_t *l, llist_info_t *li, size_t size,
+		void (*freer)(void*)) {
 	init_error(llist_info, default, li, size, freer);
 	init_error(llist, default, l, li);
 	return l;

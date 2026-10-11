@@ -28,11 +28,11 @@ option `-c` specifies the encoding of the master secret
 
   - `spanish` is also supported, but UTF-8 normalization is not yet supported
 
-* `diceware': this codec can store a diceware passphrase of at least 9 words,
+* `diceware`: this codec can store a diceware passphrase of at least 9 words,
   if you want to store a 10 word passphrase, you should randomly select an
   extra word an store it as an 11 word passphrase; etc, the system notifies
-  you if it needs an extra word, please take care to actually select an random
-  word, otherwise the result of the correct passphrase is discernable from
+  you if it needs an extra word, please take care to actually select a random
+  word, otherwise the result of the correct passphrase is discernible from
   a random passphrase
 
 ### Mode `recover` (default when no mode is specified)
@@ -56,7 +56,7 @@ shares and the `n - 4` bytes of the digest share are computed with PBKDF2 with
 the `EMS || SEED` as password and other parameters that decide the structure of
 the split as salt. If `SEED` is not kept secret, then an adversary that already
 knows `EMS`, can use it to guess the structure of the split i.e. how many
-shares each group has. Also when a codec is used that needs some random data, like diceware, the correctness of the passphrase can be proven if one knows the `SEED`. Treat is as confidential as the secret and the passphrase.
+shares each group has. Also when a codec is used that needs some random data, like diceware, the correctness of the passphrase can be proven if one knows the `SEED`. Treat it as confidential as the secret and the passphrase.
 
 All data supplied to this program on standard input should be treated as highly confidential. `SEED` should be destroyed after a single use
 
@@ -92,7 +92,7 @@ The program is known to work on Linux and MacOS. Issues pertaining to MacOS not 
 
 ## Authors
 
-The project was started by Rik Snel (https://github.com/rsnel/). MacOS compatibilty and various fixes where offered by James Z.M. Gao  (https://github.com/gzm55).
+The project was started by Rik Snel (https://github.com/rsnel/). MacOS compatibility and various fixes were offered by James Z.M. Gao  (https://github.com/gzm55).
 
 The sha256 code is copyright (c) 2014 The Bitcoin Core developers under the MIT license.
 

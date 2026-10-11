@@ -33,14 +33,17 @@ void lrcipher_init(lrcipher_t *l) {
 	}
 }
 
-void lrcipher_add_passphrase(lrcipher_t *l, const char *passphrase, size_t passphrase_len) {
+void lrcipher_add_passphrase(lrcipher_t *l, const char *passphrase,
+		size_t passphrase_len) {
 	for (uint8_t i = 0; i < 4; i++) {
-		pbkdf2_update_password(&l->rounds[i], passphrase, passphrase_len);
+		pbkdf2_update_password(&l->rounds[i], passphrase,
+				passphrase_len);
 	}
 }
 
-void lrcipher_finalize_passphrase(lrcipher_t *l, const char *context, size_t context_len, uint16_t id) {
-        uint16_t id_be16 = cpu_to_be16(id);
+void lrcipher_finalize_passphrase(lrcipher_t *l, const char *context,
+		size_t context_len, uint16_t id) {
+	uint16_t id_be16 = cpu_to_be16(id);
 	for (uint8_t i = 0; i < 4; i++) {
 		pbkdf2_update_salt(&l->rounds[i], context, context_len);
 		pbkdf2_update_salt(&l->rounds[i], &id_be16, 2);
@@ -56,10 +59,10 @@ static void helper(lrcipher_t *l, unsigned char *L,
 	pbkdf2_done(&p, tmp, size, iterations);
 
 	if (!xchg) for (int i = 0; i < size; i++) {
-                tmp[i] ^= L[i];
-                L[i] = R[i];
-                R[i] = tmp[i];
-        } else for (int i = 0; i < size; i++) {
+		tmp[i] ^= L[i];
+		L[i] = R[i];
+		R[i] = tmp[i];
+	} else for (int i = 0; i < size; i++) {
 		// do this, so we don't have to switch
 		// L and R at the end of lrcipher
 		L[i] ^= tmp[i];
@@ -70,14 +73,14 @@ static void helper(lrcipher_t *l, unsigned char *L,
 void lrcipher_execute(lrcipher_t *l, unsigned char *dst,
 		const unsigned char *src, size_t size,
 		uint64_t iterations, lrcipher_dir_t dir) {
-	// use dst as scrath pad
+	// use dst as scratch pad
 	if (src != dst) memmove(dst, src, size);
 
 	size >>= 1;
 
 	// if dir == LRCIPHER_ENCRYPT, then the rounds are 0,1,2,3
 	// if dir == LRCIPHER_DECRYPT, then the rounds are 3,2,1,0
-        for (int i = 0; i < 4; i++)
-                helper(l, dst, dst + size, size, i^dir,
+	for (int i = 0; i < 4; i++)
+		helper(l, dst, dst + size, size, i^dir,
 				iterations, i == 3);
 }

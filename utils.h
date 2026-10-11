@@ -31,25 +31,25 @@
 /* To avoid that a compiler optimizes certain memset calls away, these
  * macros may be used instead. */
 #define wipememory2(_ptr,_set,_len) do { \
-        volatile char *_vptr=(volatile char *)(_ptr); \
-        size_t _vlen=(size_t)(_len); /*, ctr = 0;*/ \
+	volatile char *_vptr=(volatile char *)(_ptr); \
+	size_t _vlen=(size_t)(_len); /*, ctr = 0;*/ \
 	if (!_vptr) break; \
-        while(_vlen) { \
-                *_vptr=(_set); _vptr++; _vlen--; \
-        } \
-} while(0)
+	while (_vlen) { \
+		*_vptr=(_set); _vptr++; _vlen--; \
+	} \
+} while (0)
 #define wipememory(_ptr,_len) wipememory2(_ptr,0,_len)
 
 #define init_error(a, b, c, ...) do { \
-        if (!a##_init_##b(c, ## __VA_ARGS__)) FATAL("initializing " #a); \
+	if (!a##_init_##b(c, ## __VA_ARGS__)) FATAL("initializing " #a); \
 } while (0)
 
 #define initp_fatal_errno(a, b, ...) do { \
-        if (!(a = b(__VA_ARGS__))) FATAL_errno(#b "()"); \
+	if (!(a = b(__VA_ARGS__))) FATAL_errno(#b "()"); \
 } while (0)
 
 #define initp_error_errno(a, b, ...) do { \
-        if (!(b = a(__VA_ARGS__))) ERROR_errno(#a "()"); \
+	if (!(b = a(__VA_ARGS__))) ERROR_errno(#a "()"); \
 } while (0)
 
 void wipestackmemory(const size_t len);
@@ -76,7 +76,7 @@ int vsnprintf_strict(char*, size_t, const char*, va_list ap);
 
 int snprintf_strict(char*, size_t, const char*, ...);
 
-int sbufprintf(sbuf_t*, const char* format, ...);
+int sbufprintf(sbuf_t*, const char*, ...);
 
 void sbufprintf_base16(sbuf_t*, const uint8_t*, size_t);
 

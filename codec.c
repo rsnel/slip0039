@@ -40,9 +40,9 @@ static void base16_encode(uint8_t *out, size_t *n,
 		scratch[no_input++] = wordlist_search(w, cur, &cur);
 	}
 
-        if (no_input%4)
+	if (no_input%4)
 		FATAL("size of plaintext must be multiple of 16 bits");
-        if (no_input>>1 < 16)
+	if (no_input>>1 < 16)
 		FATAL("size of plaintext must be at least 16 bytes");
 
 	base_decode_buffer(out, no_input>>1, &w->m,
@@ -53,7 +53,8 @@ static void base16_encode(uint8_t *out, size_t *n,
 
 static void base16_decode(char *out, size_t out_size, lrcipher_t *l,
 		uint16_t *scratch, size_t scratch_size,
-		const uint8_t *in, size_t n, wordlist_t *w, base_scratch_t *bs) {
+		const uint8_t *in, size_t n, wordlist_t *w,
+		base_scratch_t *bs) {
 	sbuf_t sbuf = { .buf = out, .size = out_size };
 
 	sbufprintf_base16(&sbuf, in, n);
@@ -64,19 +65,23 @@ static void bip39_encode(uint8_t *out, size_t *n,
 		size_t scratch_size, const char *in, wordlist_t *w,
 		const char *seed, size_t seed_len, base_scratch_t *bs) {
 	size_t no_input = 0;
-	uint8_t *s = (uint8_t*)scratch; // (ab)use scratch to store sha256 checksum
+	// (ab)use scratch to store sha256 checksum
+	uint8_t *s = (uint8_t*)scratch;
 
 	assert(scratch_size >= 16); // space for sha256 hash
 	assert(WORDS >= 24);
 
 	while (*in) {
-		if (no_input == 24) FATAL("input too big, max 24 words supported");
+		if (no_input == 24)
+			FATAL("input too big, max 24 words supported");
 
 		scratch[no_input++] = wordlist_search(w, in, &in);
 	}
 
 	if (no_input < 12 || no_input > 24 || no_input%3) {
-		FATAL("number of words %ld not supported, BIP39 only supports mnemonics of 12, 15, 18, 21 and 24 words", no_input);
+		FATAL("number of words %ld not supported, BIP39 only "
+				"supports mnemonics of 12, 15, 18, 21 and 24 "
+				"words", no_input);
 	}
 
 	base_decode_buffer(out, 4*no_input/3 + 1, &w->m,
@@ -88,16 +93,18 @@ static void bip39_encode(uint8_t *out, size_t *n,
 
 	uint8_t checksum = (*s)&(0xff<<(8 - no_input/3));
 
-	if (checksum != *(out + *n)) FATAL("invalid mnemonic, checksum does not match");
+	if (checksum != *(out + *n))
+		FATAL("invalid mnemonic, checksum does not match");
 }
 
 static void bip39_decode(char *out, size_t out_size, lrcipher_t *l,
 		uint16_t *scratch, size_t scratch_size,
-		const uint8_t *in, size_t n, wordlist_t *w, base_scratch_t *bs) {
+		const uint8_t *in, size_t n, wordlist_t *w,
+		base_scratch_t *bs) {
 
 	if (n < 16 || n > 32 || n%4 != 0)
 		FATAL("length of plaintext is not suitable for BIP39 "
-				"entropy, lenght is %ld and it should "
+				"entropy, length is %ld and it should "
 				"be 16, 20, 24, 28, or 32 bytes", n);
 
 	sbuf_t sbuf = { .buf = out, .size = out_size };
@@ -123,23 +130,24 @@ start:
 
 #if 0
 void fixnum_printf(const fixnum_t *f) {
-        char c[2];
-        for (int nibble = (f->no_limbs<<1) - 1; nibble >= 0; nibble--) {
-                memset(c, 0, sizeof(c));
-                wordlist_dereference(&wordlist_base16, c, sizeof(c), fixnum_peek(f, nibble<<2, 4));
-                putchar(c[0]);
-        }
+	char c[2];
+	for (int nibble = (f->no_limbs<<1) - 1; nibble >= 0; nibble--) {
+		memset(c, 0, sizeof(c));
+		wordlist_dereference(&wordlist_base16, c, sizeof(c),
+				fixnum_peek(f, nibble<<2, 4));
+		putchar(c[0]);
+	}
 }
 
 void fixnum_show(const fixnum_t *f, const char *name) {
-        printf("%s: ", name);
-        fixnum_printf(f);
-        printf("\n");
+	printf("%s: ", name);
+	fixnum_printf(f);
+	printf("\n");
 }
 
 void fixnum_divisor_show(const fixnum_divisor_t *d, const char *name) {
-        printf("log2=%d pure=%d ", d->p.log2, d->p.pure);
-        fixnum_show(&d->max_left_shift, "mls");
+	printf("log2=%d pure=%d ", d->p.log2, d->p.pure);
+	fixnum_show(&d->max_left_shift, "mls");
 }
 #endif
 
@@ -154,13 +162,16 @@ static void diceware_encode(uint8_t *out, size_t *n,
 	int blocks;
 	fixnum_t f, g, h, m;
 	fixnum_divisor_t d;
-        assert(scratch_size == BLOCKS<<3);
+	assert(scratch_size == BLOCKS<<3);
 
 	fixnum_init_uint16(&f, out, BLOCKS<<1, 1);
 
 	while (*in) {
 		ret = fixnum_mul16(&f, &w->m);
-		if (ret) FATAL("too many words specified on input, maximum is %ld (based on a compile time setting of the maximum MS size of %d bytes)", no_input, BLOCKS<<4);
+		if (ret) FATAL("too many words specified on input, maximum "
+				"is %ld (based on a compile time setting of "
+				"the maximum MS size of %d bytes)",
+				no_input, BLOCKS<<4);
 
 		//fixnum_show(&f, "max");
 		//if (no_input == 24) FATAL("input too big, max 24 words supported");
@@ -174,7 +185,8 @@ static void diceware_encode(uint8_t *out, size_t *n,
 	printf("log2=%d\n", log2);
 	blocks = (log2+15)/16;
 	printf("bytes=%d\n", blocks*2);
-	if (blocks < 8) FATAL("not enough diceware word specified on input, w eneed at least 9 words");
+	if (blocks < 8) FATAL("not enough diceware words specified on "
+			"input, we need at least 9 words");
 	fixnum_show(&f, "before");
 
 	// check if we have room for an extra word
@@ -184,7 +196,9 @@ static void diceware_encode(uint8_t *out, size_t *n,
 	fixnum_show(&f, "after");
 	printf("new_bytes=%d\n", (log2_new+15)/16*2);
 
-	if ((log2_new+15)/16 == blocks) FATAL("there is room for 1 more extra word, please generate an extra word randomly and add it");
+	if ((log2_new+15)/16 == blocks) FATAL("there is room for 1 more "
+			"extra word, please generate an extra word "
+			"randomly and add it");
 
 	*n = blocks<<1;
 	fixnum_init(&f, out, *n);
@@ -269,12 +283,14 @@ start:
 
 static void diceware_decode(char *out, size_t out_size, lrcipher_t *l,
 		uint16_t *scratch, size_t scratch_size,
-		const uint8_t *in, size_t n, wordlist_t *w, base_scratch_t *bs) {
+		const uint8_t *in, size_t n, wordlist_t *w,
+		base_scratch_t *bs) {
 	uint8_t *s = (uint8_t*)scratch;
 	assert(scratch_size<<1 >= n);
 	assert(bs->s.a.no_limbs >= n);
 	assert(bs->s.b.no_limbs >= n);
-	assert(n >= 16 && n%2 == 0); // as defined by slip0039 and ensured somewhere else
+	// as defined by slip0039 and ensured somewhere else
+	assert(n >= 16 && n%2 == 0);
 
 	assert(w && !w->m.p.pure && w->m.value == 7776);
 	// let's find out the length of the wordlist we can completely represent

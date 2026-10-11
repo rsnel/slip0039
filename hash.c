@@ -43,7 +43,8 @@ hash_function_t hash_functions[] = {
 };
 
 void hash_init(hash_t *h, hash_type_t type) {
-	assert(type >= 0 && type < sizeof(hash_functions)/sizeof(*hash_functions));
+	assert(type >= 0 &&
+			type < sizeof(hash_functions)/sizeof(*hash_functions));
 	h->f = &hash_functions[type];
 	(h->f->init)(&h->ctx);
 }
@@ -56,7 +57,8 @@ void hash_finalize(hash_t *h, uint8_t *out, size_t size) {
 	(h->f->finalize)(&h->ctx, out, size);
 }
 
-void hash(uint8_t *out, size_t out_size, const void *in, size_t in_size, hash_type_t type) {
+void hash(uint8_t *out, size_t out_size, const void *in, size_t in_size,
+		hash_type_t type) {
 	hash_t h;
 	hash_init(&h, type);
 	hash_update(&h, in, in_size);

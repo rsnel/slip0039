@@ -34,7 +34,8 @@ extern int debug;
 //extern int verbose;
 extern int quiet;
 
-#define WARNING(a,...) do { if (!quiet) WHINE("warning:" a, ## __VA_ARGS__); } while (0)
+#define WARNING(a,...) \
+	do { if (!quiet) WHINE("warning:" a, ## __VA_ARGS__); } while (0)
 #define ERROR(a,...) WHINE("error:" a, ## __VA_ARGS__)
 #define DEBUG(a,...) do { \
 	if (debug) WHINE("debug:" a, ## __VA_ARGS__); } while (0)
@@ -46,9 +47,9 @@ extern int quiet;
 #define BUG(msg,...)            ABORT("fatal:BUG:" msg, ## __VA_ARGS__)
 #define FATAL(msg,...)            ABORT("fatal:" msg, ## __VA_ARGS__)
 #define FATAL_errno(msg,...) \
-        FATAL(msg ": %s", ## __VA_ARGS__ , strerror(errno))
+	FATAL(msg ": %s", ## __VA_ARGS__ , strerror(errno))
 #define ERROR_errno(msg,...) \
-        ERROR(msg ": %s", ## __VA_ARGS__ , strerror(errno))
+	ERROR(msg ": %s", ## __VA_ARGS__ , strerror(errno))
 
 void verbose_init(char*);
 

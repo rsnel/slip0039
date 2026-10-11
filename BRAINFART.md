@@ -2,7 +2,7 @@ This implementation of slip0039 stores 128 + a multiple of 16 bits. It is
 currently limited to 512 bits to allow the storage (root) xpubs and xprvs.
 
 But what if we want to store structured data? Like a BIP39 mnemonic sentence of
-24 words? Or a diceware mnemomic sentence?
+24 words? Or a diceware mnemonic sentence?
 
 BIP39
 ~~~~~
@@ -14,7 +14,7 @@ recompute the checksum as needed.
 All the other sizes of BIP39 mnemonic sentences also correspond to supported
 slip0039 data sizes.
 
-In this way, every passphrase will result in an equally likeley and valid BIP39
+In this way, every passphrase will result in an equally likely and valid BIP39
 mnemonic seed. The result of typing the 'right' passphrase is not discernible
 to typing another passphrase.
 
@@ -87,7 +87,7 @@ of the inverse yields an out-of-range value, then apply it a couple of times).
 This will be undone at decoding time.
 
 This is still not good enough. Assume that the valid codes represent fraction p
-of the total possilbe words. There is a chance p that application of the
+of the total possible words. There is a chance p that application of the
 reverse yields a valid value, so in this case we can't produce an non-valid
 value using our pseudorandom function. This does not seem a to be a problem,
 because there is still a probability 1-p that we can, but this means that the

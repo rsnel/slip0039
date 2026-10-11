@@ -80,17 +80,17 @@ void rs1024_checksum(rs1024_state_t *state, uint16_t *out) {
 }
 
 bool rs1024_verify(const uint16_t *input, size_t no_input) {
-        rs1024_state_t ok = RS1024_INIT, s;
+	rs1024_state_t ok = RS1024_INIT, s;
 
-        rs1024_init_slip0039(&s);
-        rs1024_add_array(&s, input, no_input);
+	rs1024_init_slip0039(&s);
+	rs1024_add_array(&s, input, no_input);
 
-        return ok.chk == s.chk;
+	return ok.chk == s.chk;
 }
 
 void rs1024_add(uint16_t *input, size_t no_input) {
-	        rs1024_state_t s;
-        rs1024_init_slip0039(&s);
-        rs1024_add_array(&s, input, no_input);
-        rs1024_checksum(&s, input + no_input);
+	rs1024_state_t s;
+	rs1024_init_slip0039(&s);
+	rs1024_add_array(&s, input, no_input);
+	rs1024_checksum(&s, input + no_input);
 }

@@ -37,7 +37,8 @@ typedef struct shashtbl_s {
 	uint8_t unique;
 } shashtbl_t;
 
-void *shashtbl_init_default(shashtbl_t*, uint8_t, uint8_t, size_t, void (*)(void*));
+void *shashtbl_init_default(shashtbl_t*, uint8_t, uint8_t, size_t,
+		void (*)(void*));
 
 void *shashtbl_init_simple(shashtbl_t*, uint8_t, uint8_t);
 
@@ -61,7 +62,8 @@ void shashtbl_del_elt(shashtbl_t*, void*);
 
 void shashtbl_del_elt_bykey(shashtbl_t*, const char*);
 
-void *shashtbl_iteratorp(shashtbl_t*, void *(*)(shashtbl_elt_t**, void*), void*);
+void *shashtbl_iteratorp(shashtbl_t*, void *(*)(shashtbl_elt_t**, void*),
+		void*);
 
 void *shashtbl_iterator(shashtbl_t*, void *(*)(void*, void*), void*);
 

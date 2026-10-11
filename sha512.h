@@ -36,12 +36,12 @@
 
 
 /**
- * struct shar512_ctx - structure to store running context for sha512
+ * struct sha512_ctx - structure to store running context for sha512
  */
 struct sha512_ctx {
-    uint64_t s[8];
-    unsigned char buf[128];
-    size_t bytes;
+	uint64_t s[8];
+	unsigned char buf[128];
+	size_t bytes;
 };
 
 void sha512_init(struct sha512_ctx *ctx);

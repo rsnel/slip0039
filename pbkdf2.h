@@ -48,6 +48,7 @@ void pbkdf2_finished(pbkdf2_t*);
 
 void pbkdf2_done(pbkdf2_t*, void*, size_t, uint64_t);
 
-void pbkdf2(void *, const void*, size_t, const void*, size_t, uint64_t, size_t, hash_type_t);
+void pbkdf2(void*, const void*, size_t, const void*, size_t, uint64_t, size_t,
+		hash_type_t);
 
 #endif /* SLIP0039_PBKDF2_H */

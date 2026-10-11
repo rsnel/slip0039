@@ -73,7 +73,7 @@ int slip0039_quorum(slip0039_set_t *s) {
 void slip0039_debug_share(const char *path, int index, int space,
 		const uint8_t *buf, size_t n, const char *title) {
 	char character;
-        sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+	sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
 	memset(dl, 0, sizeof(dl));
 
 	if (index == -3) character = MS_IDENTIFIER;
@@ -110,12 +110,12 @@ void slip0039_debug_set(slip0039_set_t *m, slip0039_t *s,
 			if (m->children[i]) {
 				char newpath[16];
 				snprintf_strict(newpath, sizeof(newpath),
-					       	"%s%1x/", path, i);
+						"%s%1x/", path, i);
 				slip0039_debug_set(m->children[i], s,
 						newpath, m->names[i]);
 			} else if (m->shares[i])
 				slip0039_debug_share(path, i, 0, m->shares[i],
-					       	s->n, m->names[i]);
+						s->n, m->names[i]);
 		}
 	}
 
@@ -141,14 +141,18 @@ void slip0039_debug(slip0039_t *s) {
 }
 
 #if defined(__APPLE__) && defined(__MACH__)
-static void _mlock(const void *const p, const char* const var, const size_t len) {
+static void _mlock(const void *const p, const char *const var,
+		const size_t len) {
 	if (p && len && mlock(p, len) < 0) {
-		FATAL("failed locking %s(%u) in RAM: %s", var, (unsigned int)len, strerror(errno));
+		FATAL("failed locking %s(%u) in RAM: %s", var,
+				(unsigned int)len, strerror(errno));
 	}
 }
-static void _munlock(const void *const p, const char* const var, const size_t len) {
+static void _munlock(const void *const p, const char *const var,
+		const size_t len) {
 	if (p && len && munlock(p, len) < 0) {
-		WARNING("failed unlocking %s(%u) in RAM: %s", var, (unsigned int)len, strerror(errno));
+		WARNING("failed unlocking %s(%u) in RAM: %s", var,
+				(unsigned int)len, strerror(errno));
 	}
 }
 #define mlock_obj(p) do { \
@@ -205,8 +209,8 @@ void wipe() {
 	wipememory(&seed, sizeof(seed));
 	wipememory(&seed_len, sizeof(seed_len));
 	if (munlockall() < 0)
-                WARNING("failed unlocking process in from RAM: %s",
-                                strerror(errno));
+		WARNING("failed unlocking process in from RAM: %s",
+				strerror(errno));
 #endif
 }
 
@@ -253,7 +257,8 @@ void slip0039_write_group_title(slip0039_t *s, uint8_t i, uint16_t group) {
 	sbufprintf(&sb, ")");
 }
 
-void slip0039_write_member_title(slip0039_t *s, uint8_t i, uint8_t j, uint16_t member) {
+void slip0039_write_member_title(slip0039_t *s, uint8_t i, uint8_t j,
+		uint16_t member) {
 	sbuf_t sb;
 	sb.buf = s->members[i].names[j];
 	sb.size = sizeof(*s->members[i].names);
@@ -282,7 +287,8 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 			fixnum_poke(&h, 4, 4, j);
 			fixnum_poke(&h, 0, 4, s->members[i].threshold - 1);
 
-			base_encode_buffer(input, 4, &wordlist_slip0039.m, slip0039_header, 5, &bs, 0);
+			base_encode_buffer(input, 4, &wordlist_slip0039.m,
+					slip0039_header, 5, &bs, 0);
 
 			if (j == 0) {
 				if (i == 0) slip0039_write_title(s, input);
@@ -310,7 +316,8 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 			while (++k < 4 + (8*s->n + 9)/10 + 3) {
 				sbufprintf(&sb, " ");
 start:
-				sbufwordlist_dereference(&wordlist_slip0039, &sb, input[k]);
+				sbufwordlist_dereference(&wordlist_slip0039,
+						&sb, input[k]);
 			}
 			printf("%s\n", mnemonic);
 
@@ -332,17 +339,20 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 	assert(sizeof(input)/sizeof(*input) >= WORDS);
 
 	while (*line) {
-		if (no_input == WORDS) FATAL("too many words in mnemomic on line %d, "
-                                        "%d supported at maximum",
-                                        line_number, WORDS);
+		if (no_input == WORDS) FATAL("too many words in mnemonic on "
+					"line %d, "
+					"%d supported at maximum",
+					line_number, WORDS);
 
-		input[no_input++] = wordlist_search(&wordlist_slip0039, line, &line);
+		input[no_input++] = wordlist_search(&wordlist_slip0039,
+				line, &line);
 	}
 
 	if (!rs1024_verify(input, no_input))
-		FATAL("checksum of mnemonic on line %d is not valid", line_number);
+		FATAL("checksum of mnemonic on line %d is not valid",
+				line_number);
 
-        if (no_input < 20)
+	if (no_input < 20)
 		FATAL("not enough words in mnemonic on line %d, "
 				"minimum 20 words", line_number);
 
@@ -351,8 +361,8 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 	size_t n = 2*(10*(no_input - 7)/16);
 	size_t surplus = 10*(no_input - 7)%16;
-        if (surplus >= 10) 
-                FATAL("invalid master secret length in mnemonic "
+	if (surplus >= 10)
+		FATAL("invalid master secret length in mnemonic "
 				"on line %d, padding >= 10", line_number);
 
 	uint16_t id;
@@ -411,7 +421,8 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 	m->shares[I] = m->storage_shares[I];
 
-	if (base_decode_buffer(m->shares[I], n, &wordlist_slip0039.m, &input[4], no_input - 7, 0))
+	if (base_decode_buffer(m->shares[I], n, &wordlist_slip0039.m,
+				&input[4], no_input - 7, 0))
 		FATAL("invalid (nonzero) padding in mnemonic on line %d",
 				line_number);
 
@@ -446,9 +457,10 @@ void slip0039_add_seed(slip0039_t *s) {
 	mlock_ptr(seed, seed_len);
 #endif
 	if (seed_len < 64) WARNING("specified value for SEED is very "
-				"short, consider using a longer value of at least 64 alphanumeric bytes");
+				"short, consider using a longer value of at "
+				"least 64 alphanumeric bytes");
 	hash(sha, SHA256_LEN, seed, seed_len, HASH_SHA256);
-       	// drop MSB to get 15 bits
+	// drop MSB to get 15 bits
 	s->id = 0x7fff&((sha[0]<<8) + sha[1]);
 
 }
@@ -467,7 +479,7 @@ void slip0039_add_passphrase(slip0039_t *s, FILE *fp) {
 		character = fgetc(fp);
 		if (character == EOF) {
 			if (feof(fp))
-			       	FATAL("end of file while reading passphrase");
+				FATAL("end of file while reading passphrase");
 			else FATAL("error %d reading passphrase: %s",
 					errno, strerror(errno));
 		} else if (character == '\n') break;
@@ -481,7 +493,8 @@ void slip0039_add_passphrase(slip0039_t *s, FILE *fp) {
 }
 
 /* must be called after EMS is computed */
-void init_prng_pbkdf2(pbkdf2_t *p, slip0039_t *s, const char *seed, size_t seed_len) {
+void init_prng_pbkdf2(pbkdf2_t *p, slip0039_t *s, const char *seed,
+		size_t seed_len) {
 	/* initialize PRNG based on PBKDF2 with EMS and SEED
 	 * as password and a description of the way the secret
 	 * must be split as the first salt
@@ -519,8 +532,8 @@ void slip0039_split(slip0039_set_t *s, size_t n, pbkdf2_t *p) {
 	} else {
 		/* the secret and digest will be known, once we start
 		 * to compute the other shares using lagrange */
-        	uint8_t idx[MAX_SHARES] = { -1, -2 };
-        	int no_idx = 2;
+		uint8_t idx[MAX_SHARES] = { -1, -2 };
+		int no_idx = 2;
 
 		/* compute digest */
 		assert(!s->digest);
@@ -556,8 +569,8 @@ void slip0039_split(slip0039_set_t *s, size_t n, pbkdf2_t *p) {
 }
 
 void slip0039_recover(slip0039_set_t *s, uint8_t *secret, size_t n) {
-        uint8_t idx[MAX_SHARES];
-        int no_idx = 0;
+	uint8_t idx[MAX_SHARES];
+	int no_idx = 0;
 
 	assert(s->available >= s->threshold && s->threshold);
 
@@ -569,10 +582,10 @@ void slip0039_recover(slip0039_set_t *s, uint8_t *secret, size_t n) {
 		}
 		if (s->shares[i]) idx[no_idx++] = i;
 
-                if (no_idx == s->threshold) break;
-        }
+		if (no_idx == s->threshold) break;
+	}
 
-        assert(no_idx == s->threshold);
+	assert(no_idx == s->threshold);
 
 	if (s->threshold == 1) {
 		// if threshold is 1, just copy the first
@@ -626,10 +639,10 @@ void boring_stuff() {
 	mlock_obj(base_scratch_space);
 	mlock_obj(slip0039_header);
 #else
-        /* lock me into memory; don't leak info to swap */
-        if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
-                FATAL("failed locking process in RAM: %s",
-                                strerror(errno));
+	/* lock me into memory; don't leak info to swap */
+	if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
+		FATAL("failed locking process in RAM: %s",
+				strerror(errno));
 #endif
 
 	if (atexit(wipe))
@@ -712,25 +725,29 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 				char *separator = strchr(argv[optind], ':');
 				if (separator) *separator = '\0';
 				codec = codec_find(argv[optind]);
-				if (!codec) FATAL("codec %s not available", argv[optind]);
+				if (!codec) FATAL("codec %s not available",
+						argv[optind]);
 				if (!separator) {
 					wordlist = shashtbl_search_elt_bykey(
-						&codec->wordlists, codec->default_language);
-					assert(wordlist); // the default should be available
+						&codec->wordlists,
+						codec->default_language);
+					// the default should be available
+					assert(wordlist);
 				}
 				else wordlist = shashtbl_search_elt_bykey(
-						&codec->wordlists,++separator);
-				if (!wordlist)
-					FATAL("wordlist \"%s\" not found for codec %s",
-							separator, argv[optind]);
+						&codec->wordlists, ++separator);
+				if (!wordlist) FATAL("wordlist \"%s\" not "
+						"found for codec %s",
+						separator, argv[optind]);
 				optind++;
-			} else FATAL("option -c given, but no argument supplied");
+			} else FATAL("option -c given, but no argument "
+					"supplied");
 		} else if (mode == SLIP0039_MODE_RECOVER) FATAL("no arguments "
 				"must be given after \"recover\"");
 		else if (mode == SLIP0039_MODE_SPLIT)
 			parse_options_split(s, arg, &state, &max_T);
 		else {
-		       	assert(mode == SLIP0039_MODE_NULL);
+			assert(mode == SLIP0039_MODE_NULL);
 			if (!strcmp(arg, "recover"))
 				mode = SLIP0039_MODE_RECOVER;
 			else if (!strcmp(arg, "split"))
@@ -782,7 +799,7 @@ int main(int argc, char *argv[]) {
 	boring_stuff();
 	base_init_scratch(&bs, base_scratch_space, BLOCKS<<1);
 	wordlists_init();
-       	slip0039_init(&s);
+	slip0039_init(&s);
 	parse_options(&s, argc,argv);
 
 	/* read passphrase from first line of stdin */

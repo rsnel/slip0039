@@ -89,7 +89,8 @@ void pbkdf2_generate(pbkdf2_t *p, void *buf, size_t dkLen) {
 	assert(p->tmp_offset <= p->pw.h.f->len && p->tmp_offset >= 0);
 	while (dkLen > 0) {
 		if (p->tmp_offset == p->pw.h.f->len) helper(p);
-		len = (dkLen > p->pw.h.f->len - p->tmp_offset)?(p->pw.h.f->len - p->tmp_offset):dkLen;
+		len = (dkLen > p->pw.h.f->len - p->tmp_offset)?
+			(p->pw.h.f->len - p->tmp_offset):dkLen;
 		memcpy(buf, p->tmp + p->tmp_offset, len);
 		dkLen -= len;
 		buf += len;
@@ -109,7 +110,8 @@ void pbkdf2_done(pbkdf2_t *p, void *buf, size_t dkLen, uint64_t iterations) {
 }
 
 void pbkdf2(void *buf, const void *password, size_t password_size,
-		const void *salt, size_t salt_size, uint64_t iterations, size_t dkLen, hash_type_t type) {
+		const void *salt, size_t salt_size, uint64_t iterations,
+		size_t dkLen, hash_type_t type) {
 	pbkdf2_t p;
 	pbkdf2_init(&p, type);
 	pbkdf2_update_password(&p, password, password_size);

@@ -1,4 +1,4 @@
-/* slip0039.h - global data definititions used in the main program
+/* slip0039.h - global data definitions used in the main program
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -35,7 +35,7 @@ typedef struct slip0039_set_s {
 	 * in a group cannot be determined from the input  */
 	uint8_t count;       /* total members (0x00=undef) */
 	uint8_t available;   /* available members          */
-        uint8_t threshold;   /* required members           */
+	uint8_t threshold;   /* required members           */
 
 	/* slots[] overlaps digest, secret and shares[], so
 	 * that the share with x-coordinate x can be found
@@ -74,9 +74,9 @@ _Static_assert(offsetof(slip0039_set_t, shares) ==
 		SLIP0039_SLOT(0)*sizeof(uint8_t*), "shares not in slot 2");
 
 typedef struct slip0039_s {
-        size_t n;    /* size of secret in bytes */
-        int16_t id;  /* Identifier        15bit */
-        int8_t e;    /* Iteration exponent 5bit */
+	size_t n;    /* size of secret in bytes */
+	int16_t id;  /* Identifier        15bit */
+	int8_t e;    /* Iteration exponent 5bit */
 
 	slip0039_set_t root, members[MAX_SHARES];
 
