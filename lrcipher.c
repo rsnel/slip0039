@@ -50,11 +50,11 @@ void lrcipher_finalize_passphrase(lrcipher_t *l, const char *context,
 	}
 }
 
-static void feistel_round(lrcipher_t *l, unsigned char *L,
-		unsigned char *R, size_t size, int round, uint64_t iterations,
+static void feistel_round(lrcipher_t *l, uint8_t *L,
+		uint8_t *R, size_t size, int round, uint64_t iterations,
 		int xchg) {
 	pbkdf2_t p = l->rounds[round];
-	unsigned char tmp[BLOCKS];
+	uint8_t tmp[BLOCKS];
 	pbkdf2_update_salt(&p, R, size);
 	pbkdf2_done(&p, tmp, size, iterations);
 
@@ -70,8 +70,8 @@ static void feistel_round(lrcipher_t *l, unsigned char *L,
 	wipememory(tmp, sizeof(tmp));
 }
 
-void lrcipher_execute(lrcipher_t *l, unsigned char *dst,
-		const unsigned char *src, size_t size,
+void lrcipher_execute(lrcipher_t *l, uint8_t *dst,
+		const uint8_t *src, size_t size,
 		uint64_t iterations, lrcipher_dir_t dir) {
 	// use dst as scratch pad
 	if (src != dst) memmove(dst, src, size);

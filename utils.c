@@ -128,7 +128,7 @@ void sbuf_printf_base16(sbuf_t *s, const uint8_t *buf, size_t len) {
 
 void wipestackmemory(const size_t len) {
 	// only support GCC or C99+ compiler
-	unsigned char fodder[len];
+	uint8_t fodder[len];
 	if (len > 0)
 		wipememory(fodder, len);
 }

@@ -27,7 +27,7 @@ typedef struct pbkdf2_s {
 	int state; // 0: password, 1: salt, 2: output
 	hmac_t pw, salt;
 	uint64_t iterations;
-	unsigned char tmp[HASH_MAX_LEN];
+	uint8_t tmp[HASH_MAX_LEN];
 	size_t tmp_offset, generated;
 	uint32_t index;
 } pbkdf2_t;

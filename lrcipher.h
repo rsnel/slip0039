@@ -39,8 +39,8 @@ void lrcipher_add_passphrase(lrcipher_t*, const char*, size_t);
 
 void lrcipher_finalize_passphrase(lrcipher_t*, const char*, size_t, uint16_t);
 
-void lrcipher_execute(lrcipher_t*, unsigned char*,
-		const unsigned char*, size_t, uint64_t, lrcipher_dir_t);
+void lrcipher_execute(lrcipher_t*, uint8_t*,
+		const uint8_t*, size_t, uint64_t, lrcipher_dir_t);
 
 #endif /* SLIP0039_LRCYPER_H */
 

@@ -25,8 +25,8 @@ typedef struct hmac_s {
 	int state; // 0: key_plain, 1: key_hash, 2: data
 	hash_type_t type;
 	hash_t h;
-	unsigned char buf[HASH_MAX_BLOCKSIZE];
-	//unsigned char buf[SHA256_BLOCKSIZE];
+	uint8_t buf[HASH_MAX_BLOCKSIZE];
+	//uint8_t buf[SHA256_BLOCKSIZE];
 	size_t size;
 } hmac_t;
 
