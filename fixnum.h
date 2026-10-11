@@ -52,7 +52,7 @@ typedef struct fixnum_divisor_s {
 void fixnum_init(fixnum_t*, uint8_t*, size_t);
 
 typedef enum fixnum_pattern_e {
-	PATTERN_ZERO, PATTERN_MAX, PATTERN_ADD11
+	FIXNUM_PATTERN_ZERO, FIXNUM_PATTERN_MAX, FIXNUM_PATTERN_ADD11
 } fixnum_pattern_t;
 
 typedef struct fixnum_scratch_s {

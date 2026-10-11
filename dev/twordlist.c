@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 	int decode = 0xdeadbeef;
 	wordlists_init();
 	printf("%x %s\n", decode, code);
-	fixnum_init_pattern(&a, limbs_a, BLOCKS, PATTERN_ZERO);
+	fixnum_init_pattern(&a, limbs_a, BLOCKS, FIXNUM_PATTERN_ZERO);
 
 	const char *buf = code;
 	while (*buf) {

@@ -78,7 +78,7 @@ int base_decode_fixnum(fixnum_t *d, const fixnum_multiplier16_t *m,
 		const uint16_t *in, size_t in_size, uint8_t shift) {
 	int i = 0;
 
-	fixnum_set_pattern(d, PATTERN_ZERO);
+	fixnum_set_pattern(d, FIXNUM_PATTERN_ZERO);
 	goto start;
 
 	do {

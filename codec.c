@@ -208,7 +208,7 @@ static void diceware_encode(uint8_t *out, size_t *n,
 
 	fixnum_init(&g, s, *n);
 	fixnum_init_uint16(&h, s + (BLOCKS<<1), *n, 1);
-	fixnum_init_pattern(&m, s + (BLOCKS<<2), *n, PATTERN_ZERO);
+	fixnum_init_pattern(&m, s + (BLOCKS<<2), *n, FIXNUM_PATTERN_ZERO);
 	fixnum_show(&h, "start");
 	printf("h.no_limbs=%ld\n", h.no_limbs);
 

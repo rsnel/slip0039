@@ -67,13 +67,13 @@ void fixnum_divisor_show(const fixnum_divisor_t *d, const char *name) {
 void fixnum_set_pattern(fixnum_t *f, fixnum_pattern_t pattern) {
 	uint8_t tmp = 0x01;
 	switch (pattern) {
-		case PATTERN_ZERO:
+		case FIXNUM_PATTERN_ZERO:
 			memset(f->limbs, 0, f->no_limbs);
 			break;
-		case PATTERN_MAX:
+		case FIXNUM_PATTERN_MAX:
 			memset(f->limbs, 0xff, f->no_limbs);
 			break;
-		case PATTERN_ADD11:
+		case FIXNUM_PATTERN_ADD11:
 			for (size_t i = 0; i < f->no_limbs; i++) {
 				f->limbs[i] = tmp;
 				tmp += 0x11;
@@ -88,7 +88,7 @@ void fixnum_init_pattern(fixnum_t *f, uint8_t *limbs,
 }
 
 void fixnum_set_uint16(fixnum_t *f, uint16_t val) {
-	fixnum_set_pattern(f, PATTERN_ZERO);
+	fixnum_set_pattern(f, FIXNUM_PATTERN_ZERO);
 	f->limbs[f->no_limbs-1] = val&0xff;
 	f->limbs[f->no_limbs-2] = val>>8;
 }
@@ -453,7 +453,7 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 		s->b.limbs[s->b.no_limbs - f->no_limbs - 1] = 1;
 	//fixnum_show(&s->b, "starttest");
 
-	fixnum_set_pattern(f, PATTERN_ZERO);
+	fixnum_set_pattern(f, FIXNUM_PATTERN_ZERO);
 	fixnum_set_fixnum(&s->a, &d->max_left_shift);
 	size_t bit = (f->no_limbs<<3) - d->p.log2;
 	uint32_t test;

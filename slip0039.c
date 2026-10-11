@@ -356,7 +356,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 		FATAL("not enough words in mnemonic on line %d, "
 				"minimum 20 words", line_number);
 
-	fixnum_init_pattern(&h, slip0039_header, 5, PATTERN_ZERO);
+	fixnum_init_pattern(&h, slip0039_header, 5, FIXNUM_PATTERN_ZERO);
 	base_decode_fixnum(&h, &wordlist_slip0039.m, input, 4, 0);
 
 	size_t n = 2*(10*(no_input - 7)/16);

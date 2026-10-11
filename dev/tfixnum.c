@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 	//fixnum_factor_t f;
 	//fixnum_init_uint16(&a, limbs_a, sizeof(limbs_a), 0xffff);
 	fixnum_init_uint16(&a, limbs_a, sizeof(limbs_a), 1);
-	fixnum_init_pattern(&b, limbs_b, sizeof(limbs_b), PATTERN_MAX);
+	fixnum_init_pattern(&b, limbs_b, sizeof(limbs_b), FIXNUM_PATTERN_MAX);
 	ret = fixnum_div(&b, &d, &s, 1);
 	fixnum_show(&b, "result");
 	printf("rest=%d\n", ret);
@@ -77,11 +77,11 @@ int main(int argc, char *argv[]) {
 	//	printf("log2(%d)=%d\n", i, fixnum_log2_uint16(i));
 	//}
 	/*
-	fixnum_set_pattern(&a, PATTERN_ZERO);
+	fixnum_set_pattern(&a, FIXNUM_PATTERN_ZERO);
 	fixnum_show(&a, "a");
 	fixnum_poke(&a, 1, 17, (1<<17) - 1);
 	fixnum_show(&a, "a");
-	fixnum_set_pattern(&a, PATTERN_MAX);
+	fixnum_set_pattern(&a, FIXNUM_PATTERN_MAX);
 	fixnum_show(&a, "a");
 	fixnum_poke(&a, 1, 17, 0);
 	fixnum_show(&a, "a");
