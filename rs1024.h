@@ -33,9 +33,9 @@ typedef struct rs1024_state_s {
 // call this function before using the other (non-init) methods
 void rs1024_init(rs1024_state_t*);
 
-// initialize state of the checksum with
-// customization string "shamir"
-void rs1024_init_slip0039(rs1024_state_t*);
+// initialize state of the checksum with customization
+// string "shamir" (ext = 0) or "shamir_extendable" (ext = 1)
+void rs1024_init_slip0039(rs1024_state_t*, int);
 
 // add single uint16_t to checksum
 void rs1024_add_value(rs1024_state_t*, uint16_t);
@@ -49,8 +49,8 @@ void rs1024_add_array(rs1024_state_t*, const uint16_t*, size_t);
 // for at least three elements
 void rs1024_checksum(rs1024_state_t*, uint16_t*);
 
-bool rs1024_verify(const uint16_t*, size_t);
+bool rs1024_verify(const uint16_t*, size_t, int);
 
-void rs1024_add(uint16_t*, size_t);
+void rs1024_add(uint16_t*, size_t, int);
 
 #endif /* SLIP0039_RS1024_H */

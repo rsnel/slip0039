@@ -55,6 +55,10 @@ uint8_t slip0039_header[5];
  * of at most 1 + gain over plain guessing, see honey_extra_bits() */
 double gain = 0.01;
 
+/* use the share format of SLIP-0039 as it was before May 2024, without
+ * the extendable backup flag and with a 5 bit iteration exponent */
+int pre_may_2024 = 0;
+
 // seed for PRNG
 char seed[512];
 size_t seed_len = 0;
@@ -134,6 +138,7 @@ void slip0039_debug(slip0039_t *s) {
 	DEBUG("---START---internal slip0039 data----");
 	if (s->n) DEBUG("size of master secret=%ld bytes", s->n);
 	if (s->id != -1) DEBUG("Identifier=0x%04x", s->id);
+	if (s->ext != -1) DEBUG("Extendable backup flag=%d", s->ext);
 	if (s->e != -1)
 		DEBUG("Iteration exponent=%d (%ld iterations per round)",
 				s->e, 2500L<<s->e);
@@ -221,6 +226,7 @@ void wipe() {
 void slip0039_init(slip0039_t *s) {
 	memset(s, 0, sizeof(*s));
 	s->id = -1;
+	s->ext = -1;
 	s->e = -1;
 	for (int i = 0; i < MAX_SHARES; i++) {
 		s->root.line_numbers[i] = -1;
@@ -280,7 +286,13 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 	fixnum_init(&h, slip0039_header, 5);
 
 	fixnum_poke(&h, 25, 15, s->id);
-	fixnum_poke(&h, 20, 5, s->e);
+	if (pre_may_2024) {
+		assert(s->ext == 0);
+		fixnum_poke(&h, 20, 5, s->e);
+	} else {
+		fixnum_poke(&h, 24, 1, s->ext);
+		fixnum_poke(&h, 20, 4, s->e);
+	}
 
 	for (uint8_t i = 0; i < s->root.count; i++) {
 		fixnum_poke(&h, 16, 4, i);
@@ -305,7 +317,7 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 					s->members[i].shares[j],
 					s->n, &bs, 0);
 
-			rs1024_add(input, 4 + (8*s->n + 9)/10);
+			rs1024_add(input, 4 + (8*s->n + 9)/10, s->ext);
 
 			wipememory(mnemonic, sizeof(mnemonic));
 
@@ -352,9 +364,15 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 				line, &line);
 	}
 
-	if (!rs1024_verify(input, no_input))
-		FATAL("checksum of mnemonic on line %d is not valid",
-				line_number);
+	/* the customization string of the checksum depends on the
+	 * extendable backup flag, which is bit 4 of the second word */
+	uint8_t ext = pre_may_2024?0:(input[1]>>4)&1;
+
+	if (no_input < 2 || !rs1024_verify(input, no_input, ext))
+		FATAL("checksum of mnemonic on line %d is not valid%s",
+				line_number, pre_may_2024?" (if these are "
+				"shares from after May 2024, try without "
+				"--pre-may-2024)":"");
 
 	if (no_input < 20)
 		FATAL("not enough words in mnemonic on line %d, "
@@ -374,7 +392,11 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 	/* read header */
 	id = fixnum_peek(&h, 25, 15);
-	e = fixnum_peek(&h, 20, 5);
+	if (pre_may_2024) e = fixnum_peek(&h, 20, 5);
+	else {
+		assert(fixnum_peek(&h, 24, 1) == ext);
+		e = fixnum_peek(&h, 20, 4);
+	}
 
 	GI = fixnum_peek(&h, 16, 4);
 	GT = fixnum_peek(&h, 12, 4) + 1;
@@ -385,13 +407,21 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 	if (s->n == 0) { // s is uninitialized
 		slip0039_write_title(s, input);
 		s->id = id;
+		s->ext = ext;
 		s->e = e;
+		if (pre_may_2024 && e >= 16) WARNING("the most significant "
+				"bit of the 5 bit iteration exponent is set, "
+				"this is unlikely in shares created before May "
+				"2024; if recovery fails, try without "
+				"--pre-may-2024");
 		s->root.threshold = GT;
 		s->root.count = G;
 		s->n = n;
 	} else {
 		if (s->id != id) FATAL("Identifier mismatch in "
 				"mnemonic on line %d", line_number);
+		if (s->ext != ext) FATAL("Extendable backup flag mismatch "
+				"in mnemonic on line %d", line_number);
 		if (s->e != e) FATAL("Iteration exponent mismatch "
 				"in mnemonic on line %d", line_number);
 		if (s->root.threshold != GT) FATAL("Group threshold mismatch "
@@ -688,7 +718,9 @@ void parse_options_split(slip0039_t *s, char *arg,
 		seed_len = strlen(seed);
 		*state = SLIP0039_PARSE_STATE_EXP;
 	} else*/ if (*state == SLIP0039_PARSE_STATE_EXP) {
-		s->e = parse_number(arg, "iteration exponent", 0, 32, &end, 1);
+		/* the range depends on --pre-may-2024, which may come
+		 * later on the commandline, it is checked afterwards */
+		s->e = parse_number(arg, "iteration exponent", 0, 31, &end, 1);
 		*state = SLIP0039_PARSE_STATE_GT;
 	} else if (*state == SLIP0039_PARSE_STATE_GT) {
 		s->root.threshold = parse_number(arg, "group threshold", 0,
@@ -746,6 +778,8 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 				optind++;
 			} else FATAL("option -c given, but no argument "
 					"supplied");
+		} else if (!strcmp(arg, "--pre-may-2024")) {
+			pre_may_2024 = 1;
 		} else if (!strcmp(arg, "--gain")) {
 			if (argc > optind) {
 				char *end;
@@ -776,6 +810,10 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 		}
 	}
 
+	if (pre_may_2024) WARNING("--pre-may-2024 selects the share format "
+			"of SLIP-0039 as it was before the extendable backup "
+			"flag was added in May 2024, this is not recommended");
+
 	// set mode to 'recover' if no mode is specified
 	if (mode == SLIP0039_MODE_NULL) mode = SLIP0039_MODE_RECOVER;
 
@@ -796,6 +834,14 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 					"group threshold");
 		else {
 			assert(max_T > 0);
+			if (!pre_may_2024 && s->e > 15)
+				FATAL("iteration exponent must be <= 15");
+			s->ext = !pre_may_2024;
+			if (pre_may_2024) WARNING("the shares will not be "
+					"extendable%s", s->e > 15?" and other "
+					"SLIP-0039 implementations will not be "
+					"able to recover them, because the "
+					"iteration exponent is >= 16":"");
 			if (max_T == 1 && s->root.count > 1)
 				WARNING("a simple split in %d different "
 						"shares, SHOULD be made "
@@ -805,6 +851,13 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 		}
 	}
 
+}
+
+/* the salt of the encryption is "shamir" || id, unless the shares are
+ * extendable, then it is empty */
+void slip0039_finalize_passphrase(slip0039_t *s) {
+	assert(s->ext == 0 || s->ext == 1);
+	if (!s->ext) lrcipher_finalize_passphrase(&s->l, "shamir", 6, s->id);
 }
 
 int main(int argc, char *argv[]) {
@@ -828,9 +881,9 @@ int main(int argc, char *argv[]) {
 		/* read seed for encoding on second line of stdin */
 		slip0039_add_seed(&s);
 
-		/* we should have the ID, this is needed to finish
-		 * initializing lrcipher */
-		lrcipher_finalize_passphrase(&s.l, "shamir", 6, s.id);
+		/* we should have the ID and the extendable backup flag,
+		 * these are needed to finish initializing lrcipher */
+		slip0039_finalize_passphrase(&s);
 
 		/* read Master Secret (MS) and seed */
 		slip0039_add_plaintext(&s, codec);
@@ -848,9 +901,9 @@ int main(int argc, char *argv[]) {
 		/* read mnemonics from stdin (one per line) */
 		slip0039_add_mnemonics(&s, stdin);
 
-		/* we now have the ID, this is needed to finish
-		 * initializing lrcipher */
-		lrcipher_finalize_passphrase(&s.l, "shamir", 6, s.id);
+		/* we now have the ID and the extendable backup flag,
+		 * these are needed to finish initializing lrcipher */
+		slip0039_finalize_passphrase(&s);
 
 		/* check if EMS can be recovered from
 		 * these shares */

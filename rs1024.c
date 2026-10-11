@@ -35,12 +35,14 @@ void rs1024_init(rs1024_state_t *state) {
 	*state = s;
 }
 
-void rs1024_init_slip0039(rs1024_state_t *state) {
-	/* customization string as specified bij SLIP-0039 */
-	uint16_t cs[] = { 's', 'h', 'a', 'm', 'i', 'r' };
+void rs1024_init_slip0039(rs1024_state_t *state, int ext) {
+	/* customization string as specified by SLIP-0039, it depends
+	 * on the extendable backup flag */
+	uint16_t cs[] = { 's', 'h', 'a', 'm', 'i', 'r',
+		'_', 'e', 'x', 't', 'e', 'n', 'd', 'a', 'b', 'l', 'e' };
 
 	rs1024_init(state);
-	rs1024_add_array(state, cs, sizeof_array(cs));
+	rs1024_add_array(state, cs, ext?sizeof_array(cs):6);
 }
 
 void rs1024_add_value(rs1024_state_t *state, uint16_t value) {
@@ -79,18 +81,18 @@ void rs1024_checksum(rs1024_state_t *state, uint16_t *out) {
 		out[i] = (state->chk>>10*(2-i))&0x3FF;
 }
 
-bool rs1024_verify(const uint16_t *input, size_t no_input) {
+bool rs1024_verify(const uint16_t *input, size_t no_input, int ext) {
 	rs1024_state_t ok = RS1024_INIT, s;
 
-	rs1024_init_slip0039(&s);
+	rs1024_init_slip0039(&s, ext);
 	rs1024_add_array(&s, input, no_input);
 
 	return ok.chk == s.chk;
 }
 
-void rs1024_add(uint16_t *input, size_t no_input) {
+void rs1024_add(uint16_t *input, size_t no_input, int ext) {
 	rs1024_state_t s;
-	rs1024_init_slip0039(&s);
+	rs1024_init_slip0039(&s, ext);
 	rs1024_add_array(&s, input, no_input);
 	rs1024_checksum(&s, input + no_input);
 }

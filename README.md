@@ -2,9 +2,9 @@
 
 ## Usage
 
-`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] recover`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] [ --pre-may-2024 ] recover`
 
-`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] split <EXP> <GT> <XofY>..`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] [ --pre-may-2024 ] split <EXP> <GT> <XofY>..`
 
 option `-d` (debug) displays the shares, secrets and digests in the known groups
 at program exit
@@ -51,6 +51,18 @@ the attacker tries, which is negligible compared to the strength of any
 reasonable passphrase. Because the secret grows in steps of 16 bits, a
 stricter value often does not change the length of the shares at all.
 
+option `--pre-may-2024` selects the share format of SLIP-0039 as it was
+before May 2024, when the highest bit of the 5 bit iteration exponent became
+the extendable backup flag; this option is not recommended
+
+Without this option, `split` creates extendable shares (the flag is set and
+the iteration exponent is at most 15) and `recover` accepts both extendable
+and non-extendable shares, so shares made before May 2024 are recovered
+without it, unless their iteration exponent is 16 or more, which is very
+unlikely. With this option, `split` creates non-extendable shares, which
+other SLIP-0039 implementations can only recover if the iteration exponent is
+at most 15.
+
 ### Mode `recover` (default when no mode is specified)
 
 In this mode, the first line of standard input is the passphrase, and the
@@ -63,8 +75,8 @@ are
 in mode split, the first line of standard input is also the passphrase, the
 second line of standard input should be entropy for the PRNG and the third line should be the master secret
 
-on the commandline the iteration `EXP`onent and the specifications of
-groups must be given
+on the commandline the iteration `EXP`onent (at most 15, or 31 with
+`--pre-may-2024`) and the specifications of groups must be given
 
 the `ID` is the low 15 bits of the first 2 bytes of SHA256 of `SEED`
 
@@ -79,6 +91,11 @@ All data supplied to this program on standard input should be treated as highly 
 The first `XofY` reflects the distribution of shares in the first group.
 The second `XofY` reflects the distribution of shares in the second group.
 etc
+
+## Specification
+
+`doc/slip-0039.md` is the current specification, `doc/slip-0039-deprecated.md`
+is the version from before the extendable backup flag was added in May 2024.
 
 ## Features
 
@@ -101,6 +118,8 @@ The original test-suite is included as the first 40 entries of vectors.json and 
 be checked by running `./test.sh` or `make test`
 
 Test 41 can detect certain errors in modular arithmetic.
+
+Tests 42 to 45 use extendable shares, added to the specification in May 2024.
 
 ## Portability
 

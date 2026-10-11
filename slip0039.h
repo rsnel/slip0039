@@ -76,7 +76,8 @@ _Static_assert(offsetof(slip0039_set_t, shares) ==
 typedef struct slip0039_s {
 	size_t n;    /* size of secret in bytes */
 	int16_t id;  /* Identifier        15bit */
-	int8_t e;    /* Iteration exponent 5bit */
+	int8_t ext;  /* Extendable flag    1bit */
+	int8_t e;    /* Iteration exponent 4bit (5bit if pre_may_2024) */
 
 	slip0039_set_t root, members[MAX_SHARES];
 
