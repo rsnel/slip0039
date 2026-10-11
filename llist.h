@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef INCLUDE_TAGMEISTER_LLIST_H
-#define INCLUDE_TAGMEISTER_LLIST_H 1
+#ifndef SLIP0039_LLIST_H
+#define SLIP0039_LLIST_H 1
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -63,4 +63,4 @@ void *llist_iteratorp(llist_t*, void *(*)(void**, void*), void*);
 
 size_t llist_get_count(llist_t*);
 
-#endif /* INCLUDE_TAGMEISTER_LLIST_H */
+#endif /* SLIP0039_LLIST_H */
