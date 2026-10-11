@@ -24,6 +24,7 @@
 #include "fixnum.h"
 #include "cthelp.h"
 #include "utils.h"
+#include "verbose.h"
 
 void fixnum_init(fixnum_t *f, uint8_t *limbs, size_t no_limbs) {
 	assert(f && no_limbs > 0 && limbs);
@@ -214,6 +215,69 @@ static uint16_t popcnt8(uint8_t n) {
 	n = (n&0x33) + ((n>>2)&0x33);
 	n = (n&0x0f) + ((n>>4)&0x0f);
 	return n;
+}
+
+/* shift f to the left by any number of bits, returns nonzero if
+ * nonzero bits were shifted out */
+static uint16_t fixnum_shl_any(fixnum_t *f, uint16_t shift) {
+	uint16_t lost = 0;
+	while (shift > 0) {
+		uint8_t now = shift > 16 ? 16 : shift;
+		lost |= fixnum_shl(f, now);
+		shift -= now;
+	}
+	return lost;
+}
+
+/* the general case runs in time that depends only on the number of
+ * limbs; the optimized path for a multiplicand that is a power of 2
+ * (pure) does not: its running time reveals that a multiplicand is
+ * pure and its log2, so use it for public multiplicands only, like
+ * the pure divisor in fixnum_div() */
+void fixnum_mul_fixnum(fixnum_t *f, const fixnum_t *s, fixnum_scratch_t *sc) {
+	assert(f && s && sc && f->no_limbs == s->no_limbs && f->no_limbs > 1);
+	assert(sc->a.no_limbs >= f->no_limbs && sc->b.no_limbs >= f->no_limbs);
+	size_t L = f->no_limbs;
+	uint16_t overflow = 0;
+
+	if (fixnum_popcnt(s) == 1) {
+		overflow = fixnum_shl_any(f, fixnum_calc_log2(s));
+	} else if (fixnum_popcnt(f) == 1) {
+		uint16_t log2 = fixnum_calc_log2(f);
+		fixnum_set_fixnum(f, s);
+		overflow = fixnum_shl_any(f, log2);
+	} else {
+		/* copies of both multiplicands in the last L limbs of the
+		 * scratch space, so that f can be overwritten and s may
+		 * be the same as f */
+		uint8_t *a = sc->a.limbs + (sc->a.no_limbs - L);
+		uint8_t *b = sc->b.limbs + (sc->b.no_limbs - L);
+		memcpy(a, f->limbs, L);
+		memcpy(b, s->limbs, L);
+		memset(f->limbs, 0, L);
+
+		/* schoolbook multiplication, limb i and limb j counted from
+		 * the least significant limb; the products that land in
+		 * limb L or higher do not fit, they only feed overflow */
+		for (size_t i = 0; i < L; i++) {
+			uint16_t carry = 0;
+			for (size_t j = 0; j < L; j++) {
+				size_t pos = i + j;
+				uint16_t acc = a[L-1-j]*b[L-1-i] + carry;
+				if (pos < L) {
+					acc += f->limbs[L-1-pos];
+					f->limbs[L-1-pos] = acc&0xff;
+				} else overflow |= acc&0xff;
+				carry = acc>>8;
+			}
+			overflow |= carry;
+		}
+
+		wipememory(sc->a.limbs, sc->a.no_limbs);
+		wipememory(sc->b.limbs, sc->b.no_limbs);
+	}
+
+	if (overflow) BUG("overflow in fixnum_mul_fixnum()");
 }
 
 uint16_t fixnum_popcnt(const fixnum_t *f) {
