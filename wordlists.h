@@ -56,5 +56,9 @@ extern wordlist_t wordlist_base58;
 
 void wordlists_init();
 
+int wordlist_dereference(wordlist_t*, char*, int, uint16_t);
+
+uint16_t wordlist_search(wordlist_t*, const char*, const char**);
+
 #endif /* SLIP0039_WORDLISTS_H */
 

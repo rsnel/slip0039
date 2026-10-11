@@ -57,7 +57,7 @@ static void base16_decode(char *out, size_t out_size, lrcipher_t *l,
 		base_scratch_t *bs) {
 	sbuf_t sbuf = { .buf = out, .size = out_size };
 
-	sbufprintf_base16(&sbuf, in, n);
+	sbuf_printf_base16(&sbuf, in, n);
 }
 
 static void bip39_encode(uint8_t *out, size_t *n,
@@ -121,9 +121,9 @@ static void bip39_decode(char *out, size_t out_size, lrcipher_t *l,
 	int k = 0;
 	goto start;
 	while (++k < n/4*3) {
-		sbufprintf(&sbuf, " ");
+		sbuf_printf(&sbuf, " ");
 start:
-		sbufwordlist_dereference(w, &sbuf, scratch[k]);
+		sbuf_wordlist_dereference(w, &sbuf, scratch[k]);
 	}
 
 }
@@ -343,9 +343,9 @@ static void diceware_decode(char *out, size_t out_size, lrcipher_t *l,
 	int k = 0;
 	goto start;
 	while (++k < no_words) {
-		sbufprintf(&sbuf, " ");
+		sbuf_printf(&sbuf, " ");
 start:
-		sbufwordlist_dereference(w, &sbuf, scratch[k]);
+		sbuf_wordlist_dereference(w, &sbuf, scratch[k]);
 	}
 //	FATAL("not implemented");
 

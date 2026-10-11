@@ -83,13 +83,13 @@ void slip0039_debug_share(const char *path, int index, int space,
 	else if (index >= 10 && index < 16) character = 'A' + index - 10;
 	else assert(0);
 
-	sbufprintf(&sbuf, "%s%c   ", path, character);
+	sbuf_printf(&sbuf, "%s%c   ", path, character);
 
-	while (space--) sbufprintf(&sbuf, " ");
+	while (space--) sbuf_printf(&sbuf, " ");
 
-	sbufprintf_base16(&sbuf, buf, n);
+	sbuf_printf_base16(&sbuf, buf, n);
 
-	sbufprintf(&sbuf, " %s", title);
+	sbuf_printf(&sbuf, " %s", title);
 	DEBUG("%s", dl);
 }
 
@@ -141,14 +141,14 @@ void slip0039_debug(slip0039_t *s) {
 }
 
 #if defined(__APPLE__) && defined(__MACH__)
-static void _mlock(const void *const p, const char *const var,
+static void mlock_var(const void *const p, const char *const var,
 		const size_t len) {
 	if (p && len && mlock(p, len) < 0) {
 		FATAL("failed locking %s(%u) in RAM: %s", var,
 				(unsigned int)len, strerror(errno));
 	}
 }
-static void _munlock(const void *const p, const char *const var,
+static void munlock_var(const void *const p, const char *const var,
 		const size_t len) {
 	if (p && len && munlock(p, len) < 0) {
 		WARNING("failed unlocking %s(%u) in RAM: %s", var,
@@ -157,22 +157,22 @@ static void _munlock(const void *const p, const char *const var,
 }
 #define mlock_obj(p) do { \
 	void *_p = &p; \
-	_mlock(_p, #p, sizeof(p)); \
+	mlock_var(_p, #p, sizeof(p)); \
 } while (0)
 #define munlock_obj(p) do { \
 	void *_p = &p; \
-	_munlock(_p, #p, sizeof(p)); \
+	munlock_var(_p, #p, sizeof(p)); \
 } while (0)
 #define mlock_ptr(p, len) do { \
 	void *_p = &p; \
-	_mlock(_p, "&" #p, sizeof(p)); \
-	_mlock((p), #p, (len)); \
+	mlock_var(_p, "&" #p, sizeof(p)); \
+	mlock_var((p), #p, (len)); \
 } while (0)
 #define munlock_ptr(p, len) do { \
 	void *_p = &p; \
-	_mlock(p, #p, (len)); \
+	mlock_var(p, #p, (len)); \
 	wipememory(_p, sizeof(p)); \
-	_mlock(_p, "&" #p, sizeof(p)); \
+	mlock_var(_p, "&" #p, sizeof(p)); \
 } while (0)
 #endif
 
@@ -240,11 +240,11 @@ void slip0039_write_title(slip0039_t *s, uint16_t *title) {
 	sb.buf = s->title;
 	sb.size = sizeof(s->title);
 	sb.len = 0;
-	sbufprintf(&sb, " (");
-	sbufwordlist_dereference(&wordlist_slip0039, &sb, title[0]);
-	sbufprintf(&sb, " ");
-	sbufwordlist_dereference(&wordlist_slip0039, &sb, title[1]);
-	sbufprintf(&sb, ")");
+	sbuf_printf(&sb, " (");
+	sbuf_wordlist_dereference(&wordlist_slip0039, &sb, title[0]);
+	sbuf_printf(&sb, " ");
+	sbuf_wordlist_dereference(&wordlist_slip0039, &sb, title[1]);
+	sbuf_printf(&sb, ")");
 }
 
 void slip0039_write_group_title(slip0039_t *s, uint8_t i, uint16_t group) {
@@ -252,9 +252,9 @@ void slip0039_write_group_title(slip0039_t *s, uint8_t i, uint16_t group) {
 	sb.buf = s->root.names[i];
 	sb.size = sizeof(*s->root.names);
 	sb.len = 0;
-	sbufprintf(&sb, " (");
-	sbufwordlist_dereference(&wordlist_slip0039, &sb, group);
-	sbufprintf(&sb, ")");
+	sbuf_printf(&sb, " (");
+	sbuf_wordlist_dereference(&wordlist_slip0039, &sb, group);
+	sbuf_printf(&sb, ")");
 }
 
 void slip0039_write_member_title(slip0039_t *s, uint8_t i, uint8_t j,
@@ -263,9 +263,9 @@ void slip0039_write_member_title(slip0039_t *s, uint8_t i, uint8_t j,
 	sb.buf = s->members[i].names[j];
 	sb.size = sizeof(*s->members[i].names);
 	sb.len = 0;
-	sbufprintf(&sb, "  (");
-	sbufwordlist_dereference(&wordlist_slip0039, &sb, member);
-	sbufprintf(&sb, ")");
+	sbuf_printf(&sb, "  (");
+	sbuf_wordlist_dereference(&wordlist_slip0039, &sb, member);
+	sbuf_printf(&sb, ")");
 }
 
 void slip0039_print_mnemonics(slip0039_t *s) {
@@ -314,9 +314,9 @@ void slip0039_print_mnemonics(slip0039_t *s) {
 			int k = 0;
 			goto start;
 			while (++k < 4 + (8*s->n + 9)/10 + 3) {
-				sbufprintf(&sb, " ");
+				sbuf_printf(&sb, " ");
 start:
-				sbufwordlist_dereference(&wordlist_slip0039,
+				sbuf_wordlist_dereference(&wordlist_slip0039,
 						&sb, input[k]);
 			}
 			printf("%s\n", mnemonic);
@@ -432,7 +432,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 void slip0039_add_plaintext(slip0039_t *s, codec_t *c) {
 	assert(s && !s->plaintext && !s->n);
 
-	read_stringLF(input_base16, sizeof(input_base16), stdin,
+	read_string_lf(input_base16, sizeof(input_base16), stdin,
 			"plaintext", 0);
 
 	(c->encode)(s->storage_plaintext, &s->n, &s->l,
@@ -452,7 +452,7 @@ void slip0039_add_seed(slip0039_t *s) {
 	uint8_t sha[SHA256_LEN];
 
 	// now read the seed for the prng
-	seed_len = read_stringLF(seed, sizeof(seed), stdin, "seed", 0);
+	seed_len = read_string_lf(seed, sizeof(seed), stdin, "seed", 0);
 #if defined(__APPLE__) && defined(__MACH__)
 	mlock_ptr(seed, seed_len);
 #endif
@@ -468,7 +468,7 @@ void slip0039_add_seed(slip0039_t *s) {
 void slip0039_add_mnemonics(slip0039_t *s, FILE *fp) {
 	int line_number = 0;
 
-	while (read_stringLF(mnemonic, sizeof(mnemonic), fp, "mnemonic", 1))
+	while (read_string_lf(mnemonic, sizeof(mnemonic), fp, "mnemonic", 1))
 		slip0039_add_mnemonic(s, mnemonic, ++line_number);
 }
 

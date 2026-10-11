@@ -1,4 +1,4 @@
-/* utils.c - some utilties
+/* utils.c - some utilities
  *
  * Copyright 2020 Rik Snel <rik@snel.it>
  *
@@ -79,65 +79,15 @@ int wordeq(const char *unknown, const char *target, const char **end,
 
 // escape unprintable char as \ooo so that error messages
 // will never mess up the terminal
-void sbufputchar(sbuf_t *s, char c) {
-	if (isprint(c)) sbufprintf(s, "%c", c);
-	else sbufprintf(s, "\\%o", (unsigned char)c);
+void sbuf_putchar(sbuf_t *s, char c) {
+	if (isprint(c)) sbuf_printf(s, "%c", c);
+	else sbuf_printf(s, "\\%o", (unsigned char)c);
 }
 
-int wordlist_dereference(wordlist_t *w, char *buf, int buf_size, uint16_t idx) {
-	assert(w && idx < w->m.value && buf_size > w->max_word_length);
-	int ret = 0;
-
-	for (int i = 0; i < w->max_word_length + 1; i++)
-		assert(*(buf + i) == '\0');
-
-	for (int i = 0; i < w->m.value; i++) {
-		char *cur = w->words[i];
-		int eq = cthelp_eq(i, idx);
-		while (*cur) {
-			*(buf + (cur - w->words[i])) |= *cur&(-eq);
-			ret += 1&(-eq);
-			cur++;
-		}
-	}
-
-	return ret;
-}
-
-void sbufwordlist_dereference(wordlist_t *w, sbuf_t *s, uint16_t idx) {
+void sbuf_wordlist_dereference(wordlist_t *w, sbuf_t *s, uint16_t idx) {
 	assert(s);
 	s->len += wordlist_dereference(w, s->buf + s->len,
 			s->size - s->len, idx);
-}
-
-uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
-	int match = -1; /* 0xffffffff */
-	*end = NULL;
-
-	for (int i = 0; i < w->m.value; i++)
-		match &= i|(-(wordeq(word, w->words[i], end,
-				w->max_word_length != w->min_word_length)));
-
-	if (match == -1) {
-		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
-
-		sbufprintf(&sbuf, "word '");
-
-		while (*word != '\0' && *word != ' ' && *word != '\n')
-			sbufputchar(&sbuf, *word++);
-
-		if (*w->elt.key == '\0') {
-			sbufprintf(&sbuf, "' not found in the %s wordlist",
-					w->family);
-		} else {
-			sbufprintf(&sbuf, "' not found in the %s wordlist "
-					"of language %s", w->family,
-					w->elt.key);
-		}
-		FATAL("%s", dl);
-	}
-
-	return match;
 }
 
 int vsnprintf_strict(char *str, size_t size, const char *format, va_list ap) {
@@ -156,7 +106,7 @@ int snprintf_strict(char *str, size_t size, const char *format, ...) {
 	return vsnprintf_strict(str, size, format, ap);
 }
 
-int sbufprintf(sbuf_t *s, const char *format, ...) {
+int sbuf_printf(sbuf_t *s, const char *format, ...) {
 	int ret;
 	va_list ap;
 	va_start(ap, format);
@@ -167,12 +117,12 @@ int sbufprintf(sbuf_t *s, const char *format, ...) {
 	return ret;
 }
 
-void sbufprintf_base16(sbuf_t *s, const uint8_t *buf, size_t len) {
+void sbuf_printf_base16(sbuf_t *s, const uint8_t *buf, size_t len) {
 	fixnum_t f;
 	fixnum_init(&f, (uint8_t*)buf, len);
 
 	for (int nibble = (len<<1) - 1; nibble >= 0; nibble--)
-		sbufwordlist_dereference(&wordlist_base16, s,
+		sbuf_wordlist_dereference(&wordlist_base16, s,
 				fixnum_peek(&f, nibble<<2, 4));
 }
 
@@ -187,7 +137,7 @@ void wipestackmemory(const size_t len) {
 // was read without the terminating \0
 // eof_acceptable means: if we encounter EOF when we try to read the first
 // character of input, we don't complain and return an empty string
-size_t read_stringLF(char *buf, size_t size, FILE *fp, const char *desc,
+size_t read_string_lf(char *buf, size_t size, FILE *fp, const char *desc,
 		int eof_acceptable) {
 	assert(size > 0);
 	int c;

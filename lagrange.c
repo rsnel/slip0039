@@ -21,7 +21,7 @@
 #include "lagrange.h"
 #include "gf256.h"
 
-static void helper(slip0039_set_t *s, int no_idx,
+static void lagrange_byte(slip0039_set_t *s, int no_idx,
 		uint8_t *idx, uint8_t x, size_t offset) {
 	// x-coordinates 254 and 255 are the digest and the secret,
 	// SLIP0039_SLOT() maps every x-coordinate to its slot
@@ -44,7 +44,7 @@ static void helper(slip0039_set_t *s, int no_idx,
 void lagrange(slip0039_set_t *s, size_t n,
 		int no_idx, uint8_t *idx, uint8_t x) {
 	for (int i = 0; i < n; i++)
-		helper(s, no_idx, idx, x, i);
+		lagrange_byte(s, no_idx, idx, x, i);
 }
 
 

@@ -50,7 +50,7 @@ void lrcipher_finalize_passphrase(lrcipher_t *l, const char *context,
 	}
 }
 
-static void helper(lrcipher_t *l, unsigned char *L,
+static void feistel_round(lrcipher_t *l, unsigned char *L,
 		unsigned char *R, size_t size, int round, uint64_t iterations,
 		int xchg) {
 	pbkdf2_t p = l->rounds[round];
@@ -81,6 +81,6 @@ void lrcipher_execute(lrcipher_t *l, unsigned char *dst,
 	// if dir == LRCIPHER_ENCRYPT, then the rounds are 0,1,2,3
 	// if dir == LRCIPHER_DECRYPT, then the rounds are 3,2,1,0
 	for (int i = 0; i < 4; i++)
-		helper(l, dst, dst + size, size, i^dir,
+		feistel_round(l, dst, dst + size, size, i^dir,
 				iterations, i == 3);
 }

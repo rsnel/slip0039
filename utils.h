@@ -64,26 +64,24 @@ typedef char displayline_t[DISPLAYLINE];
 
 extern displayline_t dl;
 
-int wordlist_dereference(wordlist_t*, char *, int, uint16_t);
+void sbuf_putchar(sbuf_t*, char);
 
-void sbufwordlist_dereference(wordlist_t*, sbuf_t*, uint16_t);
+void sbuf_wordlist_dereference(wordlist_t*, sbuf_t*, uint16_t);
 
 int wordeq(const char*, const char*, const char**, int);
 
-uint16_t wordlist_search(wordlist_t*, const char*, const char**);
-
-int vsnprintf_strict(char*, size_t, const char*, va_list ap);
+int vsnprintf_strict(char*, size_t, const char*, va_list);
 
 int snprintf_strict(char*, size_t, const char*, ...);
 
-int sbufprintf(sbuf_t*, const char*, ...);
+int sbuf_printf(sbuf_t*, const char*, ...);
 
-void sbufprintf_base16(sbuf_t*, const uint8_t*, size_t);
+void sbuf_printf_base16(sbuf_t*, const uint8_t*, size_t);
 
 int memeq(const uint8_t*, const uint8_t*, size_t);
 
 int memzero(const uint8_t*, size_t);
 
-size_t read_stringLF(char*, size_t, FILE*, const char*, int);
+size_t read_string_lf(char*, size_t, FILE*, const char*, int);
 
 #endif /* SLIP0039_UTILS_H */

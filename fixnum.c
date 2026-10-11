@@ -209,7 +209,7 @@ void fixnum_divisor_init_from_multiplier16(fixnum_divisor_t *d,
 }
 
 // a nice implementation of John Bollinger: https://stackoverflow.com/a/51388846
-static uint16_t popcnt_helper(uint8_t n) {
+static uint16_t popcnt8(uint8_t n) {
 	n = (n&0x55) + ((n>>1)&0x55);
 	n = (n&0x33) + ((n>>2)&0x33);
 	n = (n&0x0f) + ((n>>4)&0x0f);
@@ -222,7 +222,7 @@ uint16_t fixnum_popcnt(const fixnum_t *f) {
 	uint16_t n = 0;
 
 	for (int i = 0; i < f->no_limbs; i++) {
-		n += popcnt_helper(f->limbs[i]);
+		n += popcnt8(f->limbs[i]);
 	}
 
 	return n;

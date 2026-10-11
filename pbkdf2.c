@@ -67,7 +67,7 @@ void pbkdf2_finalize_salt(pbkdf2_t *p, uint64_t iterations) {
 	assert(p->iterations > 0);
 }
 
-static void helper(pbkdf2_t *p) {
+static void pbkdf2_next_block(pbkdf2_t *p) {
 	uint8_t sha[p->pw.h.f->len];
 	hmac_t h = p->salt;
 	hmac_update_data_uint32be(&h, p->index++);
@@ -88,7 +88,7 @@ void pbkdf2_generate(pbkdf2_t *p, void *buf, size_t dkLen) {
 	assert(p->state == 2);
 	assert(p->tmp_offset <= p->pw.h.f->len && p->tmp_offset >= 0);
 	while (dkLen > 0) {
-		if (p->tmp_offset == p->pw.h.f->len) helper(p);
+		if (p->tmp_offset == p->pw.h.f->len) pbkdf2_next_block(p);
 		len = (dkLen > p->pw.h.f->len - p->tmp_offset)?
 			(p->pw.h.f->len - p->tmp_offset):dkLen;
 		memcpy(buf, p->tmp + p->tmp_offset, len);
