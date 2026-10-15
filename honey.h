@@ -20,6 +20,20 @@
 #ifndef SLIP0039_HONEY_H
 #define SLIP0039_HONEY_H
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "fixnum.h"
+
+/* size in bytes of the scratch space honey_encode() and honey_decode()
+ * need for fixnums of the given number of limbs */
+#define HONEY_SCRATCH_SIZE(no_limbs) (11*(no_limbs))
+
 int honey_extra_bits(double);
+
+void honey_encode(fixnum_t*, const fixnum_t*, const fixnum_t*, uint16_t,
+		const uint8_t*, uint8_t*);
+
+void honey_decode(fixnum_t*, const fixnum_t*, const fixnum_t*, uint8_t*);
 
 #endif /* SLIP0039_HONEY_H */
