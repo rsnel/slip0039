@@ -501,10 +501,19 @@ uint16_t fixnum_mul16(fixnum_t *f, const fixnum_multiplier16_t *m) {
  * can shift at most 16 bits at a time, so we shift in steps; returns
  * the lowest 16 bits of the remainder */
 static uint16_t fixnum_div_pure(fixnum_t *f, const fixnum_divisor_t *d,
-		int dividendmaxplus1) {
+		fixnum_scratch_t *s, int dividendmaxplus1) {
 	assert(d->p.pure && d->p.log2 > 0 && d->p.log2 < f->no_limbs<<3);
 	// if the dividend is 2^(8*no_limbs), f is 0, so is the remainder
 	uint16_t ret = fixnum_peek(f, 0, d->p.log2 < 16 ? d->p.log2 : 16);
+
+	// the remainder is the lowest log2 bits of f
+	fixnum_set_fixnum(&s->b, f);
+	for (size_t i = 0; i < s->b.no_limbs; i++) {
+		size_t lsb = (s->b.no_limbs - 1 - i)<<3; // bit number of lsb
+		if (lsb >= d->p.log2) s->b.limbs[i] = 0;
+		else if (lsb + 8 > d->p.log2)
+			s->b.limbs[i] &= (1<<(d->p.log2 - lsb)) - 1;
+	}
 
 	for (uint16_t left = d->p.log2; left > 0; ) {
 		uint8_t shift = left > 16 ? 16 : left;
@@ -527,12 +536,13 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 	for (size_t i = 0; i < f->no_limbs; i++)
 		f->limbs[i] &= -(1 - dividendmaxplus1);
 
-	// the divisor is public, so we may branch on it
-	if (d->p.pure) return fixnum_div_pure(f, d, dividendmaxplus1);
-
-	// s->a is used as a shift register and s->b is brought to zero
-
 	assert(s->a.no_limbs >= f->no_limbs && s->b.no_limbs >= f->no_limbs);
+
+	// the divisor is public, so we may branch on it
+	if (d->p.pure) return fixnum_div_pure(f, d, s, dividendmaxplus1);
+
+	// s->a is used as a shift register and s->b ends up holding
+	// the remainder
 
 	//printf("f->no_limbs=%ld\n", f->no_limbs);
 	fixnum_set_fixnum(&s->b, f);
@@ -560,8 +570,6 @@ uint16_t fixnum_div(fixnum_t *f, const fixnum_divisor_t *d,
 	}
 
 	ret = s->b.limbs[s->b.no_limbs-1] + (s->b.limbs[s->b.no_limbs-2]<<8);
-
-	s->b.limbs[s->b.no_limbs-1] = s->b.limbs[s->b.no_limbs-2] = 0;
 
 	return ret;
 }

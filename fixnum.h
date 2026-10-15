@@ -120,6 +120,14 @@ void fixnum_mul_fixnum(fixnum_t*, const fixnum_t*, fixnum_scratch_t*);
 
 uint16_t fixnum_popcnt(const fixnum_t*);
 
+/* f = floor(f/d); if the last argument is 1, the dividend is
+ * 2^(8*f->no_limbs) instead of f (f is ignored); the scratch space must
+ * have at least f->no_limbs limbs in a and b
+ *
+ * the lowest 16 bits of the remainder are returned, the full remainder
+ * is left in the scratch space b: it is smaller than the divisor, so it
+ * sits in the last f->no_limbs limbs of b and any limbs before those
+ * are zero; it stays there until the scratch space is used again */
 uint16_t fixnum_div(fixnum_t*, const fixnum_divisor_t*, fixnum_scratch_t*, int);
 
 uint16_t fixnum_calc_log2(const fixnum_t*);
