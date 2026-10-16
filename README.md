@@ -177,6 +177,51 @@ The first `XofY` reflects the distribution of shares in the first group.
 The second `XofY` reflects the distribution of shares in the second group.
 etc
 
+## Verifying that `split` is deterministic
+
+The reference implementation of SLIP-0039 takes the random values that the
+scheme needs (the random shares and the random part of the digests) from
+the operating system. Shares made that way cannot be checked: a malicious
+implementation could, for example, hide an encrypted copy of the master
+secret in them, and nobody could tell. `slip0039 split` is deterministic:
+every random value is taken, in a fixed order, from
+
+    PBKDF2-HMAC-SHA256(password = EMS || SEED,
+                       salt = e || GT || G || T_1 || N_1 ... T_G || N_G,
+                       iterations = 1)
+
+where EMS is the encrypted master secret (as specified by SLIP-0039, the
+only place where the master secret and the passphrase are used) and the
+salt describes the split, with each number as a single byte. The
+identifier is the lowest 15 bits of the first two bytes of SHA256(SEED).
+
+`verify.py` is an independent implementation of all of this in about 200
+lines of Python that only uses the standard library. It reads the same
+input and takes the same arguments as `slip0039 split` (with the default
+codec), and prints the same shares:
+
+    $ ./slip0039 split 1 2 2of3 3of5 < input > shares
+    $ ./verify.py 1 2 2of3 3of5 < input | diff - shares
+
+If `diff` prints nothing, the shares contain only what SLIP-0039 prescribes:
+the EMS, split with randomness that is a fixed function of the EMS and the
+SEED. For another codec, recover the master secret with `-c base16` and use
+that as input. `test-verify.sh` runs a number of such comparisons.
+
+With 1 iteration, block i of the PBKDF2 output is
+HMAC-SHA256(EMS || SEED, salt || i), a pseudorandom function keyed with
+EMS || SEED. Someone who holds fewer shares than the threshold sees some of
+these bytes, but computing the EMS (or anything else about the key) from
+them is as hard as breaking HMAC-SHA256, unless the key can be guessed.
+So this protection is computational, while that of shares made with true
+randomness is information theoretic, and it depends on EMS || SEED being
+hard to guess. A master secret of 128 bits or more is enough on its own,
+but for a low entropy secret (a PIN with `numeric`, a short `password`) the
+randomness of the honey encoding also comes from SEED, so then the SEED is
+what protects the secret: use a long random SEED (`slip0039` warns if it is
+shorter than 64 characters), and keep in mind that the identifier reveals
+15 bits of SHA256(SEED).
+
 ## Specification
 
 `doc/slip-0039.md` is the current specification, `doc/slip-0039-deprecated.md`
@@ -205,6 +250,8 @@ be checked by running `./test.sh` or `make test`
 Test 41 can detect certain errors in modular arithmetic.
 
 Tests 42 to 45 use extendable shares, added to the specification in May 2024.
+
+`./test-verify.sh` checks that `verify.py` reproduces the shares of `split`.
 
 ## Portability
 
