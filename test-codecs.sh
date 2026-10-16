@@ -9,17 +9,17 @@ OUT=$(echo -n "${PENS}$PLAINTEXT\n" | ./slip0039 split 1 1 1of1)
 echo "TREZOR\n$OUT\n" | ./slip0039 -c base16
 #echo "TREZOR\n$OUT\n" | ./slip0039 -c bip39:english
 #echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:english
-echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch
+echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch:10
 
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split 1 1 1of1)
 echo "TREZOR\n$OUT\n" | ./slip0039 -c bip39
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n0000000000000000000000000000000000000000000000000000000000000000\n" | ./slip0039 split 1 1 1of1)
 echo "TREZOR\n$OUT\n" | ./slip0039 -c bip39:spanish
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n00000000000000000000000000000000\n" | ./slip0039 split 1 1 1of1)
-echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware
+echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware::9
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split 1 1 1of1)
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split 1 1 1of1)
-echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch
+echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch:10
 
 XPRV="xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n$XPRV\n" | ./slip0039 -c bip32::xprv split 1 1 1of1)

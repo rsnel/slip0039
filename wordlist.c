@@ -54,15 +54,22 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 
 	if (match == -1) {
 		sbuf_t sbuf = { .buf = dl, .size = sizeof(dl) };
+		/* the words of an alphabet are single characters */
+		int alphabet = w->max_word_length == 1;
 
-		sbuf_printf(&sbuf, "word '");
+		sbuf_printf(&sbuf, alphabet?"character '":"word '");
 
-		while (*word != '\0' && *word != ' ' && *word != '\n')
+		if (alphabet) sbuf_putchar(&sbuf, *word);
+		else while (*word != '\0' && *word != ' ' && *word != '\n')
 			sbuf_putchar(&sbuf, *word++);
 
 		if (*w->elt.key == '\0') {
-			sbuf_printf(&sbuf, "' not found in the %s wordlist",
-					w->family);
+			sbuf_printf(&sbuf, "' not found in the %s %s",
+					w->family,
+					alphabet?"alphabet":"wordlist");
+		} else if (alphabet) {
+			sbuf_printf(&sbuf, "' not found in the %s alphabet "
+					"of %s", w->elt.key, w->family);
 		} else {
 			sbuf_printf(&sbuf, "' not found in the %s wordlist "
 					"of language %s", w->family,
