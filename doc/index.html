@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>slip0039, Shamir backups you can check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="slip0039 splits a secret into SLIP-0039 shares without hidden randomness: the same input gives the same shares on every machine, so anyone can check that the shares contain nothing else.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="wrap top">
+	<a class="brand" href="#" aria-label="slip0039 home">
+		<svg viewBox="0 0 64 64" aria-hidden="true"><style>.lc{stroke:var(--noise-3)}.l2{fill:var(--ink-3)}.l3{fill:var(--ink-2)}.la{fill:var(--a)}</style><path class="lc" d="M7.00 46.00 C22.00 2.00 40.00 70.00 57.00 16.00" fill="none" stroke-width="2.4" stroke-linecap="round"/><rect class="la" x="1.00" y="40.00" width="12" height="12" rx="2"/><rect class="l2" x="18.18" y="25.76" width="10" height="10" rx="2"/><rect class="l3" x="34.47" y="32.97" width="10" height="10" rx="2"/><rect class="l2" x="52.00" y="11.00" width="10" height="10" rx="2"/></svg>
+		<span>slip0039</span>
+	</a>
+	<nav aria-label="Sections">
+		<a href="#try">Try it</a>
+		<a href="#deterministic">Deterministic</a>
+		<a href="#codecs">Codecs</a>
+		<a href="#examples">Examples</a>
+		<a href="#spec">The spec</a>
+		<a href="#start">Get it</a>
+		<a href="#license">License</a>
+	</nav>
+</header>
+
+<main>
+<section class="wrap hero" id="try" aria-labelledby="hero-title">
+	<h1 id="hero-title">Shamir backups you can check.</h1>
+	<p class="lede">slip0039 splits a secret into SLIP-0039 shares: lists of words that you give to people you trust, so that a few of them together can restore the secret. It uses no hidden randomness. The same input gives the same shares, on every machine, so anyone can check that the shares contain the secret and nothing else.</p>
+
+	<div class="demo">
+		<form id="split" autocomplete="off" novalidate>
+			<div class="field">
+				<label for="passphrase">Passphrase</label>
+				<input id="passphrase" type="text" spellcheck="false" value="correct horse">
+				<small>Needed again to recover. A wrong passphrase recovers a different secret, not an error.</small>
+			</div>
+			<div class="field">
+				<label for="seed">Seed</label>
+				<input id="seed" type="text" spellcheck="false" value="qT7vW2mZ9xLp4Rk8sN3cYb6Hd1Jf5Ga0EuViXoPwQeMnBtCzKyAlDgFhIjUrOsS2">
+				<small>64 or more random characters. All randomness of the shares comes from it, keep it secret.</small>
+			</div>
+			<div class="field">
+				<span class="label" id="codec-label">Secret</span>
+				<div class="seg" role="group" aria-labelledby="codec-label" id="codec">
+					<button type="button" data-codec="numeric" aria-pressed="true">PIN</button>
+					<button type="button" data-codec="password" aria-pressed="false">Password</button>
+					<button type="button" data-codec="base16" aria-pressed="false">Hex</button>
+				</div>
+				<input id="secret" type="text" spellcheck="false" value="042195" aria-labelledby="codec-label" aria-describedby="secret-hint">
+				<small id="secret-hint">Any number of digits.</small>
+			</div>
+			<div class="field">
+				<span class="label" id="scheme-label">Shares</span>
+				<div class="seg" role="group" aria-labelledby="scheme-label" id="scheme">
+					<button type="button" data-scheme="0" aria-pressed="false">1 of 1</button>
+					<button type="button" data-scheme="1" aria-pressed="true">2 of 3</button>
+					<button type="button" data-scheme="2" aria-pressed="false">3 of 5</button>
+					<button type="button" data-scheme="3" aria-pressed="false">2 of 3 groups</button>
+				</div>
+			</div>
+			<p class="err" id="err" role="alert"></p>
+		</form>
+
+		<div class="out">
+			<p class="status" id="status" aria-live="polite">Splitting&hellip;</p>
+			<p class="status"><button type="button" class="btn quiet" id="again">Split again</button><span class="same" id="same" hidden>Identical, word for word.</span></p>
+			<ul class="shares" id="shares" aria-label="The shares; select shares to recover from them"></ul>
+			<p class="caption">Grey words: the identifier, the group and member numbers, and the checksum. Click shares to choose which ones to recover from.</p>
+
+			<div class="recover">
+				<div class="row">
+					<div class="field">
+						<label for="rpass">Recover with passphrase</label>
+						<input id="rpass" type="text" spellcheck="false" value="correct horse">
+					</div>
+				</div>
+				<p class="result" id="result" aria-live="polite"></p>
+			</div>
+
+			<div class="cmd">
+				<p>The same split in a terminal. slip0039 prints exactly these shares:</p>
+				<pre id="cmd"></pre>
+			</div>
+		</div>
+	</div>
+	<p class="privacy">Everything on this page is computed in your browser, by a JavaScript port of slip0039, and nothing is sent anywhere. Still, never type a real secret into a web page. This demo is for trying things out.</p>
+</section>
+
+<section class="wrap part" id="deterministic" aria-labelledby="det-title">
+	<div class="prose">
+		<h2 id="det-title">Deterministic, so you can check it</h2>
+		<p>Shamir's secret sharing needs random numbers. The usual implementations, including the reference implementation of SLIP-0039, take them from the operating system. That makes the shares impossible to check. A program with a hidden agenda could put an encrypted copy of your secret in the random parts of the shares, and the shares would look exactly as they should. Only the author of the program could read the hidden copy.</p>
+		<p>slip0039 has no such freedom. Every random value is computed from the encrypted secret and a seed that you provide. Run slip0039 twice on the same input and you get the same shares. Run an independent program on the same input, and if it gives the same shares, the shares contain nothing that the specification does not prescribe.</p>
+	</div>
+
+	<figure class="figure">
+		<svg viewBox="0 0 960 380" role="img" aria-label="Data flow of slip0039 split: the master secret and the passphrase are encrypted to the EMS; PBKDF2 of EMS and SEED, salted with the split description, gives the random bytes; SplitSecret turns the EMS and the random bytes into the shares; SHA256 of the SEED gives the identifier">
+			<defs>
+				<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0 L10 5 L0 10Z"/></marker>
+				<marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead a" d="M0 0 L10 5 L0 10Z"/></marker>
+			</defs>
+			<text x="0" y="12" class="svgtext small muted">your input</text>
+			<text x="440" y="12" class="svgtext small muted">computed</text>
+			<rect x="0" y="22" width="170" height="44" rx="3" class="box"/>
+			<text x="85" y="49" class="svgtext" text-anchor="middle">master secret</text>
+			<rect x="0" y="80" width="170" height="44" rx="3" class="box"/>
+			<text x="85" y="107" class="svgtext" text-anchor="middle">passphrase</text>
+			<rect x="0" y="170" width="170" height="54" rx="3" class="box"/>
+			<text x="85" y="192" class="svgtext" text-anchor="middle">split description</text>
+			<text x="85" y="212" class="svgtext small muted mono" text-anchor="middle">e GT G T&#8321; N&#8321; &hellip;</text>
+			<rect x="0" y="250" width="170" height="44" rx="3" class="box"/>
+			<text x="85" y="277" class="svgtext" text-anchor="middle">SEED</text>
+
+			<rect x="230" y="36" width="170" height="74" rx="3" class="box strong"/>
+			<text x="315" y="66" class="svgtext" text-anchor="middle" font-weight="700">Encrypt</text>
+			<text x="315" y="88" class="svgtext small muted" text-anchor="middle">SLIP-0039, 4 rounds</text>
+			<path class="line" d="M170 44 L229 58" marker-end="url(#ah)"/>
+			<path class="line" d="M170 102 L229 88" marker-end="url(#ah)"/>
+
+			<rect x="460" y="50" width="130" height="46" rx="3" class="box a"/>
+			<text x="525" y="78" class="svgtext" text-anchor="middle" font-weight="700">EMS</text>
+			<path class="line" d="M400 73 L459 73" marker-end="url(#ah)"/>
+
+			<rect x="440" y="170" width="170" height="124" rx="3" class="box strong"/>
+			<text x="525" y="214" class="svgtext" text-anchor="middle" font-weight="700">PBKDF2</text>
+			<text x="525" y="236" class="svgtext small muted" text-anchor="middle">HMAC-SHA256</text>
+			<text x="525" y="256" class="svgtext small muted" text-anchor="middle">password EMS &#8214; SEED</text>
+			<text x="525" y="276" class="svgtext small muted" text-anchor="middle">1 iteration</text>
+			<path class="line" d="M525 96 L525 169" marker-end="url(#ah)"/>
+			<path class="line" d="M170 197 L439 197" marker-end="url(#ah)"/>
+			<text x="300" y="189" class="svgtext small muted" text-anchor="middle">salt</text>
+			<path class="line" d="M170 272 L439 272" marker-end="url(#ah)"/>
+
+			<rect x="680" y="40" width="150" height="254" rx="3" class="box strong"/>
+			<text x="755" y="160" class="svgtext" text-anchor="middle" font-weight="700">SplitSecret</text>
+			<text x="755" y="182" class="svgtext small muted" text-anchor="middle">groups, then members</text>
+			<path class="line a" d="M590 73 L679 73" marker-end="url(#aha)"/>
+			<path class="line" d="M610 232 L679 232" marker-end="url(#ah)"/>
+			<text x="645" y="222" class="svgtext small muted" text-anchor="middle">random</text>
+
+			<rect x="870" y="140" width="90" height="54" rx="3" class="box a"/>
+			<text x="915" y="172" class="svgtext" text-anchor="middle" font-weight="700">shares</text>
+			<path class="line a" d="M830 167 L869 167" marker-end="url(#aha)"/>
+
+			<rect x="230" y="324" width="170" height="44" rx="3" class="box strong"/>
+			<text x="315" y="351" class="svgtext" text-anchor="middle" font-weight="700">SHA256</text>
+			<path class="line" d="M85 294 L85 346 L229 346" marker-end="url(#ah)"/>
+			<path class="line" d="M400 346 L915 346 L915 195" marker-end="url(#ah)"/>
+			<text x="640" y="338" class="svgtext small muted" text-anchor="middle">15 bits: the identifier</text>
+		</svg>
+		<figcaption>Only the encryption sees the master secret and the passphrase. The shares are a fixed function of the encrypted master secret (EMS), the SEED and the split description. Blue marks where the secret flows.</figcaption>
+	</figure>
+
+	<div class="three">
+		<div><span class="lang">C</span><h3>slip0039</h3><p>The program itself. No dependencies, constant time handling of secrets, memory locked and wiped at exit.</p></div>
+		<div><span class="lang">Python</span><h3>verify.py</h3><p>About 200 lines, standard library only. Reads the same input and prints the same shares, so <code>diff</code> settles it.</p></div>
+		<div><span class="lang">JavaScript</span><h3>this page</h3><p>The demo above, using the Web Crypto API of your browser. It gives the same shares as the other two.</p></div>
+	</div>
+
+	<div class="prose">
+		<h3>Why the EMS cannot be read from the shares</h3>
+		<p>The random bytes are a PBKDF2 stream with one iteration, which is HMAC-SHA256 keyed with EMS&#8239;&#8214;&#8239;SEED. Someone who holds fewer shares than needed sees some of these bytes. Computing the EMS from them is as hard as breaking HMAC-SHA256, unless the key can be guessed.</p>
+		<p class="warn">This protection is computational, where truly random shares protect perfectly. It depends on EMS&#8239;&#8214;&#8239;SEED being impossible to guess. A secret of 128 bits or more is enough on its own. For a short PIN or password, the seed carries the weight: use 64 or more random characters, and keep it secret. The identifier in every share reveals 15 bits of its SHA256 hash.</p>
+	</div>
+</section>
+
+<section class="wrap part" id="codecs" aria-labelledby="codecs-title">
+	<div class="prose">
+		<h2 id="codecs-title">Codecs</h2>
+		<p>A share stores a master secret of 16 to 64 bytes. A codec turns the thing you actually want to keep into such a master secret, and back. You choose it with <code>-c</code>, followed by a wordlist and, for some codecs, an argument that you write down with your shares.</p>
+		<p>With most codecs, a wrong passphrase recovers something that looks just as real as the right answer. This is <em>honey encryption</em>: someone who tries passphrases gets a valid looking secret for every one of them, and cannot tell which one is right without trying it where it is used.</p>
+	</div>
+	<div class="table-wrap">
+		<table>
+			<thead><tr><th scope="col">Codec</th><th scope="col">Stores</th><th scope="col">Example</th><th scope="col">A wrong passphrase recovers</th></tr></thead>
+			<tbody>
+				<tr><td><code>base16</code></td><td>bytes in hex, the default</td><td><code>-c base16</code></td><td>other bytes</td></tr>
+				<tr><td><code>bip39</code></td><td>a BIP-39 mnemonic of 12 to 24 words</td><td><code>-c bip39</code></td><td class="honey">a valid mnemonic</td></tr>
+				<tr><td><code>diceware</code></td><td>a diceware passphrase, English, Dutch or German</td><td><code>-c diceware::12</code></td><td class="honey">12 diceware words</td></tr>
+				<tr><td><code>password</code></td><td>a random password, four alphabets</td><td><code>-c password:ascii:20</code></td><td class="honey">a password of 20</td></tr>
+				<tr><td><code>numeric</code></td><td>a PIN or another random number</td><td><code>-c numeric::6</code></td><td class="honey">6 digits</td></tr>
+				<tr><td><code>totp</code></td><td>the base32 secret of a TOTP or HOTP authenticator</td><td><code>-c totp::32</code></td><td class="honey">a valid secret</td></tr>
+				<tr><td><code>bip32</code></td><td>a root extended private key, xprv to Vprv</td><td><code>-c bip32::zprv</code></td><td class="honey">a valid key</td></tr>
+				<tr><td><code>wif</code></td><td>a bitcoin private key in Wallet Import Format</td><td><code>-c wif::compressed</code></td><td class="honey">a valid key</td></tr>
+				<tr><td><code>nostr</code></td><td>a nostr private key, <code>nsec1&hellip;</code></td><td><code>-c nostr</code></td><td class="honey">a valid key</td></tr>
+				<tr><td><code>codex32</code></td><td>a codex32 secret (BIP-93)</td><td><code>-c codex32::0test</code></td><td class="honey">a valid secret</td></tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="prose">
+		<p>Codecs for numbers, passwords and passphrases use a modular encoding that makes every master secret decode to a secret of the same length. Option <code>--gain</code> bounds how much an attacker can gain from the encoding being very slightly uneven: by default, a factor of at most 1.01.</p>
+		<p class="warn">Honey encryption only helps against someone who has no other way to check a guess. The keys of a wallet that has been used can be checked against the blockchain. A PIN, a TOTP secret or the password of an account can only be tried online, a few times, and benefit the most.</p>
+	</div>
+</section>
+
+<section class="wrap part" id="examples" aria-labelledby="examples-title">
+	<div class="prose">
+		<h2 id="examples-title">Examples</h2>
+		<p>slip0039 reads the passphrase, the seed and the secret from standard input, one per line. The arguments of <code>split</code> are the iteration exponent, the group threshold and one <code>XofY</code> for every group.</p>
+	</div>
+
+	<div class="example">
+		<h3>Split into 2 of 3, recover from shares 1 and 3</h3>
+<pre><span class="p">$ </span>cat input
+TREZOR
+qT7vW2mZ9xLp4Rk8sN3cYb6Hd1Jf5Ga0EuViXoPwQeMnBtCzKyAlDgFhIjUrOsS2
+bb54aac4b89dc868ba37d9cc21b2cece
+<span class="p">$ </span>slip0039 split 0 1 2of3 &lt; input
+genius moment academic acid angry device safari evaluate pitch firm screw suitable stadium amount findings garlic tricycle hush scene exceed
+genius moment academic agency criminal founder sharp diet identify amuse invasion pants shaft plunge senior jewelry amazing biology detailed retreat
+genius moment academic always apart treat snapshot become surface traffic pecan drink credit fiction admit elevator platform package carbon spray
+<span class="p">$ </span>slip0039 recover
+TREZOR
+genius moment academic acid angry device safari evaluate pitch firm screw suitable stadium amount findings garlic tricycle hush scene exceed
+genius moment academic always apart treat snapshot become surface traffic pecan drink credit fiction admit elevator platform package carbon spray
+<span class="h">bb54aac4b89dc868ba37d9cc21b2cece</span></pre>
+		<p>Run it on your own machine: you get these very shares.</p>
+	</div>
+
+	<div class="example">
+		<h3>Check the shares with verify.py</h3>
+<pre><span class="p">$ </span>slip0039 split 0 2 2of3 3of5 &lt; input &gt; shares
+<span class="p">$ </span>./verify.py 0 2 2of3 3of5 &lt; input | diff - shares
+<span class="p">$ </span><span class="c"># no output: all 8 shares are identical</span></pre>
+	</div>
+
+	<div class="example">
+		<h3>A PIN, and what wrong passphrases give</h3>
+<pre><span class="p">$ </span>printf '%s\n' 'correct horse' "$SEED" 042195 | slip0039 -c numeric::6 split 0 1 2of3 &gt; pin
+<span class="p">$ </span>(echo 'correct horse'; head -2 pin) | slip0039 -c numeric::6
+<span class="h">042195</span>
+<span class="p">$ </span>(echo 'Correct horse'; head -2 pin) | slip0039 -c numeric::6
+702084
+<span class="p">$ </span>(echo 'battery staple'; head -2 pin) | slip0039 -c numeric::6
+511373</pre>
+		<p>Every passphrase gives six digits. Only the bank can tell which one is right, and it blocks the card after three wrong tries.</p>
+	</div>
+</section>
+
+<section class="wrap part" id="spec" aria-labelledby="spec-title">
+	<div class="prose">
+		<h2 id="spec-title">The specification, and its silent change</h2>
+		<p>slip0039 implements <a href="https://github.com/satoshilabs/slips/blob/master/slip-0039.md">SLIP-0039</a>, Shamir's Secret-Sharing for Mnemonic Codes, by SatoshiLabs. It passes the official test vectors, and its shares are recovered by the reference implementation.</p>
+		<p>In May 2024 the specification changed, under the same name and number. The 5 bit iteration exponent in every share became a 1 bit <em>extendable backup flag</em> and a 4 bit exponent. When the flag is set, the identifier is no longer part of the salt of the encryption, so more sets of shares can be made later for the same encrypted secret, and the checksum uses the customization string <code>shamir_extendable</code> instead of <code>shamir</code>.</p>
+		<p>The document still has status Final and carries no date or version. Only a footnote mentions <q>a later revision</q>, while its section on versioning says that any enhancement should be standardized as a new BIP or SLIP. Software from before the change rejects the new shares, because their checksum does not match. Shares from before the change remain valid, unless their iteration exponent is 16 or more: then its highest bit now reads as the flag.</p>
+	</div>
+	<div class="cols">
+		<div><h3>What slip0039 does</h3><p>It creates extendable shares by default and recovers both kinds. Option <code>--pre-may-2024</code> creates shares in the old format, for older software.</p></div>
+		<div><h3>Both versions included</h3><p>The repository contains the current specification, <code>doc/slip-0039.md</code>, and the version from before the change, <code>doc/slip-0039-deprecated.md</code>. See also the <a href="https://github.com/satoshilabs/slips/commits/master/slip-0039.md">history of the document</a>.</p></div>
+	</div>
+</section>
+
+<section class="wrap part" id="start" aria-labelledby="start-title">
+	<div class="prose">
+		<h2 id="start-title">Get it</h2>
+		<p>slip0039 is written in C and has no dependencies. It runs on Linux and macOS. The test suite runs the official test vectors and needs <code>jq</code>; <code>test-verify.sh</code> needs Python&#8239;3.</p>
+	</div>
+<pre>git clone https://github.com/rsnel/slip0039
+cd slip0039
+make
+./test.sh &amp;&amp; ./test-verify.sh</pre>
+	<div class="prose">
+		<p>The <code>README</code> describes every option and codec. Option <code>-d</code> shows the internal values, including the EMS and the digests.</p>
+		<p class="warn"><strong>Test before you trust.</strong> Build slip0039 yourself, compare its shares with <code>verify.py</code>, and recover from your shares once before you rely on them. Write down the codec argument, such as the number of words, with the shares.</p>
+	</div>
+</section>
+
+<section class="wrap part" id="license" aria-labelledby="license-title">
+	<div class="prose">
+		<h2 id="license-title">License</h2>
+		<p>slip0039 is free software: you can redistribute it and/or modify it under the terms of the <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License</a> as published by the Free Software Foundation, either version&#8239;3 of the License, or (at your option) any later version. The full text is in the file <code>LICENSE</code>.</p>
+		<p>It is distributed in the hope that it will be useful, but without any warranty; without even the implied warranty of merchantability or fitness for a particular purpose.</p>
+		<p>This website uses TeX Gyre Adventor, TeX Gyre Schola and Latin Modern Mono, under the GUST Font License (<code>doc/fonts/GUST-FONT-LICENSE.txt</code>). It loads nothing from other sites.</p>
+		<h3>Contact</h3>
+		<p>Questions, reviews and bug reports: Rik Snel, <a href="mailto:rik@snel.it">rik@snel.it</a>, or the <a href="https://github.com/rsnel/slip0039">repository on GitHub</a>.</p>
+	</div>
+</section>
+</main>
+
+<footer>
+	<div class="wrap">
+		<span>slip0039. Copyright &copy; 2020&ndash;2026 Rik Snel.</span>
+		<span>GPL version 3 or later.</span>
+	</div>
+</footer>
+<script src="slip0039.js"></script>
+<script src="site.js"></script>
+</body>
+</html>

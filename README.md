@@ -222,6 +222,13 @@ what protects the secret: use a long random SEED (`slip0039` warns if it is
 shorter than 64 characters), and keep in mind that the identifier reveals
 15 bits of SHA256(SEED).
 
+## Website
+
+`doc/index.html` is the website of slip0039. Its demo uses `doc/slip0039.js`,
+a JavaScript port of `split` and `recover` (for the `base16`, `numeric` and
+`password` codecs) that gives the same shares as slip0039 and `verify.py`.
+The site loads nothing from other sites.
+
 ## Specification
 
 `doc/slip-0039.md` is the current specification, `doc/slip-0039-deprecated.md`

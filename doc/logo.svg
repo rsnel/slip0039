@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><style>.lc{stroke:var(--noise-3,#a3acba)}.l2{fill:var(--ink-3,#6b7489)}.l3{fill:var(--ink-2,#45506a)}.la{fill:var(--a,#2d55d6)}</style><path class="lc" d="M7.00 46.00 C22.00 2.00 40.00 70.00 57.00 16.00" fill="none" stroke-width="2.4" stroke-linecap="round"/>
+<rect class="la" x="1.00" y="40.00" width="12" height="12" rx="2"/>
+<rect class="l2" x="18.18" y="25.76" width="10" height="10" rx="2"/>
+<rect class="l3" x="34.47" y="32.97" width="10" height="10" rx="2"/>
+<rect class="l2" x="52.00" y="11.00" width="10" height="10" rx="2"/></svg>
