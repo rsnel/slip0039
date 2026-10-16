@@ -795,6 +795,8 @@ void parse_codec(char *arg) {
 
 	codec = codec_find(name);
 	if (!codec) FATAL("codec %s not available", name);
+	if (!codec->encode || !codec->decode)
+		FATAL("codec %s is not implemented", name);
 
 	if (!codec->default_language) {
 		if (list && *list) FATAL("codec %s does not take a wordlist",
