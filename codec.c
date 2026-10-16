@@ -70,7 +70,7 @@ static void bip39_encode(uint8_t *out, size_t *n,
 	// (ab)use scratch to store sha256 checksum
 	uint8_t *s = (uint8_t*)scratch;
 
-	assert(scratch_size >= 16); // space for sha256 hash
+	assert(scratch_size<<1 >= SHA256_LEN); // space for sha256 hash
 	assert(WORDS >= 24);
 
 	while (*in) {
@@ -91,7 +91,7 @@ static void bip39_encode(uint8_t *out, size_t *n,
 
 	*n = 4*no_input/3;
 
-	hash(s, sizeof(scratch), out, *n, HASH_SHA256);
+	hash(s, SHA256_LEN, out, *n, HASH_SHA256);
 
 	uint8_t checksum = (*s)&(0xff<<(8 - no_input/3));
 
