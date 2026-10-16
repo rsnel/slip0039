@@ -335,9 +335,9 @@ static void bip32_parse_arg(const char *arg) {
 			"uprv, vprv, Uprv and Vprv", arg);
 }
 
-/* layout of codec_scratch: the hash (first, because sha256 stores
- * 32 bit words), the serialized key, and the private key and the order
- * as fixnums, followed by the scratch space for base58 encoding */
+/* layout of codec_scratch: the hash, the serialized key, and the
+ * private key and the order as fixnums, followed by the scratch space
+ * for base58 encoding */
 #define BIP32_KEY	SHA256_LEN
 #define BIP32_K		(BIP32_KEY + BIP32_LEN)
 #define BIP32_ORDER	(BIP32_K + 32)

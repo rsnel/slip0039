@@ -20,6 +20,17 @@ static void check_sha512(struct sha512_ctx *ctx) {
 }
 
 
+/* big endian loads and stores that do not depend on the alignment of p */
+static uint64_t load_be64(const unsigned char *p) {
+	uint64_t x = 0;
+	for (int i = 0; i < 8; i++) x = x<<8|p[i];
+	return x;
+}
+
+static void store_be64(unsigned char *p, uint64_t x) {
+	for (int i = 7; i >= 0; i--, x >>= 8) p[i] = x;
+}
+
 static uint64_t inline Ch(uint64_t x, uint64_t y, uint64_t z) {
 	return z ^ (x & (y ^ z));
 }
@@ -53,27 +64,26 @@ static void inline Round(uint64_t a, uint64_t b, uint64_t c, uint64_t *d,
 }
 
 /** Perform one SHA-512 transformation, processing a 128-byte chunk. */
-static void Transform(uint64_t* s, const uint64_t *chunk) {
-//static void Transform(uint64_t* s, const unsigned char* chunk) {
+static void Transform(uint64_t* s, const unsigned char *chunk) {
 	uint64_t a = s[0], b = s[1], c = s[2], d = s[3], e = s[4], f = s[5], g = s[6], h = s[7];
 	uint64_t w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15;
 
-	Round(a, b, c, &d, e, f, g, &h, 0x428a2f98d728ae22ull, w0 = be64_to_cpu(chunk[0]));
-	Round(h, a, b, &c, d, e, f, &g, 0x7137449123ef65cdull, w1 = be64_to_cpu(chunk[1]));
-	Round(g, h, a, &b, c, d, e, &f, 0xb5c0fbcfec4d3b2full, w2 = be64_to_cpu(chunk[2]));
-	Round(f, g, h, &a, b, c, d, &e, 0xe9b5dba58189dbbcull, w3 = be64_to_cpu(chunk[3]));
-	Round(e, f, g, &h, a, b, c, &d, 0x3956c25bf348b538ull, w4 = be64_to_cpu(chunk[4]));
-	Round(d, e, f, &g, h, a, b, &c, 0x59f111f1b605d019ull, w5 = be64_to_cpu(chunk[5]));
-	Round(c, d, e, &f, g, h, a, &b, 0x923f82a4af194f9bull, w6 = be64_to_cpu(chunk[6]));
-	Round(b, c, d, &e, f, g, h, &a, 0xab1c5ed5da6d8118ull, w7 = be64_to_cpu(chunk[7]));
-	Round(a, b, c, &d, e, f, g, &h, 0xd807aa98a3030242ull, w8 = be64_to_cpu(chunk[8]));
-	Round(h, a, b, &c, d, e, f, &g, 0x12835b0145706fbeull, w9 = be64_to_cpu(chunk[9]));
-	Round(g, h, a, &b, c, d, e, &f, 0x243185be4ee4b28cull, w10 = be64_to_cpu(chunk[10]));
-	Round(f, g, h, &a, b, c, d, &e, 0x550c7dc3d5ffb4e2ull, w11 = be64_to_cpu(chunk[11]));
-	Round(e, f, g, &h, a, b, c, &d, 0x72be5d74f27b896full, w12 = be64_to_cpu(chunk[12]));
-	Round(d, e, f, &g, h, a, b, &c, 0x80deb1fe3b1696b1ull, w13 = be64_to_cpu(chunk[13]));
-	Round(c, d, e, &f, g, h, a, &b, 0x9bdc06a725c71235ull, w14 = be64_to_cpu(chunk[14]));
-	Round(b, c, d, &e, f, g, h, &a, 0xc19bf174cf692694ull, w15 = be64_to_cpu(chunk[15]));
+	Round(a, b, c, &d, e, f, g, &h, 0x428a2f98d728ae22ull, w0 = load_be64(chunk + 8*0));
+	Round(h, a, b, &c, d, e, f, &g, 0x7137449123ef65cdull, w1 = load_be64(chunk + 8*1));
+	Round(g, h, a, &b, c, d, e, &f, 0xb5c0fbcfec4d3b2full, w2 = load_be64(chunk + 8*2));
+	Round(f, g, h, &a, b, c, d, &e, 0xe9b5dba58189dbbcull, w3 = load_be64(chunk + 8*3));
+	Round(e, f, g, &h, a, b, c, &d, 0x3956c25bf348b538ull, w4 = load_be64(chunk + 8*4));
+	Round(d, e, f, &g, h, a, b, &c, 0x59f111f1b605d019ull, w5 = load_be64(chunk + 8*5));
+	Round(c, d, e, &f, g, h, a, &b, 0x923f82a4af194f9bull, w6 = load_be64(chunk + 8*6));
+	Round(b, c, d, &e, f, g, h, &a, 0xab1c5ed5da6d8118ull, w7 = load_be64(chunk + 8*7));
+	Round(a, b, c, &d, e, f, g, &h, 0xd807aa98a3030242ull, w8 = load_be64(chunk + 8*8));
+	Round(h, a, b, &c, d, e, f, &g, 0x12835b0145706fbeull, w9 = load_be64(chunk + 8*9));
+	Round(g, h, a, &b, c, d, e, &f, 0x243185be4ee4b28cull, w10 = load_be64(chunk + 8*10));
+	Round(f, g, h, &a, b, c, d, &e, 0x550c7dc3d5ffb4e2ull, w11 = load_be64(chunk + 8*11));
+	Round(e, f, g, &h, a, b, c, &d, 0x72be5d74f27b896full, w12 = load_be64(chunk + 8*12));
+	Round(d, e, f, &g, h, a, b, &c, 0x80deb1fe3b1696b1ull, w13 = load_be64(chunk + 8*13));
+	Round(c, d, e, &f, g, h, a, &b, 0x9bdc06a725c71235ull, w14 = load_be64(chunk + 8*14));
+	Round(b, c, d, &e, f, g, h, &a, 0xc19bf174cf692694ull, w15 = load_be64(chunk + 8*15));
 
 	Round(a, b, c, &d, e, f, g, &h, 0xe49b69c19ef14ad2ull, w0 += sigma1(w14) + w9 + sigma0(w1));
 	Round(h, a, b, &c, d, e, f, &g, 0xefbe4786384f25e3ull, w1 += sigma1(w15) + w10 + sigma0(w2));
@@ -176,13 +186,13 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size) {
 		memcpy(ctx->buf + bufsize, data, 128 - bufsize);
 		ctx->bytes += 128 - bufsize;
 		data += 128 - bufsize;
-		Transform(ctx->s, (uint64_t*)ctx->buf);
+		Transform(ctx->s, ctx->buf);
 		bufsize = 0;
 	}
 
 	while (end - data >= 128) {
 		// Process full chunks directly from the source.
-		Transform(ctx->s, (const uint64_t*)data);
+		Transform(ctx->s, data);
 		data += 128;
 		ctx->bytes += 128;
 	}
@@ -200,11 +210,11 @@ void sha512_finalize(struct sha512_ctx *ctx, uint8_t *hash, size_t size) {
 
 	assert(size%8 == 0 && size <= SHA512_LEN);
 
-	*((uint64_t*)(sizedesc + 8)) = cpu_to_be64(ctx->bytes<<3);
+	store_be64(sizedesc + 8, ctx->bytes<<3);
 	sha512_update(ctx, pad, 1 + ((239 - (ctx->bytes%128))%128));
 	sha512_update(ctx, sizedesc, 16);
 	for (int i = 0; i < size/8; i++) 
-		*((uint64_t*)hash + i) = cpu_to_be64(ctx->s[i]);
+		store_be64(hash + 8*i, ctx->s[i]);
 
 	/* *((uint64_t*)hash)      = cpu_to_be64(ctx->s[0]);
 	*((uint64_t*)hash + 1) = cpu_to_be64(ctx->s[1]);

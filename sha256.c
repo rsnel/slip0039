@@ -40,6 +40,18 @@ static void invalidate_sha256(struct sha256_ctx *ctx) {
 	ctx->bytes = (size_t)-1;
 }
 
+/* big endian loads and stores that do not depend on the alignment of p */
+static uint32_t load_be32(const unsigned char *p) {
+	return (uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];
+}
+
+static void store_be32(unsigned char *p, uint32_t x) {
+	p[0] = x>>24;
+	p[1] = x>>16;
+	p[2] = x>>8;
+	p[3] = x;
+}
+
 static void check_sha256(struct sha256_ctx *ctx) {
 	assert(ctx->bytes != (size_t)-1);
 }
@@ -73,27 +85,27 @@ static void Round(uint32_t a, uint32_t b, uint32_t c, uint32_t *d, uint32_t e,
 }
 
 /** Perform one SHA-256 transformation, processing a 64-byte chunk. */
-static void Transform(uint32_t *s, const uint32_t *chunk) {
+static void Transform(uint32_t *s, const unsigned char *chunk) {
 	uint32_t a = s[0], b = s[1], c = s[2], d = s[3], e = s[4], f = s[5],
 		g = s[6], h = s[7], w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10,
 		w11, w12, w13, w14, w15;
 
-	Round(a, b, c, &d, e, f, g, &h, 0x428a2f98, w0 = be32_to_cpu(chunk[0]));
-	Round(h, a, b, &c, d, e, f, &g, 0x71374491, w1 = be32_to_cpu(chunk[1]));
-	Round(g, h, a, &b, c, d, e, &f, 0xb5c0fbcf, w2 = be32_to_cpu(chunk[2]));
-	Round(f, g, h, &a, b, c, d, &e, 0xe9b5dba5, w3 = be32_to_cpu(chunk[3]));
-	Round(e, f, g, &h, a, b, c, &d, 0x3956c25b, w4 = be32_to_cpu(chunk[4]));
-	Round(d, e, f, &g, h, a, b, &c, 0x59f111f1, w5 = be32_to_cpu(chunk[5]));
-	Round(c, d, e, &f, g, h, a, &b, 0x923f82a4, w6 = be32_to_cpu(chunk[6]));
-	Round(b, c, d, &e, f, g, h, &a, 0xab1c5ed5, w7 = be32_to_cpu(chunk[7]));
-	Round(a, b, c, &d, e, f, g, &h, 0xd807aa98, w8 = be32_to_cpu(chunk[8]));
-	Round(h, a, b, &c, d, e, f, &g, 0x12835b01, w9 = be32_to_cpu(chunk[9]));
-	Round(g, h, a, &b, c, d, e, &f, 0x243185be, w10 = be32_to_cpu(chunk[10]));
-	Round(f, g, h, &a, b, c, d, &e, 0x550c7dc3, w11 = be32_to_cpu(chunk[11]));
-	Round(e, f, g, &h, a, b, c, &d, 0x72be5d74, w12 = be32_to_cpu(chunk[12]));
-	Round(d, e, f, &g, h, a, b, &c, 0x80deb1fe, w13 = be32_to_cpu(chunk[13]));
-	Round(c, d, e, &f, g, h, a, &b, 0x9bdc06a7, w14 = be32_to_cpu(chunk[14]));
-	Round(b, c, d, &e, f, g, h, &a, 0xc19bf174, w15 = be32_to_cpu(chunk[15]));
+	Round(a, b, c, &d, e, f, g, &h, 0x428a2f98, w0 = load_be32(chunk + 4*0));
+	Round(h, a, b, &c, d, e, f, &g, 0x71374491, w1 = load_be32(chunk + 4*1));
+	Round(g, h, a, &b, c, d, e, &f, 0xb5c0fbcf, w2 = load_be32(chunk + 4*2));
+	Round(f, g, h, &a, b, c, d, &e, 0xe9b5dba5, w3 = load_be32(chunk + 4*3));
+	Round(e, f, g, &h, a, b, c, &d, 0x3956c25b, w4 = load_be32(chunk + 4*4));
+	Round(d, e, f, &g, h, a, b, &c, 0x59f111f1, w5 = load_be32(chunk + 4*5));
+	Round(c, d, e, &f, g, h, a, &b, 0x923f82a4, w6 = load_be32(chunk + 4*6));
+	Round(b, c, d, &e, f, g, h, &a, 0xab1c5ed5, w7 = load_be32(chunk + 4*7));
+	Round(a, b, c, &d, e, f, g, &h, 0xd807aa98, w8 = load_be32(chunk + 4*8));
+	Round(h, a, b, &c, d, e, f, &g, 0x12835b01, w9 = load_be32(chunk + 4*9));
+	Round(g, h, a, &b, c, d, e, &f, 0x243185be, w10 = load_be32(chunk + 4*10));
+	Round(f, g, h, &a, b, c, d, &e, 0x550c7dc3, w11 = load_be32(chunk + 4*11));
+	Round(e, f, g, &h, a, b, c, &d, 0x72be5d74, w12 = load_be32(chunk + 4*12));
+	Round(d, e, f, &g, h, a, b, &c, 0x80deb1fe, w13 = load_be32(chunk + 4*13));
+	Round(c, d, e, &f, g, h, a, &b, 0x9bdc06a7, w14 = load_be32(chunk + 4*14));
+	Round(b, c, d, &e, f, g, h, &a, 0xc19bf174, w15 = load_be32(chunk + 4*15));
 
 	Round(a, b, c, &d, e, f, g, &h, 0xe49b69c1, w0 += sigma1(w14) + w9 + sigma0(w1));
 	Round(h, a, b, &c, d, e, f, &g, 0xefbe4786, w1 += sigma1(w15) + w10 + sigma0(w2));
@@ -166,13 +178,13 @@ static void add(struct sha256_ctx *ctx, const void *p, size_t len) {
 		ctx->bytes += 64 - bufsize;
 		data += 64 - bufsize;
 		len -= 64 - bufsize;
-		Transform(ctx->s, ctx->buf.u32);
+		Transform(ctx->s, ctx->buf.u8);
 		bufsize = 0;
 	}
 
 	while (len >= 64) {
 		/* Process full chunks directly from the source. */
-		Transform(ctx->s, (const uint32_t *)data);
+		Transform(ctx->s, data);
 		ctx->bytes += 64;
 		data += 64;
 		len -= 64;
@@ -210,7 +222,7 @@ void sha256_finalize(struct sha256_ctx *ctx, uint8_t *sha, size_t size) {
 	assert(size%4 == 0 && size/4 <= sizeof(ctx->s) / sizeof(ctx->s[0]));
 
 	for (i = 0; i < size/4; i++)
-		((uint32_t*)sha)[i] = cpu_to_be32(ctx->s[i]);
+		store_be32(sha + 4*i, ctx->s[i]);
 
 	invalidate_sha256(ctx);
 }
