@@ -792,6 +792,39 @@ void parse_options_split(slip0039_t *s, char *arg,
 	} else BUG("invalid parse state %d", *state);
 }
 
+/* parse CODEC[:WORDLIST[:NO_WORDS]], an empty WORDLIST selects the
+ * default wordlist of the codec */
+void parse_codec(char *arg) {
+	char *name = arg, *list = NULL, *words = NULL;
+
+	if ((list = strchr(name, ':'))) {
+		*list++ = '\0';
+		if ((words = strchr(list, ':'))) *words++ = '\0';
+	}
+
+	codec = codec_find(name);
+	if (!codec) FATAL("codec %s not available", name);
+
+	if (!list || !*list) {
+		wordlist = shashtbl_search_elt_bykey(&codec->wordlists,
+				codec->default_language);
+		// the default should be available
+		assert(wordlist);
+	} else {
+		wordlist = shashtbl_search_elt_bykey(&codec->wordlists, list);
+		if (!wordlist) FATAL("wordlist \"%s\" not found for codec "
+				"%s", list, name);
+	}
+
+	if (words) {
+		char *end;
+		if (!codec->needs_words) FATAL("codec %s does not take a "
+				"number of words", name);
+		codec_words = parse_number(words, "number of words", 1,
+				WORDS, &end, 1);
+	}
+}
+
 void parse_options(slip0039_t *s, int argc, char *argv[]) {
 	slip0039_parse_state_t state = SLIP0039_PARSE_STATE_EXP;
 	int max_T = 0;
@@ -803,34 +836,8 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 		else if (!strcmp(arg, "-q")) quiet = 1;
 		else if (!strcmp(arg, "-c")) {
 			if (argc > optind) {
-				char *separator = strchr(argv[optind], ':');
-				if (separator) *separator = '\0';
-				codec = codec_find(argv[optind]);
-				if (!codec) FATAL("codec %s not available",
-						argv[optind]);
-				if (!separator) {
-					wordlist = shashtbl_search_elt_bykey(
-						&codec->wordlists,
-						codec->default_language);
-					// the default should be available
-					assert(wordlist);
-				}
-				else wordlist = shashtbl_search_elt_bykey(
-						&codec->wordlists, ++separator);
-				if (!wordlist) FATAL("wordlist \"%s\" not "
-						"found for codec %s",
-						separator, argv[optind]);
-				optind++;
+				parse_codec(argv[optind++]);
 			} else FATAL("option -c given, but no argument "
-					"supplied");
-		} else if (!strcmp(arg, "--words")) {
-			if (argc > optind) {
-				char *end;
-				codec_words = parse_number(argv[optind],
-						"number of words", 1, WORDS,
-						&end, 1);
-				optind++;
-			} else FATAL("option --words given, but no argument "
 					"supplied");
 		} else if (!strcmp(arg, "--pre-may-2024")) {
 			pre_may_2024 = 1;
@@ -868,9 +875,11 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 			"of SLIP-0039 as it was before the extendable backup "
 			"flag was added in May 2024, this is not recommended");
 
-	if (mode == SLIP0039_MODE_SPLIT && codec_words)
-		WARNING("--words is ignored by split, the number of words "
-				"follows from the passphrase");
+	if (codec->needs_words && !codec_words)
+		FATAL("codec %s needs the number of words, use -c %s:"
+				"[WORDLIST]:NO_WORDS, for example -c %s::12",
+				codec->elt.key, codec->elt.key,
+				codec->elt.key);
 
 	// set mode to 'recover' if no mode is specified
 	if (mode == SLIP0039_MODE_NULL) mode = SLIP0039_MODE_RECOVER;

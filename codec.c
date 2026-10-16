@@ -156,8 +156,9 @@ void fixnum_divisor_show(const fixnum_divisor_t *d, const char *name) {
 /* the diceware codec stores the passphrase as a number k, with
  * 0 <= k < j = 7776^w (w is the number of words), honey encoded with
  * the modular DTE in a master secret of n bits, so that every master
- * secret decodes to a passphrase of w words; for decoding the number
- * of words must be given with --words */
+ * secret decodes to a passphrase of w words; the number of words is
+ * given with -c diceware:[WORDLIST]:NO_WORDS, when splitting it must
+ * match the passphrase */
 
 /* j = m^w in a fixnum of L limbs, returns nonzero on overflow */
 static int diceware_range(fixnum_t *j, const wordlist_t *w, size_t words) {
@@ -183,7 +184,9 @@ static void diceware_encode(uint8_t *out, size_t *n,
 			FATAL("too many words in diceware passphrase");
 		scratch[no_input++] = wordlist_search(w, in, &in);
 	}
-	if (!no_input) FATAL("empty diceware passphrase");
+	if (no_input != (size_t)codec_words) FATAL("the diceware passphrase "
+			"has %zu words, but -c specifies %d words", no_input,
+			codec_words);
 
 	/* size of the master secret: enough bits for j and for the gain,
 	 * at least 128 bits and a multiple of 16 bits */
@@ -240,10 +243,8 @@ static void diceware_decode(char *out, size_t out_size, lrcipher_t *l,
 	size_t max_words = 0;
 	while (!diceware_range(&j, w, max_words + 1)) max_words++;
 
-	if (!codec_words) FATAL("specify the number of words of the "
-			"diceware passphrase with --words, at most %zu "
-			"words fit in this master secret", max_words);
-	if (codec_words > max_words) FATAL("a diceware passphrase of %d "
+	assert(codec_words > 0);
+	if ((size_t)codec_words > max_words) FATAL("a diceware passphrase of %d "
 			"words does not fit in a master secret of %zu bits, "
 			"at most %zu words fit", codec_words, n<<3, max_words);
 	assert(scratch_size >= (size_t)codec_words);
@@ -284,7 +285,8 @@ codec_t codecs_array[] = {
 		.elt.key = "diceware",
 		.encode = diceware_encode,
 		.decode = diceware_decode,
-		.default_language = "english"
+		.default_language = "english",
+		.needs_words = 1
 	}, {
 		.elt.key = "base58",
 		.encode = NULL,

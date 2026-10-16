@@ -38,6 +38,7 @@ typedef struct {
 	void (*decode)(char*, size_t, lrcipher_t*, uint16_t*, size_t,
 			const uint8_t*, size_t, wordlist_t*, base_scratch_t*);
 	const char *default_language;
+	int needs_words; /* the number of words is given with -c */
 	shashtbl_t wordlists;
 } codec_t;
 
@@ -45,7 +46,7 @@ void codec_init();
 
 extern codec_t *codec;
 
-/* number of words to decode, set with --words, 0 if not given */
+/* number of words, set with -c CODEC:[WORDLIST]:NO_WORDS, 0 if not given */
 extern int codec_words;
 
 /* the gain of the honey encoding, set with --gain */
