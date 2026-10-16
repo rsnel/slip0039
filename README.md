@@ -20,7 +20,7 @@ option `-c` specifies the encoding of the master secret, optionally followed
 by the wordlist (an empty `WORDLIST` selects the default wordlist of the codec)
 and, for codecs that need it, an argument `ARG`
 
-* `rawhex`: this is the default codec, it stores 16 bytes of data or more in
+* `base16`: this is the default codec, it stores 16 bytes of data or more in
   increments of 2 bytes with a default maximum of 64 bytes
 
 * `bip39`: use this codec to store a valid bip39 wordlist from 12 to 24
