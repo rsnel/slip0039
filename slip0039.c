@@ -526,6 +526,8 @@ void slip0039_add_mnemonics(slip0039_t *s, FILE *fp) {
 
 	while (read_string_lf(mnemonic, sizeof(mnemonic), fp, "mnemonic", 1))
 		slip0039_add_mnemonic(s, mnemonic, ++line_number);
+
+	if (!line_number) FATAL("no mnemonics given");
 }
 
 void slip0039_add_passphrase(slip0039_t *s, FILE *fp) {
