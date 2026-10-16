@@ -18,6 +18,7 @@
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <assert.h>
+#include <string.h>
 #include "codec.h"
 #include "utils.h"
 #include "verbose.h"
@@ -160,6 +161,14 @@ void fixnum_divisor_show(const fixnum_divisor_t *d, const char *name) {
  * given with -c diceware:[WORDLIST]:NO_WORDS, when splitting it must
  * match the passphrase */
 
+static int codec_words = 0;
+
+static void diceware_parse_arg(const char *arg) {
+	char *end;
+
+	codec_words = parse_number(arg, "number of words", 1, WORDS, &end, 1);
+}
+
 /* j = m^w in a fixnum of L limbs, returns nonzero on overflow */
 static int diceware_range(fixnum_t *j, const wordlist_t *w, size_t words) {
 	fixnum_set_uint16(j, 1);
@@ -264,6 +273,181 @@ start:
 	}
 }
 
+/* the bip32 codec stores a BIP32 root extended private key (depth 0,
+ * no parent fingerprint and child number 0) as a master secret of 64
+ * bytes: the private key k followed by the chain code c, which is the
+ * output I = IL || IR of HMAC-SHA512 from which BIP32 derives the root
+ * key; the version (xprv, yprv, zprv, ...) is not stored, it is given
+ * with -c bip32::VERSION, when splitting it must match the key
+ *
+ * every master secret decodes to a valid key, except when k = 0 or
+ * k >= the order of secp256k1, which happens with probability < 2^-127
+ *
+ * extended public keys are not supported: the compressed public key
+ * needs the x coordinate and one bit for the parity of y, so it does
+ * not fit in 64 bytes together with the chain code */
+
+#define BIP32_LEN	82	/* 78 bytes of data and 4 checksum bytes */
+#define BIP32_DIGITS	112	/* 58^112 > 2^(8*BIP32_LEN) */
+
+/* SLIP-0132 */
+static const struct {
+	const char *name;
+	uint32_t version;
+	int private;
+} bip32_versions[] = {
+	{ "xpub", 0x0488b21e, 0 }, { "xprv", 0x0488ade4, 1 },
+	{ "ypub", 0x049d7cb2, 0 }, { "yprv", 0x049d7878, 1 },
+	{ "zpub", 0x04b24746, 0 }, { "zprv", 0x04b2430c, 1 },
+	{ "Ypub", 0x0295b43f, 0 }, { "Yprv", 0x0295b005, 1 },
+	{ "Zpub", 0x02aa7ed3, 0 }, { "Zprv", 0x02aa7a99, 1 },
+	{ "tpub", 0x043587cf, 0 }, { "tprv", 0x04358394, 1 },
+	{ "upub", 0x044a5262, 0 }, { "uprv", 0x044a4e28, 1 },
+	{ "vpub", 0x045f1cf6, 0 }, { "vprv", 0x045f18bc, 1 },
+	{ "Upub", 0x024289ef, 0 }, { "Uprv", 0x024285b5, 1 },
+	{ "Vpub", 0x02575483, 0 }, { "Vprv", 0x02575048, 1 }
+};
+
+#define BIP32_NO_VERSIONS (sizeof(bip32_versions)/sizeof(*bip32_versions))
+
+/* the order of the group of secp256k1 */
+static const uint8_t bip32_order[32] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
+	0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
+	0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41
+};
+
+static int bip32_version = -1; /* index in bip32_versions */
+
+static void bip32_parse_arg(const char *arg) {
+	for (size_t i = 0; i < BIP32_NO_VERSIONS; i++) {
+		if (strcmp(arg, bip32_versions[i].name)) continue;
+		if (!bip32_versions[i].private) FATAL("%s is the version "
+				"of an extended public key, codec bip32 only "
+				"supports extended private keys", arg);
+		bip32_version = i;
+		return;
+	}
+
+	FATAL("unknown version \"%s\" for codec bip32, supported are xprv, "
+			"yprv, zprv, Yprv, Zprv and, for testnet, tprv, "
+			"uprv, vprv, Uprv and Vprv", arg);
+}
+
+/* layout of codec_scratch: the hash (first, because sha256 stores
+ * 32 bit words), the serialized key, and the private key and the order
+ * as fixnums, followed by the scratch space for base58 encoding */
+#define BIP32_KEY	SHA256_LEN
+#define BIP32_K		(BIP32_KEY + BIP32_LEN)
+#define BIP32_ORDER	(BIP32_K + 32)
+#define BIP32_BASE	(BIP32_ORDER + 32)
+
+static void bip32_encode(uint8_t *out, size_t *n,
+		lrcipher_t *l, uint16_t *scratch,
+		size_t scratch_size, const char *in, wordlist_t *w,
+		const char *seed, size_t seed_len, base_scratch_t *bs) {
+	uint8_t *key = codec_scratch + BIP32_KEY, *h = codec_scratch;
+	size_t no_input = 0;
+	fixnum_t k, order;
+
+	assert(scratch_size >= BIP32_DIGITS);
+	assert(BIP32_BASE <= CODEC_SCRATCH_SIZE);
+	assert(BLOCKS<<1 >= 64);
+	assert(bip32_version >= 0);
+
+	while (*in) {
+		if (no_input == BIP32_DIGITS)
+			FATAL("extended key is too long");
+		scratch[no_input++] = wordlist_search(&wordlist_base58,
+				in, &in);
+	}
+
+	if (!no_input) FATAL("no extended key given");
+
+	if (base_decode_buffer(key, BIP32_LEN, &wordlist_base58.m,
+				scratch, no_input, 0))
+		FATAL("extended key is too long");
+
+	hash(h, SHA256_LEN, key, BIP32_LEN - 4, HASH_SHA256D);
+	if (memcmp(h, key + BIP32_LEN - 4, 4))
+		FATAL("invalid extended key, checksum does not match");
+
+	uint32_t version = (uint32_t)key[0]<<24|key[1]<<16|key[2]<<8|key[3];
+	if (version != bip32_versions[bip32_version].version) {
+		for (size_t i = 0; i < BIP32_NO_VERSIONS; i++)
+			if (version == bip32_versions[i].version)
+				FATAL("the version of the extended key is %s, "
+						"but -c specifies %s",
+						bip32_versions[i].name,
+						bip32_versions[bip32_version].name);
+		FATAL("unknown version 0x%08x of extended key", version);
+	}
+
+	for (int i = 4; i < 13; i++) if (key[i])
+		FATAL("the extended key is not a root key, depth, parent "
+				"fingerprint and child number must be zero");
+
+	if (key[45]) FATAL("invalid extended private key, the key data "
+			"does not start with 0x00");
+
+	/* 0 < k < order */
+	fixnum_init_buffer(&k, codec_scratch + BIP32_K, 32, key + 46, 32);
+	fixnum_init_buffer(&order, codec_scratch + BIP32_ORDER, 32,
+			bip32_order, 32);
+	if (!fixnum_popcnt(&k) || !fixnum_sub_fixnum(&k, &order, 0xff))
+		FATAL("invalid extended private key, the private key "
+				"is not in the range [1, n-1]");
+
+	memcpy(out, key + 46, 32);
+	memcpy(out + 32, key + 13, 32);
+
+	*n = 64;
+}
+
+static void bip32_decode(char *out, size_t out_size, lrcipher_t *l,
+		uint16_t *scratch, size_t scratch_size,
+		const uint8_t *in, size_t n, wordlist_t *w,
+		base_scratch_t *bs) {
+	sbuf_t sbuf = { .buf = out, .size = out_size };
+	uint8_t *key = codec_scratch + BIP32_KEY, *h = codec_scratch;
+	uint32_t version;
+	base_scratch_t b;
+
+	assert(scratch_size >= BIP32_DIGITS);
+	assert(BIP32_BASE + 4*BIP32_LEN <= CODEC_SCRATCH_SIZE);
+	assert(bip32_version >= 0);
+
+	if (n != 64) FATAL("the master secret has %zu bytes, codec bip32 "
+			"needs 64 bytes: a private key and a chain code", n);
+
+	version = bip32_versions[bip32_version].version;
+	key[0] = version>>24;
+	key[1] = version>>16;
+	key[2] = version>>8;
+	key[3] = version;
+	memset(key + 4, 0, 9); /* depth, fingerprint and child number */
+	memcpy(key + 13, in + 32, 32);
+	key[45] = 0x00;
+	memcpy(key + 46, in, 32);
+
+	hash(h, SHA256_LEN, key, BIP32_LEN - 4, HASH_SHA256D);
+	memcpy(key + BIP32_LEN - 4, h, 4);
+
+	/* the first byte of the version is not zero, so there are
+	 * no leading 1s in the base58 encoding */
+	assert(key[0]);
+
+	base_init_scratch(&b, codec_scratch + BIP32_BASE, BIP32_LEN);
+	base_encode_buffer(scratch, BIP32_DIGITS, &wordlist_base58.m,
+			key, BIP32_LEN, &b, 0);
+
+	size_t i = 0;
+	while (!scratch[i]) i++;
+	while (i < BIP32_DIGITS)
+		sbuf_wordlist_dereference(&wordlist_base58, &sbuf, scratch[i++]);
+}
+
 codec_t codecs_array[] = {
 	{
 		.elt.key = "base16",
@@ -286,7 +470,17 @@ codec_t codecs_array[] = {
 		.encode = diceware_encode,
 		.decode = diceware_decode,
 		.default_language = "english",
-		.needs_words = 1
+		.parse_arg = diceware_parse_arg,
+		.arg_name = "number of words",
+		.arg_example = "diceware::12"
+	}, {
+		.elt.key = "bip32",
+		.encode = bip32_encode,
+		.decode = bip32_decode,
+		.default_language = NULL,
+		.parse_arg = bip32_parse_arg,
+		.arg_name = "version of the extended key",
+		.arg_example = "bip32::xprv"
 	}, {
 		.elt.key = "base58",
 		.encode = NULL,
@@ -301,7 +495,7 @@ shashtbl_t codecs;
 
 codec_t *codec = &codecs_array[0];
 
-int codec_words = 0;
+const char *codec_arg = NULL;
 
 /* the modular DTE may give a guesser that tries passphrases a factor
  * of at most 1 + gain over plain guessing, see honey_extra_bits() */

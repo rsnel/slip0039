@@ -18,6 +18,7 @@
  * along with slip0039.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <stdarg.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
@@ -160,4 +161,17 @@ size_t read_string_lf(char *buf, size_t size, FILE *fp, const char *desc,
 	}
 	buf[i] = '\0';
 	return i;
+}
+
+unsigned long int parse_number(const char *arg, const char *name,
+		unsigned long int min, unsigned long int max,
+		char **end, int empty) {
+	unsigned long int ret = strtoul(arg, end, 0);
+
+	if (*end == arg) FATAL("expected %s, found \"%s\" instead", name, arg);
+	if (ret > max) FATAL("%s must be <= %lu", name, max);
+	if (ret < min) FATAL("%s must be >= %lu", name, min);
+	if (empty && **end != '\0') FATAL("junk found while parsing %s", name);
+
+	return ret;
 }

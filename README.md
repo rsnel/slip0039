@@ -2,9 +2,9 @@
 
 ## Usage
 
-`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:[WORDLIST][:NO_WORDS]] ] [ --gain GAIN ] [ --pre-may-2024 ] recover`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:[WORDLIST][:ARG]] ] [ --gain GAIN ] [ --pre-may-2024 ] recover`
 
-`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:[WORDLIST][:NO_WORDS]] ] [ --gain GAIN ] [ --pre-may-2024 ] split <EXP> <GT> <XofY>..`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:[WORDLIST][:ARG]] ] [ --gain GAIN ] [ --pre-may-2024 ] split <EXP> <GT> <XofY>..`
 
 option `-d` (debug) displays the shares, secrets and digests in the known groups
 at program exit
@@ -18,7 +18,7 @@ option `-q` (quiet) shuts up warnings
 
 option `-c` specifies the encoding of the master secret, optionally followed
 by the wordlist (an empty `WORDLIST` selects the default wordlist of the codec)
-and, for codecs that need it, the number of words
+and, for codecs that need it, an argument `ARG`
 
 * `rawhex`: this is the default codec, it stores 16 bytes of data or more in
   increments of 2 bytes with a default maximum of 64 bytes
@@ -39,6 +39,23 @@ and, for codecs that need it, the number of words
   (where it is checked against the passphrase) and for `recover` (where any
   number of words that fits in the master secret can be used, the gain that
   was used to split does not matter); write it down with your shares
+
+* `bip32`: this codec stores a BIP32 root extended private key (depth 0, no
+  parent fingerprint, child number 0) in a master secret of 64 bytes: the
+  private key followed by the chain code, which is exactly the output of
+  HMAC-SHA512 from which BIP32 derives the root key, so `-c base16` shows it;
+  the version is not stored and is mandatory, as in `-c bip32::zprv`, it is
+  one of `xprv`, `yprv`, `zprv`, `Yprv`, `Zprv` or, for testnet, `tprv`,
+  `uprv`, `vprv`, `Uprv`, `Vprv` (see SLIP-0132), use the same value for
+  `split` (where it is checked against the key) and for `recover`; write it
+  down with your shares; this codec does not take a wordlist
+
+  Every master secret, so also the one recovered with a wrong passphrase,
+  decodes to a valid extended private key (except with negligible
+  probability). Extended public keys (`xpub` etc.) are not supported: a
+  compressed public key is the x coordinate and the parity of y, which is one
+  bit more than fits in 64 bytes together with the chain code, and a wrong
+  passphrase would give an x that is not on the curve half of the time.
 
 option `--gain GAIN` bounds the advantage an attacker gets from the way
 structured secrets (like a diceware passphrase) are encoded, the default is

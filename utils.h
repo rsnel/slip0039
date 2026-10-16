@@ -78,6 +78,9 @@ int sbuf_printf(sbuf_t*, const char*, ...);
 
 void sbuf_printf_base16(sbuf_t*, const uint8_t*, size_t);
 
+unsigned long int parse_number(const char*, const char*, unsigned long int,
+		unsigned long int, char**, int);
+
 int memeq(const uint8_t*, const uint8_t*, size_t);
 
 int memzero(const uint8_t*, size_t);

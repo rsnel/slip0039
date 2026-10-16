@@ -21,3 +21,7 @@ OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f\n" | ./slip0039 split 1 1 1of1)
 echo "TREZOR\n$OUT\n" | ./slip0039 -c diceware:dutch
 
+XPRV="xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"
+OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n$XPRV\n" | ./slip0039 -c bip32::xprv split 1 1 1of1)
+echo "TREZOR\n$OUT\n" | ./slip0039 -c bip32::xprv
+echo "TREZOR\n$OUT\n" | ./slip0039 -c bip32::zprv

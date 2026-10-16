@@ -740,19 +740,6 @@ void boring_stuff() {
 	signal(SIGUSR2, sig_handler);
 }
 
-unsigned long int parse_number(const char *arg, const char *name,
-		unsigned long int min, unsigned long int max,
-		char **end, int empty) {
-	unsigned long int ret = strtoul(arg, end, 0);
-
-	if (*end == arg) FATAL("expected %s, found \"%s\" instead", name, arg);
-	if (ret > max) FATAL("%s must be <= %lu", name, max);
-	if (ret < min) FATAL("%s must be >= %lu", name, min);
-	if (empty && **end != '\0') FATAL("junk found while parsing %s", name);
-
-	return ret;
-}
-
 void parse_options_split(slip0039_t *s, char *arg,
 		slip0039_parse_state_t *state, int *max_T) {
 	char *end;
@@ -792,20 +779,26 @@ void parse_options_split(slip0039_t *s, char *arg,
 	} else BUG("invalid parse state %d", *state);
 }
 
-/* parse CODEC[:WORDLIST[:NO_WORDS]], an empty WORDLIST selects the
+/* parse CODEC[:[WORDLIST][:ARG]], an empty WORDLIST selects the
  * default wordlist of the codec */
 void parse_codec(char *arg) {
-	char *name = arg, *list = NULL, *words = NULL;
+	char *name = arg, *list = NULL, *a = NULL;
 
 	if ((list = strchr(name, ':'))) {
 		*list++ = '\0';
-		if ((words = strchr(list, ':'))) *words++ = '\0';
+		if ((a = strchr(list, ':'))) *a++ = '\0';
 	}
+
+	codec_arg = a;
 
 	codec = codec_find(name);
 	if (!codec) FATAL("codec %s not available", name);
 
-	if (!list || !*list) {
+	if (!codec->default_language) {
+		if (list && *list) FATAL("codec %s does not take a wordlist",
+				name);
+		wordlist = NULL;
+	} else if (!list || !*list) {
 		wordlist = shashtbl_search_elt_bykey(&codec->wordlists,
 				codec->default_language);
 		// the default should be available
@@ -816,12 +809,10 @@ void parse_codec(char *arg) {
 				"%s", list, name);
 	}
 
-	if (words) {
-		char *end;
-		if (!codec->needs_words) FATAL("codec %s does not take a "
-				"number of words", name);
-		codec_words = parse_number(words, "number of words", 1,
-				WORDS, &end, 1);
+	if (codec_arg) {
+		if (!codec->parse_arg) FATAL("codec %s does not take an "
+				"argument", name);
+		(*codec->parse_arg)(codec_arg);
 	}
 }
 
@@ -875,11 +866,10 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 			"of SLIP-0039 as it was before the extendable backup "
 			"flag was added in May 2024, this is not recommended");
 
-	if (codec->needs_words && !codec_words)
-		FATAL("codec %s needs the number of words, use -c %s:"
-				"[WORDLIST]:NO_WORDS, for example -c %s::12",
-				codec->elt.key, codec->elt.key,
-				codec->elt.key);
+	if (codec->parse_arg && !codec_arg)
+		FATAL("codec %s needs the %s, for example -c %s",
+				codec->elt.key, codec->arg_name,
+				codec->arg_example);
 
 	// set mode to 'recover' if no mode is specified
 	if (mode == SLIP0039_MODE_NULL) mode = SLIP0039_MODE_RECOVER;
