@@ -4,24 +4,24 @@ all: tfixnum 16tothe32 lrperm twordlist ta prob basetest wordeq lrprng probsim f
 
 fakedist:
 
-sha512test: sha512test.c ../sha512.c ../hmac.c ../sha256.c ../hash.c ../pbkdf2.c ../base.c ../fixnum.c ../wordlists.c ../shashtbl.c ../llist.c ../codec.c ../honey.c ../verbose.c ../utils.c ../wordlist.c ../lrcipher.c ../verbose.c
+sha512test: sha512test.c ../sha512.c ../hmac.c ../sha256.c ../hash.c ../pbkdf2.c ../base.c ../fixnum.c ../wordlists.c ../shashtbl.c ../llist.c ../codec.c ../bech32.c ../honey.c ../verbose.c ../utils.c ../wordlist.c ../lrcipher.c ../verbose.c
 
-lrprng: lrprng.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
+lrprng: lrprng.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
 
-tfixnum: tfixnum.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
+tfixnum: tfixnum.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
 
-16tothe32: 16tothe32.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
+16tothe32: 16tothe32.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
 
-lrperm: lrperm.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
+lrperm: lrperm.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
 
-twordlist: twordlist.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
+twordlist: twordlist.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
 
-ta: ta.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
+ta: ta.c dev.c ../sha256.c ../hmac.c ../pbkdf2.c ../lrcipher.c ../fixnum.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../hash.c ../sha512.c
 
-wordeq: wordeq.c dev.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../fixnum.c ../codec.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../sha256.c ../lrcipher.c ../pbkdf2.c ../hmac.c ../hash.c ../sha512.c
+wordeq: wordeq.c dev.c ../utils.c ../wordlist.c ../wordlists.c ../verbose.c ../fixnum.c ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../base.c ../sha256.c ../lrcipher.c ../pbkdf2.c ../hmac.c ../hash.c ../sha512.c
 
 prob.c:
 
 probsim.c:
 
-basetest: basetest.c ../fixnum.c ../base.c ../verbose.c dev.c ../utils.c ../wordlist.c ../wordlists.c  ../codec.c ../honey.c ../shashtbl.c ../llist.c ../sha256.c ../lrcipher.c ../pbkdf2.c ../hmac.c ../hash.c ../sha512.c
+basetest: basetest.c ../fixnum.c ../base.c ../verbose.c dev.c ../utils.c ../wordlist.c ../wordlists.c  ../codec.c ../bech32.c ../honey.c ../shashtbl.c ../llist.c ../sha256.c ../lrcipher.c ../pbkdf2.c ../hmac.c ../hash.c ../sha512.c

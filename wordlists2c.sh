@@ -72,7 +72,8 @@ format_wordlist() {
 	echo "\t.max_word_length = $MAX_WORD_LENGTH,"
 	echo "\t.min_word_length = $MIN_WORD_LENGTH,"
 	echo "\t.words = (char *[]){"
-	sed "s/^/\t\t\"/;s/\$/\",/" < "$FILENAME"
+	# escape backslashes and double quotes, they may occur in alphabets
+	sed 's/[\\"]/\\&/g;s/^/\t\t"/;s/$/",/' < "$FILENAME"
 	echo "\t}"
 	echo "};"
 	INIT="$INIT\tfixnum_multiplier16_init(&$WORDLIST.m, $4);\n"
@@ -82,8 +83,20 @@ format_wordlist() {
 #		FAMILIES[$1]="known"
 #	fi
 #	if [ "$2" != "" ]; then
-	INIT="$INIT\tif ((c = codec_find(\"$1\"))) shashtbl_add_elt(&c->wordlists,\n\t\t\t&$WORDLIST); else FATAL(\"codec $1 not found\");\n"
+	if [ "$REGISTER" = "1" ]; then
+		INIT="$INIT\tif ((c = codec_find(\"$1\"))) shashtbl_add_elt(&c->wordlists,\n\t\t\t&$WORDLIST); else FATAL(\"codec $1 not found\");\n"
+	fi
 #	fi
+}
+
+REGISTER=1
+
+# an alphabet is a wordlist that is used directly by one or more codecs,
+# it is not registered as a selectable wordlist of a codec
+format_alphabet() {
+	REGISTER=0
+	format_wordlist "$@"
+	REGISTER=1
 }
 
 #declare -A FAMILIES
@@ -117,6 +130,22 @@ format_wordlist base16 "" \
 	0bedb386a64d361e65bdf47702cdde4ad44491960c28589bdedd29916a0581d6 16
 format_wordlist base58 "" \
 	7c67430686b77fac7051d8ea4372dcc02884533134544a3355caa5967a0687d1 58
+format_wordlist password alnum \
+	0a94bb85eb456a04aae7ba2505fde280818649440e122922adcc5f3ab073dc72 62
+format_wordlist password alpha \
+	14e42c3c8963dfd94146317bfc4e87059cae5ac7c4ce2a44a29b8a2f9f55de8e 52
+format_wordlist password lower \
+	e2675e968ab5c9e5b16c816e41f4a294e3880ef8122ed5207218658c64716ede 26
+format_wordlist password ascii \
+	d39a8797c560b434fe58e910a31c4e5454a6626602b7114a41509fa12792c1a2 94
+format_wordlist numeric "" \
+	7427877c40fb0361401248f9c96abe6117396bc6ab16811b5b1706274c02443e 10
+# RFC 4648
+format_alphabet base32 "" \
+	aa2189188015f1d0289c403d54ce81ee0f01cb7bf7cb03ab9449f256b0ea26fe 32
+# BIP-0173
+format_alphabet bech32 "" \
+	cf0555e8aab8ffc79a19bbc1eb492f27e0d93f35a931cf31be665c9921032ed4 32
 
 #echo $DECL
 

@@ -40,6 +40,35 @@ and, for codecs that need it, an argument `ARG`
   number of words that fits in the master secret can be used, the gain that
   was used to split does not matter); write it down with your shares
 
+* `password`: this codec stores a random password of a given length, encoded
+  in the same way as `diceware` (every master secret recovers a password of
+  that length), the length is mandatory, as in `-c password::20`; the
+  wordlist is the alphabet of the password:
+
+  - `alnum` (the default): `0-9`, `A-Z` and `a-z`
+
+  - `alpha`: `A-Z` and `a-z`
+
+  - `lower`: `a-z`
+
+  - `ascii`: all printable ASCII characters except space
+
+  This is only a good choice for passwords that were generated uniformly from
+  the alphabet (as password managers do), not for passwords chosen by a
+  person and not for passwords that were generated with rules like 'at least
+  one digit'
+
+* `numeric`: this codec stores a random number of a given number of digits
+  (a PIN for example) in the same way, as in `-c numeric::6`, leading zeros
+  are significant
+
+* `totp`: this codec stores the base32 secret of a TOTP or HOTP
+  authenticator (RFC 6238, RFC 4226), as shown by many sites as an
+  alternative to the QR code, in the same way as `diceware`; the number of
+  base32 characters (without `=` padding) is mandatory, as in `-c totp::32`;
+  when splitting, spaces, `=` and lower case letters are accepted, when
+  recovering, the secret is printed in upper case without spaces and padding
+
 * `bip32`: this codec stores a BIP32 root extended private key (depth 0, no
   parent fingerprint, child number 0) in a master secret of 64 bytes: the
   private key followed by the chain code, which is exactly the output of
@@ -57,9 +86,43 @@ and, for codecs that need it, an argument `ARG`
   bit more than fits in 64 bytes together with the chain code, and a wrong
   passphrase would give an x that is not on the curve half of the time.
 
+* `wif`: this codec stores a bitcoin private key in Wallet Import Format in a
+  master secret of 32 bytes (the private key, so `-c base16` shows it); the
+  type of the key is not stored and is mandatory, as in `-c wif::compressed`,
+  it is one of `compressed` (the key starts with `K` or `L`), `uncompressed`
+  (`5`), `testnet-compressed` (`c`) or `testnet-uncompressed` (`9`)
+
+* `nostr`: this codec stores a nostr private key (`nsec1...`, NIP-19) in a
+  master secret of 32 bytes (the private key); this codec has no argument
+
+* `codex32`: this codec stores a codex32 secret (BIP-0093, share index `s`)
+  that encodes a BIP32 master seed of 16, 20, 24, 28, 32 or 64 bytes, the
+  master secret is the master seed (so `-c base16` shows it); the threshold
+  and the identifier are not stored and are mandatory, as in
+  `-c codex32::0test` for the secret `ms10tests...`, the secret is recovered
+  in the case of this argument (so `-c codex32::0TEST` recovers
+  `MS10TESTS...`, upper case is recommended for handwriting); the 1 to 4
+  padding bits at the end of the payload are not stored, if they are not
+  zero a warning is given and the recovered secret differs in its last
+  characters, but it encodes the same master seed; codex32 shares (share
+  index other than `s`) are not supported
+
+For `bip32`, `wif`, `nostr` and `codex32` every master secret, so also the
+one recovered with a wrong passphrase, decodes to a valid key or seed (except
+with negligible probability).
+
+Keep in mind that honey encryption only helps against an attacker who has no
+other way to check a guess: the public keys and addresses that belong to a
+wallet that has been used can be found on the blockchain, so an attacker can
+recognize the right private key, extended key or master seed by deriving
+them; secrets that can only be checked online with a limited number of
+tries, like a PIN, a TOTP secret or the password of an account, benefit the
+most.
+
 option `--gain GAIN` bounds the advantage an attacker gets from the way
 structured secrets (like a diceware passphrase) are encoded, the default is
-`0.01`; it is used by the `diceware` codec
+`0.01`; it is used by the `diceware`, `password`, `numeric` and `totp`
+codecs
 
 An attacker with a list of q equally likely passphrases can decrypt with all
 of them and gets q plausible secrets. If the encoding were perfect, the best

@@ -19,7 +19,10 @@ wordlists.c: wordlists/wordlist_slip0039.txt wordlists/wordlist_bip39_english.tx
 	wordlists/wordlist_diceware_dutch.txt wordlists/wordlist_bip39_spanish.txt \
 	wordlists/wordlist_diceware_german.txt wordlists/wordlist_base16.txt \
 	wordlists/wordlist_base58.txt wordlists/wordlist_diceware_english.txt \
-	wordlists2c.sh
+	wordlists/wordlist_password_alnum.txt wordlists/wordlist_password_alpha.txt \
+	wordlists/wordlist_password_lower.txt wordlists/wordlist_password_ascii.txt \
+	wordlists/wordlist_numeric.txt wordlists/wordlist_base32.txt \
+	wordlists/wordlist_bech32.txt wordlists2c.sh
 	sh wordlists2c.sh > wordlists.c
 
 clean:

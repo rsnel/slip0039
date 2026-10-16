@@ -25,3 +25,13 @@ XPRV="xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWU
 OUT=$(echo -n "TREZOR\nlkjsfkjdsh\n$XPRV\n" | ./slip0039 -c bip32::xprv split 1 1 1of1)
 echo "TREZOR\n$OUT\n" | ./slip0039 -c bip32::xprv
 echo "TREZOR\n$OUT\n" | ./slip0039 -c bip32::zprv
+SEED="gUaRlvJDNiDFTjrJfmghruaDh47Tnm9jZCnTBnFZI5axMqxxry6j3zys1Fz67kgx"
+for T in "password::20 aB3dE5gH7jK9mN1pQ3sT" "numeric::6 012345" \
+	"totp::32 JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP" \
+	"wif::compressed KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617" \
+	"nostr nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5" \
+	"codex32::3cash ms13cashsllhdmn9m42vcsamx24zrxgs3qqjzqud4m0d6nln"; do
+	set -- $T
+	OUT=$(echo -n "TREZOR\n$SEED\n$2\n" | ./slip0039 -c $1 split 1 1 1of1)
+	echo "TREZOR\n$OUT\n" | ./slip0039 -c $1
+done

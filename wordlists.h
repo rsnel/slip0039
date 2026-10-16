@@ -54,6 +54,10 @@ extern wordlist_t wordlist_diceware_dutch;
 
 extern wordlist_t wordlist_base58;
 
+extern wordlist_t wordlist_base32;
+
+extern wordlist_t wordlist_bech32;
+
 void wordlists_init();
 
 int wordlist_dereference(wordlist_t*, char*, int, uint16_t);
