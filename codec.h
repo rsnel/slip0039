@@ -26,6 +26,8 @@
 #include "lrcipher.h"
 #include "wordlists.h"
 #include "base.h"
+#include "config.h"
+#include "honey.h"
 
 typedef struct {
 	shashtbl_elt_t elt;
@@ -42,6 +44,17 @@ typedef struct {
 void codec_init();
 
 extern codec_t *codec;
+
+/* number of words to decode, set with --words, 0 if not given */
+extern int codec_words;
+
+/* the gain of the honey encoding, set with --gain */
+extern double gain;
+
+/* static scratch space for the codecs, cleared at exit: room for 3
+ * fixnums of the maximum size and the scratch space of the DTE */
+#define CODEC_SCRATCH_SIZE (3*(BLOCKS<<1) + HONEY_SCRATCH_SIZE(BLOCKS<<1))
+extern uint8_t codec_scratch[CODEC_SCRATCH_SIZE];
 
 codec_t *codec_find(const char*);
 

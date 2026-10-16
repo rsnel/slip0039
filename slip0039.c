@@ -55,10 +55,6 @@ base_scratch_t bs;	      // scratch space for base encoding
 uint8_t base_scratch_space[(BLOCKS<<1)<<2]; // actual scratch space
 uint8_t slip0039_header[5];
 
-/* the modular DTE may give a guesser that tries passphrases a factor
- * of at most 1 + gain over plain guessing, see honey_extra_bits() */
-double gain = 0.01;
-
 /* use the share format of SLIP-0039 as it was before May 2024, without
  * the extendable backup flag and with a 5 bit iteration exponent */
 int pre_may_2024 = 0;
@@ -220,6 +216,7 @@ void wipe() {
 	wipememory(&bs, sizeof(bs));
 	wipememory(&slip0039_header, sizeof(slip0039_header));
 	wipememory(base_scratch_space, sizeof(base_scratch_space));
+	wipememory(codec_scratch, sizeof(codec_scratch));
 	pbkdf2_finished(&prng);
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -238,6 +235,7 @@ void wipe() {
 	munlock_obj(base_scratch_space);
 	munlock_obj(stdin_buffer);
 	munlock_obj(stdout_buffer);
+	munlock_obj(codec_scratch);
 #else
 	wipememory(&seed, sizeof(seed));
 	wipememory(&seed_len, sizeof(seed_len));
@@ -718,6 +716,7 @@ void boring_stuff() {
 	mlock_obj(slip0039_header);
 	mlock_obj(stdin_buffer);
 	mlock_obj(stdout_buffer);
+	mlock_obj(codec_scratch);
 #else
 	/* lock me into memory; don't leak info to swap */
 	if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
@@ -824,6 +823,15 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 				optind++;
 			} else FATAL("option -c given, but no argument "
 					"supplied");
+		} else if (!strcmp(arg, "--words")) {
+			if (argc > optind) {
+				char *end;
+				codec_words = parse_number(argv[optind],
+						"number of words", 1, WORDS,
+						&end, 1);
+				optind++;
+			} else FATAL("option --words given, but no argument "
+					"supplied");
 		} else if (!strcmp(arg, "--pre-may-2024")) {
 			pre_may_2024 = 1;
 		} else if (!strcmp(arg, "--gain")) {
@@ -859,6 +867,10 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 	if (pre_may_2024) WARNING("--pre-may-2024 selects the share format "
 			"of SLIP-0039 as it was before the extendable backup "
 			"flag was added in May 2024, this is not recommended");
+
+	if (mode == SLIP0039_MODE_SPLIT && codec_words)
+		WARNING("--words is ignored by split, the number of words "
+				"follows from the passphrase");
 
 	// set mode to 'recover' if no mode is specified
 	if (mode == SLIP0039_MODE_NULL) mode = SLIP0039_MODE_RECOVER;

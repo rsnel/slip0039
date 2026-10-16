@@ -2,7 +2,7 @@
 
 ## Usage
 
-`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] [ --pre-may-2024 ] recover`
+`$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] [ --words WORDS ] [ --pre-may-2024 ] recover`
 
 `$ slip0039 [ -d ] [ -q ] [ -c CODEC[:WORDLIST] ] [ --gain GAIN ] [ --pre-may-2024 ] split <EXP> <GT> <XofY>..`
 
@@ -28,16 +28,16 @@ option `-c` specifies the encoding of the master secret
 
   - `spanish` is also supported, but UTF-8 normalization is not yet supported
 
-* `diceware`: this codec can store a diceware passphrase of at least 9 words,
-  if you want to store a 10 word passphrase, you should randomly select an
-  extra word an store it as an 11 word passphrase; etc, the system notifies
-  you if it needs an extra word, please take care to actually select a random
-  word, otherwise the result of the correct passphrase is discernible from
-  a random passphrase
+* `diceware`: this codec stores a diceware passphrase of any number of words
+  (up to 39 with the default settings); the master secret is made large
+  enough for the passphrase and for `GAIN` (see `--gain`), so that every
+  passphrase, the right one or a wrong one, recovers a diceware passphrase of
+  the same number of words; when recovering, the number of words must be
+  given with `--words`
 
 option `--gain GAIN` bounds the advantage an attacker gets from the way
 structured secrets (like a diceware passphrase) are encoded, the default is
-`0.01`; the option is parsed, but not yet used by any codec
+`0.01`; it is used by the `diceware` codec
 
 An attacker with a list of q equally likely passphrases can decrypt with all
 of them and gets q plausible secrets. If the encoding were perfect, the best
@@ -50,6 +50,11 @@ losing about 0.014 bits of passphrase strength, once, however many passphrases
 the attacker tries, which is negligible compared to the strength of any
 reasonable passphrase. Because the secret grows in steps of 16 bits, a
 stricter value often does not change the length of the shares at all.
+
+option `--words WORDS` gives the number of words of the passphrase that the
+`diceware` codec recovers; the master secret does not record it, so it must be
+given, and any number of words that fits in the master secret can be recovered
+(the gain used to split does not matter)
 
 option `--pre-may-2024` selects the share format of SLIP-0039 as it was
 before May 2024, when the highest bit of the 5 bit iteration exponent became
