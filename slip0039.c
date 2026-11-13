@@ -474,6 +474,8 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 
 	assert(sizeof(input)/sizeof(*input) >= WORDS);
 
+	snprintf_strict(wordlist_context, sizeof(wordlist_context),
+			"mnemonic on line %d", line_number);
 	while (*line) {
 		if (no_input == WORDS) FATAL("too many words in mnemonic on "
 					"line %d, "
@@ -483,6 +485,7 @@ void slip0039_add_mnemonic(slip0039_t *s, const char *line, int line_number) {
 		input[no_input++] = wordlist_search(&wordlist_slip0039,
 				line, &line);
 	}
+	*wordlist_context = '\0';
 
 	/* the customization string of the checksum depends on the
 	 * extendable backup flag, which is bit 4 of the second word */
@@ -727,9 +730,12 @@ void slip0039_report(FILE *fp, slip0039_t *s) {
 			fprintf(fp, "group %d: no shares\n", i + 1);
 			continue;
 		}
-		fprintf(fp, "group %d%s: %d share%s, %d needed", i + 1,
-				s->root.names[i], m->available,
-				m->available == 1?"":"s", m->threshold);
+		if (m->available <= m->threshold)
+			fprintf(fp, "group %d%s: %d of %d shares", i + 1,
+					s->root.names[i], m->available,
+					m->threshold);
+		else fprintf(fp, "group %d%s: %d shares, %d needed", i + 1,
+				s->root.names[i], m->available, m->threshold);
 		if (m->available >= m->threshold) fprintf(fp, ", complete");
 		else fprintf(fp, ", %d more needed",
 				m->threshold - m->available);

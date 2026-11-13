@@ -344,29 +344,24 @@ async function recover(result, chosen, passphrase) {
 			st.id, st.ext, st.e) };
 }
 
-/* the codecs of the demo: base16, numeric and password (alnum), with the
- * modular DTE of honey.c for the last two, gain 0.01 (7 extra bits) */
+/* the codecs that are honey encoded with the modular DTE of honey.c
+ * (gain 0.01, 7 extra bits), except diceware, whose wordlists are not
+ * included: numeric, password (all alphabets) and totp; and base16; the
+ * codec is given as with -c, without the count, as in "password:ascii" */
 var ALPHABETS = {
 	numeric: "0123456789",
-	password: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	"password:alnum": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+	"password:alpha": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+	"password:lower": "abcdefghijklmnopqrstuvwxyz",
+	"password:ascii": "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 };
+ALPHABETS.password = ALPHABETS["password:alnum"];
 
-async function encodeSecret(codec, text, seed) {
-	if (codec === "base16") {
-		var ms = unhex(text.trim());
-		if (!ms) throw new Error("a master secret is hexadecimal, two digits per byte");
-		if (ms.length < 16 || ms.length % 2)
-			throw new Error("a master secret is 16 bytes or more, an even number");
-		return ms;
-	}
-	var alpha = ALPHABETS[codec], m = BigInt(alpha.length), k = 0n;
-	if (!text.length) throw new Error("type a secret first");
-	for (var i = 0; i < text.length; i++) {
-		var d = alpha.indexOf(text[i]);
-		if (d < 0) throw new Error("'" + text[i] + "' is not in the alphabet of " + codec);
-		k = k * m + BigInt(d);
-	}
-	var j = m ** BigInt(text.length);
+var BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+/* the master secret x = k + j*r of a secret 0 <= k < j, with r derived
+ * from the SEED only, see honey.c */
+async function modular(k, j, seed) {
 	var bits = j.toString(2).length + 7;	/* floor(log2 j) + 1 + 7 */
 	bits = Math.max(128, (bits + 15) & ~15);
 	if (bits > 512) throw new Error("this secret is too long for one master secret");
@@ -377,10 +372,57 @@ async function encodeSecret(codec, text, seed) {
 	return fromBig(k + j * r, L);
 }
 
+/* a base32 secret of len characters has n bytes and p unused bits */
+function base32Size(len) {
+	var n = Math.floor(5 * len / 8);
+	if (Math.floor((8 * n + 4) / 5) !== len) throw new Error("a base32 string of " + len + " characters does not encode whole bytes");
+	return { n: n, p: 5 * len - 8 * n };
+}
+
+async function encodeSecret(codec, text, seed) {
+	if (codec === "base16") {
+		var ms = unhex(text.replace(/[ \t]/g, "").toLowerCase());
+		if (!ms) throw new Error("a master secret is hexadecimal, two digits per byte");
+		if (ms.length < 16 || ms.length % 2)
+			throw new Error("a master secret is 16 bytes or more, an even number");
+		return ms;
+	}
+	if (!text.length) throw new Error("type a secret first");
+	if (codec === "totp") {
+		var s = text.replace(/[ =]/g, "").toUpperCase(), v = 0n;
+		var size = base32Size(s.length);
+		for (var i = 0; i < s.length; i++) {
+			var d = BASE32.indexOf(s[i]);
+			if (d < 0) throw new Error("'" + s[i] + "' is not a base32 character");
+			v = v << 5n | BigInt(d);
+		}
+		if (v & ((1n << BigInt(size.p)) - 1n)) throw new Error("the unused bits of the last character are not zero");
+		return modular(v >> BigInt(size.p), 256n ** BigInt(size.n), seed);
+	}
+	var alpha = ALPHABETS[codec], m = BigInt(alpha.length), k = 0n;
+	for (var i = 0; i < text.length; i++) {
+		var d = alpha.indexOf(text[i]);
+		if (d < 0) throw new Error("'" + text[i] + "' is not in the alphabet of " + codec);
+		k = k * m + BigInt(d);
+	}
+	return modular(k, m ** BigInt(text.length), seed);
+}
+
+/* the secret of count symbols (characters for totp) */
 function decodeSecret(codec, ms, count) {
 	if (codec === "base16") return hex(ms);
+	var out = "";
+	if (codec === "totp") {
+		var size = base32Size(count);
+		var v = (toBig(ms) % 256n ** BigInt(size.n)) << BigInt(size.p);
+		for (var i = 0; i < count; i++) {
+			out = BASE32[Number(v & 31n)] + out;
+			v >>= 5n;
+		}
+		return out;
+	}
 	var alpha = ALPHABETS[codec], m = BigInt(alpha.length);
-	var k = toBig(ms) % m ** BigInt(count), out = "";
+	var k = toBig(ms) % m ** BigInt(count);
 	for (var i = 0; i < count; i++) {
 		out = alpha[Number(k % m)] + out;
 		k /= m;

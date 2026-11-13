@@ -27,6 +27,9 @@
 #include "cthelp.h"
 #include "normalize.h"
 
+/* where the words come from, for error messages */
+char wordlist_context[64];
+
 int wordlist_dereference(wordlist_t *w, char *buf, int buf_size, uint16_t idx) {
 	assert(w && idx < w->m.value && buf_size > w->max_word_length);
 	int ret = 0;
@@ -92,6 +95,8 @@ uint16_t wordlist_search(wordlist_t *w, const char *word, const char **end) {
 		if (w->min_prefix) sbuf_printf(&sbuf, " (a word can be "
 				"given by its first %d letters)",
 				w->min_prefix);
+		if (*wordlist_context) sbuf_printf(&sbuf, ", in the %s",
+				wordlist_context);
 		FATAL("%s", dl);
 	}
 

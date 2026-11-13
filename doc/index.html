@@ -49,6 +49,7 @@
 				<div class="seg" role="group" aria-labelledby="codec-label" id="codec">
 					<button type="button" data-codec="numeric" aria-pressed="true">PIN</button>
 					<button type="button" data-codec="password" aria-pressed="false">Password</button>
+					<button type="button" data-codec="totp" aria-pressed="false">TOTP</button>
 					<button type="button" data-codec="base16" aria-pressed="false">Hex</button>
 				</div>
 				<input id="secret" type="text" spellcheck="false" value="042195" aria-labelledby="codec-label" aria-describedby="secret-hint">
@@ -180,7 +181,7 @@
 			<thead><tr><th scope="col">Codec</th><th scope="col">Stores</th><th scope="col">Example</th><th scope="col">A wrong passphrase recovers</th></tr></thead>
 			<tbody>
 				<tr><td><code>base16</code></td><td>bytes in hex, the default</td><td><code>-c base16</code></td><td>other bytes</td></tr>
-				<tr><td><code>bip39</code></td><td>a BIP-39 mnemonic of 12 to 24 words</td><td><code>-c bip39</code></td><td class="honey">a valid mnemonic</td></tr>
+				<tr><td><code>bip39</code></td><td>a BIP-39 mnemonic of 12 to 24 words, in any of its 10 languages</td><td><code>-c bip39</code></td><td class="honey">a valid mnemonic</td></tr>
 				<tr><td><code>diceware</code></td><td>a diceware passphrase, English, Dutch or German</td><td><code>-c diceware::12</code></td><td class="honey">12 diceware words</td></tr>
 				<tr><td><code>password</code></td><td>a random password, four alphabets</td><td><code>-c password:ascii:20</code></td><td class="honey">a password of 20</td></tr>
 				<tr><td><code>numeric</code></td><td>a PIN or another random number</td><td><code>-c numeric::6</code></td><td class="honey">6 digits</td></tr>
@@ -227,6 +228,17 @@ genius moment academic always apart treat snapshot become surface traffic pecan 
 <pre><span class="p">$ </span>slip0039 split 0 2 2of3 3of5 &lt; input &gt; shares
 <span class="p">$ </span>./verify.py 0 2 2of3 3of5 &lt; input | diff - shares
 <span class="p">$ </span><span class="c"># no output: all 8 shares are identical</span></pre>
+		<p><code>verify.py</code> takes the same <code>-c</code> option, so it also reproduces the honey encoding of a PIN, a password or a diceware passphrase.</p>
+	</div>
+
+	<div class="example">
+		<h3>Check shares without the passphrase</h3>
+<pre><span class="p">$ </span>head -1 shares | slip0039 check
+identifier 12466, extendable, iteration exponent 0, master secret of 128 bits
+1 of 1 groups needed, 0 complete
+group 1 (academic): 1 of 2 shares, 1 more needed (line 1)
+not enough shares to recover the master secret</pre>
+		<p><code>check</code> also tells whether the shares belong together: a share from another set is detected, even one beyond the threshold.</p>
 	</div>
 
 	<div class="example">
@@ -258,14 +270,15 @@ genius moment academic always apart treat snapshot become surface traffic pecan 
 <section class="wrap part" id="start" aria-labelledby="start-title">
 	<div class="prose">
 		<h2 id="start-title">Get it</h2>
-		<p>slip0039 is written in C and has no dependencies. It runs on Linux and macOS. The test suite runs the official test vectors and needs <code>jq</code>; <code>test-verify.sh</code> needs Python&#8239;3.</p>
+		<p>slip0039 is written in C and has no dependencies. It runs on Linux and macOS. The test suite runs the official test vectors and needs <code>jq</code> and Python&#8239;3; with Node.js it also tests the JavaScript of this page.</p>
 	</div>
 <pre>git clone https://github.com/rsnel/slip0039
 cd slip0039
 make
-./test.sh &amp;&amp; ./test-verify.sh</pre>
+make test
+sudo make install</pre>
 	<div class="prose">
-		<p>The <code>README</code> describes every option and codec. Option <code>-d</code> shows the internal values, including the EMS and the digests.</p>
+		<p><code>slip0039 --help</code>, the manual page and the <code>README</code> describe every option and codec. On a terminal, slip0039 asks for its input and does not echo the passphrase, the seed and the secret; <code>--random-seed</code> makes the seed. Option <code>-d</code> shows the internal values, including the EMS and the digests.</p>
 		<p class="warn"><strong>Test before you trust.</strong> Build slip0039 yourself, compare its shares with <code>verify.py</code>, and recover from your shares once before you rely on them. Write down the codec argument, such as the number of words, with the shares.</p>
 	</div>
 </section>

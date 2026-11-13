@@ -21,18 +21,22 @@
 Python standard library, to show that slip0039 is deterministic and that
 its shares contain nothing but what SLIP-0039 prescribes.
 
-Usage (same input and arguments as slip0039 split with the default codec):
+Usage (same input and arguments as slip0039 split):
 
-    printf 'PASSPHRASE\\nSEED\\nMASTER_SECRET_HEX\\n' |
-        ./verify.py [--pre-may-2024] [-v] EXP GT XofY...
+    printf 'PASSPHRASE\\nSEED\\nMASTER_SECRET\\n' |
+        ./verify.py [-c CODEC] [--gain GAIN] [--pre-may-2024] [-v] \\
+            EXP GT XofY...
 
 The output is identical to that of slip0039 split, so
 
     ./slip0039 split 1 2 2of3 3of5 < input > shares
     ./verify.py 1 2 2of3 3of5 < input | diff - shares
 
-prints nothing if the shares are reproduced. For a codec other than base16,
-recover the master secret with `slip0039 -c base16` and use that.
+prints nothing if the shares are reproduced. All codecs of slip0039 are
+supported, with the same -c argument; for the honey encoded codecs
+(diceware, password, numeric and totp) this also shows that the master
+secret is k + j*r, where k is the secret, j the number of possible
+secrets and r a number that is derived from the SEED only.
 
 The computation has two stages, which only meet in the EMS:
 
@@ -59,10 +63,13 @@ The computation has two stages, which only meet in the EMS:
 import hashlib
 import hmac
 import os
+import re
 import sys
+import unicodedata
 
-WORDLIST = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-        "wordlists", "wordlist_slip0039.txt")
+WORDLISTS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+        "wordlists")
+WORDLIST = os.path.join(WORDLISTS, "wordlist_slip0039.txt")
 
 # GF(256) with the polynomial x^8 + x^4 + x^3 + x + 1, as in SLIP-0039
 
@@ -152,6 +159,239 @@ def split(ems, seed, e, gt, groups):
     return [(i, j, s) for i, shares in enumerate(member_shares)
             for j, s in enumerate(shares)]
 
+# the codecs: from the master secret as it is given to the master secret
+# of SLIP-0039 (bytes)
+
+def fatal(msg):
+    sys.exit("verify.py: " + msg)
+
+def read_wordlist(family, language=""):
+    name = "wordlist_" + family + ("_" + language if language else "")
+    with open(os.path.join(WORDLISTS, name + ".txt"), encoding="utf-8") as f:
+        # a trailing space is not part of a word (diceware dutch)
+        return [w.rstrip(" ") for w in f.read().split("\n")[:-1]]
+
+def ascii_lower(text):
+    return "".join(c.lower() if "A" <= c <= "Z" else c for c in text)
+
+def words_of(text, words):
+    """split a secret of words like slip0039 does: Unicode NFKD, runs of
+    spaces, tabs and CRs are one separator, lower case if the wordlist
+    has no upper case letters"""
+    text = unicodedata.normalize("NFKD", text)
+    if not any("A" <= c <= "Z" for w in words for c in w):
+        text = ascii_lower(text)
+    return [w for w in re.split("[ \t\r]+", text) if w]
+
+def lookup(words, word, prefix=0):
+    """index of word (the first if it occurs more than once), a word
+    may be given by its first prefix (or more) letters if prefix > 0"""
+    norm = [unicodedata.normalize("NFKD", w) for w in words]
+    for i, w in enumerate(norm):
+        if w == word or (prefix and len(word) >= prefix and
+                w.startswith(word)):
+            return i
+    fatal("word '%s' not found" % word)
+
+def bit_length_extra(gain):
+    """honey_extra_bits() of honey.c"""
+    bits = 0
+    while 2**bits < 1/gain + 1:
+        bits += 1
+    return bits
+
+def modular(digits, m, seed, gain):
+    """the modular DTE of honey.c: the secret k (the digits in base m,
+    most significant first) is stored as x = k + j*r, with j = m^count
+    and 0 <= x < 2^n; r is uniform on the possible values, which are one
+    more for k < t, the randomness comes from the SEED only"""
+    j = m**len(digits)
+    k = 0
+    for d in digits:
+        k = k*m + d
+    bits = max(128, j.bit_length() + bit_length_extra(gain))
+    bits = (bits + 15)//16*16
+    if bits > 512:
+        fatal("the secret does not fit in a master secret of 512 bits")
+    L = bits//8
+    u = int.from_bytes(hashlib.pbkdf2_hmac("sha256", b"honey", seed, 1, L),
+            "big")
+    R, t = divmod(2**bits, j)
+    r = u % (R + 1) if k < t else u % R
+    return (k + j*r).to_bytes(L, "big")
+
+def base16(text, arg, seed, gain, language):
+    text = ascii_lower(re.sub("[ \t]", "", text))
+    if not re.fullmatch("[0-9a-f]*", text) or len(text) % 4:
+        fatal("master secret must be hexadecimal, a multiple of 16 bits")
+    ms = bytes.fromhex(text)
+    if len(ms) < 16:
+        fatal("master secret must be at least 16 bytes")
+    return ms
+
+def bip39(text, arg, seed, gain, language):
+    words = read_wordlist("bip39", language or "english")
+    idx = [lookup(words, w, 4 if (language or "english") == "english" else 0)
+            for w in words_of(text, words)]
+    if len(idx) not in (12, 15, 18, 21, 24):
+        fatal("a BIP39 mnemonic has 12, 15, 18, 21 or 24 words")
+    v = 0
+    for i in idx:
+        v = v << 11 | i
+    cs = len(idx)//3
+    entropy = (v >> cs).to_bytes(len(idx)*4//3, "big")
+    if hashlib.sha256(entropy).digest()[0] >> (8 - cs) != v & (2**cs - 1):
+        fatal("invalid BIP39 mnemonic, checksum does not match")
+    return entropy
+
+def symbols(family, default, spaced):
+    def codec(text, arg, seed, gain, language):
+        words = read_wordlist(family, language or default)
+        if spaced:
+            digits = [lookup(words, w) for w in words_of(text, words)]
+        else:
+            digits = [lookup(words, c) for c in text]
+        if len(digits) != int(arg):
+            fatal("the secret has %d symbols, -c specifies %s" %
+                    (len(digits), arg))
+        return modular(digits, len(words), seed, gain)
+    return codec
+
+B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+
+def totp(text, arg, seed, gain, language):
+    text = re.sub("[ =]", "", text).upper()
+    if len(text) != int(arg):
+        fatal("the TOTP secret has %d characters, -c specifies %s" %
+                (len(text), arg))
+    v = 0
+    for c in text:
+        v = v << 5 | B32.index(c)
+    n = 5*len(text)//8
+    p = 5*len(text) - 8*n
+    if v & (2**p - 1):
+        fatal("the unused bits of the last character are not zero")
+    return modular(list((v >> p).to_bytes(n, "big")), 256, seed, gain)
+
+B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+ORDER = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+
+def base58check(text, length):
+    v = 0
+    for c in text:
+        v = v*58 + B58.index(c)
+    data = v.to_bytes(length, "big")
+    if hashlib.sha256(hashlib.sha256(data[:-4]).digest()).digest()[:4] != \
+            data[-4:]:
+        fatal("invalid base58check string, checksum does not match")
+    return data
+
+def private_key(key):
+    if not 0 < int.from_bytes(key, "big") < ORDER:
+        fatal("the private key is not in the range [1, n-1]")
+    return key
+
+BIP32_VERSIONS = { "xprv": 0x0488ade4, "yprv": 0x049d7878,
+        "zprv": 0x04b2430c, "Yprv": 0x0295b005, "Zprv": 0x02aa7a99,
+        "tprv": 0x04358394, "uprv": 0x044a4e28, "vprv": 0x045f18bc,
+        "Uprv": 0x024285b5, "Vprv": 0x02575048 }
+
+def bip32(text, arg, seed, gain, language):
+    key = base58check(text, 82)
+    if int.from_bytes(key[:4], "big") != BIP32_VERSIONS[arg]:
+        fatal("the version of the extended key is not " + arg)
+    if any(key[4:13]) or key[45]:
+        fatal("not a root extended private key")
+    return private_key(key[46:78]) + key[13:45]
+
+WIF_TYPES = { "compressed": (0x80, 1), "uncompressed": (0x80, 0),
+        "testnet-compressed": (0xef, 1), "testnet-uncompressed": (0xef, 0) }
+
+def wif(text, arg, seed, gain, language):
+    version, compressed = WIF_TYPES[arg]
+    key = base58check(text, 37 + compressed)
+    if key[0] != version or (compressed and key[33] != 1):
+        fatal("the WIF key is not of type " + arg)
+    return private_key(key[1:33])
+
+B32L = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
+
+def bech32_polymod(values):
+    gen = (0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3)
+    chk = 1
+    for v in values:
+        b = chk >> 25
+        chk = (chk & 0x1ffffff) << 5 ^ v
+        for i in range(5):
+            chk ^= gen[i] if (b >> i) & 1 else 0
+    return chk
+
+def nostr(text, arg, seed, gain, language):
+    if text != text.lower() and text != text.upper():
+        fatal("nostr private key mixes upper and lower case")
+    text = text.lower()
+    if not text.startswith("nsec1") or len(text) != 5 + 52 + 6:
+        fatal("not a nostr private key")
+    data = [B32L.index(c) for c in text[5:]]
+    hrp = [ord(c) >> 5 for c in "nsec"] + [0] + [ord(c) & 31 for c in "nsec"]
+    if bech32_polymod(hrp + data) != 1:
+        fatal("invalid nostr private key, checksum does not match")
+    v = 0
+    for d in data[:52]:
+        v = v << 5 | d
+    if v & 15:
+        fatal("the padding bits are not zero")
+    return private_key((v >> 4).to_bytes(32, "big"))
+
+# codex32 (BIP-0093), the generators and constants of the regular and the
+# long checksum, the residue starts with the value of the prefix "ms"
+MS32 = { 13: (65, (0x19dc500ce73fde210, 0x1bfae00def77fe529,
+            0x1fbd920fffe7bee52, 0x1739640bdeee3fdad, 0x07729a039cfc75f5a),
+            0x10ce0795c2fd1e62a),
+        15: (75, (0x3d59d273535ea62d897, 0x7a9becb6361c6c51507,
+            0x543f9b7e6c38d8a2a0e, 0x0c577eaeccf1990d13c,
+            0x1887f74f8dc71b10651), 0x43381e570bf4798ab26) }
+
+def ms32_polymod(values, variant):
+    bits, gen, _ = MS32[variant]
+    residue = 0x23181b3
+    for v in values:
+        b = residue >> (bits - 5)
+        residue = (residue & (2**(bits - 5) - 1)) << 5 ^ v
+        for i in range(5):
+            residue ^= gen[i] if (b >> i) & 1 else 0
+    return residue
+
+def codex32(text, arg, seed, gain, language):
+    if text != text.lower() and text != text.upper():
+        fatal("codex32 secret mixes upper and lower case")
+    text = text.lower()
+    if not text.startswith("ms1"):
+        fatal("codex32 secret does not start with ms1")
+    data = [B32L.index(c) for c in text[3:]]
+    variant = 13 if 5 + len(data) <= 93 else 15
+    if (variant == 15 and not 96 <= 5 + len(data) <= 1023) or \
+            ms32_polymod(data, variant) != MS32[variant][2]:
+        fatal("invalid codex32 secret, the checksum does not match")
+    if text[3:8] != arg.lower() or text[8] != "s":
+        fatal("the header of the codex32 secret is not %ss" % arg)
+    payload = data[6:-variant]
+    v = 0
+    for d in payload:
+        v = v << 5 | d
+    n = 5*len(payload)//8
+    p = 5*len(payload) - 8*n
+    if p > 4 or n not in (16, 20, 24, 28, 32, 64):
+        fatal("the codex32 secret does not encode a master seed")
+    return (v >> p).to_bytes(n, "big")
+
+CODECS = { "base16": base16, "bip39": bip39,
+        "diceware": symbols("diceware", "english", True),
+        "password": symbols("password", "alnum", False),
+        "numeric": symbols("numeric", "", False),
+        "totp": totp, "bip32": bip32, "wif": wif, "nostr": nostr,
+        "codex32": codex32 }
+
 # the mnemonic format of SLIP-0039
 
 def rs1024_polymod(values):
@@ -181,15 +421,28 @@ def mnemonic(words, identifier, ext, e, gi, gt, g, mi, mt, share, pre_may):
     data += [chk >> 10*(2 - i) & 1023 for i in range(3)]
     return " ".join(words[d] for d in data)
 
-def fatal(msg):
-    sys.exit("verify.py: " + msg)
-
 def main(argv):
-    pre_may = "--pre-may-2024" in argv
-    verbose = "-v" in argv
-    args = [a for a in argv if a not in ("--pre-may-2024", "-v")]
+    pre_may, verbose, codec, gain, args = False, False, "base16", 0.01, []
+    argv = list(argv)
+    while argv:
+        a = argv.pop(0)
+        if a == "--pre-may-2024":
+            pre_may = True
+        elif a == "-v":
+            verbose = True
+        elif a == "-q":
+            pass
+        elif a == "-c" and argv:
+            codec = argv.pop(0)
+        elif a == "--gain" and argv:
+            gain = float(argv.pop(0))
+        else:
+            args.append(a)
+    if args and args[0] == "split":
+        args = args[1:]
     if len(args) < 3:
-        fatal("usage: verify.py [--pre-may-2024] [-v] EXP GT XofY...")
+        fatal("usage: verify.py [-c CODEC] [--gain GAIN] [--pre-may-2024] "
+                "[-v] [split] EXP GT XofY...")
     e, gt = int(args[0]), int(args[1])
     groups = []
     for spec in args[2:]:
@@ -198,11 +451,19 @@ def main(argv):
     if e > (31 if pre_may else 15) or not 1 <= gt <= len(groups) <= 16:
         fatal("invalid iteration exponent or group threshold")
 
-    # the same input as slip0039 split: three lines
-    lines = sys.stdin.buffer.read().split(b"\n")
+    name, _, rest = codec.partition(":")
+    language, _, arg = rest.partition(":")
+    if name not in CODECS:
+        fatal("codec %s is not supported" % name)
+
+    # the same input as slip0039 split: three lines, a CR at the end of
+    # a line is not part of it
+    lines = [l[:-1] if l.endswith(b"\r") else l
+            for l in sys.stdin.buffer.read().split(b"\n")]
     if len(lines) < 3:
         fatal("expected passphrase, seed and master secret on stdin")
-    passphrase, seed, ms = lines[0], lines[1], bytes.fromhex(lines[2].decode())
+    passphrase, seed = lines[0], lines[1]
+    ms = CODECS[name](lines[2].decode("utf-8"), arg, seed, gain, language)
     if len(ms) < 16 or len(ms) % 2:
         fatal("master secret must be at least 16 bytes, an even number")
 

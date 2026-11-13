@@ -79,5 +79,7 @@ uint16_t wordlist_search(wordlist_t*, const char*, const char**);
 
 void wordlist_prepare(wordlist_t*);
 
+extern char wordlist_context[64];
+
 #endif /* SLIP0039_WORDLISTS_H */
 

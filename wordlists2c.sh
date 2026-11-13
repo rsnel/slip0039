@@ -24,6 +24,14 @@ fatal() {
 	exit 1
 }
 
+# echo of dash interprets escapes like \t and \n, echo of bash does not,
+# so we use printf, which does it everywhere
+echo() {
+	printf '%b\n' "$*"
+}
+
+TAB=`printf '\t'`
+
 if [ "$#" != "0" ]; then
 	fatal "wrong number of arguments given"
 fi
@@ -96,7 +104,7 @@ format_wordlist() {
 	printf '\t.separator = "%s",\n' "$SEPARATOR"
 	echo "\t.words = (char *[]){"
 	# escape backslashes and double quotes, they may occur in alphabets
-	sed 's/ *$//;s/[\\"]/\\&/g;s/^/\t\t"/;s/$/",/' < "$FILENAME"
+	sed "s/ *\$//;s/[\\\\\"]/\\\\&/g;s/^/$TAB$TAB\"/;s/\$/\",/" < "$FILENAME"
 	echo "\t}"
 	echo "};"
 	INIT="$INIT\tfixnum_multiplier16_init(&$WORDLIST.m, $4);\n"
@@ -204,4 +212,4 @@ format_alphabet bech32 "" \
 #echo $DECL
 
 INIT="$INIT}\n";
-echo $INIT
+echo "$INIT"
