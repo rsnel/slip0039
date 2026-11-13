@@ -1,0 +1,181 @@
+.TH SLIP0039 1 "November 2026" "slip0039" "User Commands"
+.SH NAME
+slip0039 \- split a secret into SLIP-0039 shares and recover it
+.SH SYNOPSIS
+.B slip0039
+[\fIOPTION\fR]... [\fBrecover\fR]
+.br
+.B slip0039
+[\fIOPTION\fR]... \fBcheck\fR
+.br
+.B slip0039
+[\fIOPTION\fR]... \fBsplit\fR \fIEXP\fR \fIGT\fR \fIXofY\fR...
+.SH DESCRIPTION
+.B slip0039
+implements SLIP-0039, Shamir's Secret-Sharing for Mnemonic Codes. It splits
+a master secret, protected by a passphrase, into groups of shares of 20 or
+more words, and recovers the master secret from enough of them.
+.PP
+All input is read from standard input, one item per line. If standard
+input is a terminal, every item is asked for, and the passphrase, the seed
+and the master secret are not echoed.
+.PP
+.B split
+is deterministic: the shares are a function of the master secret, the
+passphrase and the
+.IR SEED .
+.B verify.py
+in the source reproduces them independently.
+.SH MODES
+.TP
+.B recover
+(the default) reads the passphrase and then the shares, one per line, and
+prints the master secret. Empty lines are skipped, upper case, extra
+spaces and CRLF line ends are accepted and a word can be given by its first
+four letters. All shares are checked: a share of another split is
+detected, also if it is not needed.
+.TP
+.B check
+reads the shares, without a passphrase, and reports which groups are
+complete and which shares are missing. If there are enough shares, it
+checks that they belong together. The exit status is 0 if the master
+secret can be recovered.
+.TP
+\fBsplit\fR \fIEXP\fR \fIGT\fR \fIXofY\fR...
+reads the passphrase, the
+.I SEED
+and the master secret and prints the shares, group by group.
+.I EXP
+is the iteration exponent (at most 15), the encryption takes
+2500*2^\fIEXP\fR iterations of PBKDF2 per round.
+.I GT
+is the number of groups that is needed, and every
+.I XofY
+describes a group: X of its Y shares are needed, as in 2of3.
+The
+.I SEED
+should be a long random string (64 characters or more) that is used once;
+it can be generated with
+.BR \-\-random\-seed ,
+or by leaving it empty on a terminal.
+.SH OPTIONS
+.TP
+\fB\-c\fR \fICODEC\fR[\fB:\fR[\fIWORDLIST\fR][\fB:\fR\fIARG\fR]]
+The format of the master secret. The argument
+.I ARG
+is not stored in the shares, write it down with them;
+.B split
+prints the command to recover.
+.TP
+\fB\-\-gain\fR \fIGAIN\fR
+The bound on the advantage that an attacker gets from the honey encoding
+of structured secrets, the default is 0.01.
+.TP
+.B \-\-random\-seed
+With
+.BR split :
+generate the
+.I SEED
+(64 characters), it is not read from the input. It is printed on standard
+error; it is needed only to check the shares with
+.BR verify.py .
+.TP
+.B \-\-pre\-may\-2024
+With
+.BR split :
+make shares in the format of SLIP-0039 before May 2024, without the
+extendable backup flag. Not recommended.
+.B recover
+accepts both formats without this option.
+.TP
+.B \-d
+Show the internal data (shares, digests, secrets) on standard error at
+exit.
+.TP
+.B \-q
+Do not show warnings and notes.
+.TP
+.BR \-h ", " \-\-help
+Show a summary of the usage.
+.TP
+.BR \-V ", " \-\-version
+Show the version.
+.SH CODECS
+With most codecs every master secret, so also the one that a wrong
+passphrase gives, decodes to a valid secret of the same kind (honey
+encryption).
+.TP
+.B base16
+16 to 64 bytes in hexadecimal, a multiple of 2 bytes (the default).
+.TP
+\fBbip39\fR[\fB:\fR\fILANGUAGE\fR]
+A BIP39 mnemonic of 12, 15, 18, 21 or 24 words. LANGUAGE is english (the
+default), spanish, french, italian, portuguese, czech, japanese, korean,
+chinese_simplified or chinese_traditional. The input is converted to
+Unicode normalization form NFKD.
+.TP
+\fBdiceware:\fR[\fILANGUAGE\fR]\fB:\fR\fIWORDS\fR
+A diceware passphrase of WORDS words, english (the default), dutch or
+german.
+.TP
+\fBpassword:\fR[\fIALPHABET\fR]\fB:\fR\fILENGTH\fR
+A random password, the alphabet is alnum (the default), alpha, lower or
+ascii.
+.TP
+\fBnumeric::\fR\fIDIGITS\fR
+A random number of DIGITS digits, a PIN for example.
+.TP
+\fBtotp::\fR\fICHARS\fR
+The base32 secret of a TOTP or HOTP authenticator, CHARS characters
+without padding.
+.TP
+\fBbip32::\fR\fIVERSION\fR
+A BIP32 root extended private key, VERSION is xprv, yprv, zprv, Yprv,
+Zprv, tprv, uprv, vprv, Uprv or Vprv.
+.TP
+\fBwif::\fR\fITYPE\fR
+A bitcoin private key in Wallet Import Format, TYPE is compressed,
+uncompressed, testnet-compressed or testnet-uncompressed.
+.TP
+.B nostr
+A nostr private key (nsec1...).
+.TP
+\fBcodex32::\fR\fIHEADER\fR
+A codex32 secret, HEADER is its threshold and identifier, as in 0test.
+.SH SECURITY
+The process locks its memory (it needs a few MiB of locked memory, see
+.BR "ulimit \-l" ),
+disables core dumps and wipes all secrets at exit, also on a fatal signal.
+Honey encryption only helps against an attacker who has no other way to
+check a guess; the keys of a wallet that has been used can be checked
+against the blockchain.
+.SH EXAMPLES
+Split a master secret into 2 of 3 shares and recover it from two of them:
+.PP
+.nf
+$ printf 'TREZOR\en%s\en%s\en' "$SEED" 00112233445566778899aabbccddeeff |
+    slip0039 split 0 1 2of3 > shares
+$ (echo TREZOR; sed -n 1,2p shares) | slip0039
+00112233445566778899aabbccddeeff
+.fi
+.PP
+Split a PIN, with a generated seed:
+.PP
+.nf
+$ printf 'TREZOR\en042195\en' | slip0039 -c numeric::6 --random-seed split 0 1 2of3
+.fi
+.PP
+Check shares without the passphrase:
+.PP
+.nf
+$ slip0039 check < shares
+.fi
+.SH EXIT STATUS
+0 on success, 1 on an error or, with
+.BR check ,
+if there are not enough shares.
+.SH SEE ALSO
+https://github.com/satoshilabs/slips/blob/master/slip-0039.md,
+the README and verify.py in the source of slip0039.
+.SH AUTHOR
+Rik Snel <rik@snel.it>

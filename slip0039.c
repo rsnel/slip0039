@@ -980,9 +980,18 @@ void boring_stuff() {
 	mlock_obj(nfkd_scratch);
 #else
 	/* lock me into memory; don't leak info to swap */
-	if (mlockall(MCL_CURRENT|MCL_FUTURE)<0)
+	if (mlockall(MCL_CURRENT|MCL_FUTURE)<0) {
+		struct rlimit l;
+		int err = errno;
+		if (err == ENOMEM && !getrlimit(RLIMIT_MEMLOCK, &l) &&
+				l.rlim_cur != RLIM_INFINITY)
+			FATAL("failed locking process in RAM: %s, the limit "
+					"of locked memory is %lu KiB, see ulimit "
+					"-l, a few MiB are needed", strerror(err),
+					(unsigned long)(l.rlim_cur>>10));
 		FATAL("failed locking process in RAM: %s",
-				strerror(errno));
+				strerror(err));
+	}
 #endif
 
 	if (atexit(wipe))

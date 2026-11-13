@@ -1,0 +1,47 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cc: [gcc, clang]
+        exclude:
+          # gcc is clang on macOS
+          - os: macos-latest
+            cc: gcc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: install jq
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y jq
+      - name: build
+        run: make CC=${{ matrix.cc }} CFLAGS="-O2 -g -Werror"
+      - name: test
+        # the limit of locked memory may be too low for mlockall()
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then sudo prlimit --pid $$ --memlock=unlimited:unlimited; fi
+          make test
+      - name: version
+        run: ./slip0039 --version
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install jq
+        run: sudo apt-get install -y jq
+      - name: build with sanitizers
+        run: make CC="gcc -fsanitize=address,undefined -fno-sanitize-recover=undefined" CFLAGS="-O1 -g"
+      - name: test
+        run: |
+          sudo prlimit --pid $$ --memlock=unlimited:unlimited
+          ASAN_OPTIONS=detect_leaks=0 make test
