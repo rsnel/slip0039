@@ -1,0 +1,226 @@
+### -c base16 split 0 1 1of1
+column describe academic academic company elegant elevator review increase criminal unfold decorate identify organize decorate acrobat pile blanket indicate piece
+## passphrase "TREZOR"
+00000000000000000000000000000000
+## passphrase "wrong"
+84eddfacc34690a7a06fc901ce967f7c
+## passphrase "another one"
+6c38f59f77abf7b21948adf6e10ba13a
+## passphrase ""
+6b39dd2a56b3f24234724501a0969a41
+### -c base16 split 1 2 2of3 3of5 1of1
+column desert acrobat leaf always cinema pregnant quantity elephant ruin duckling reward strike garlic punish activity campus heat process tenant shadow envelope cradle tadpole railroad withdraw duration fiscal garden ancient credit package organize
+column desert acrobat lily aircraft muscle friendly humidity multiple romp branch item sled ugly quick grumpy safari stick news unfold magazine favorite payroll sweater ivory cleanup payment kind total pile mineral involve kidney
+column desert acrobat lungs adult slim finger ancient treat satisfy imply diet usual judicial random shame adequate license satisfy width wireless idle cluster prospect material marathon camera alcohol tactics boundary repeat phrase impact
+column desert beard learn aide album disaster husky jump spine home pink chubby legend flash tracks ocean husky remind founder flame hawk peasant width magazine execute deny headset safari activity eyebrow orange judicial
+column desert beard lips academic practice paid dining guilt liquid safari slow inmate gravity daisy retreat income fatigue ticket member category acquire golden downtown level alarm rocky magazine river canyon pile wrote dominant
+column desert beard luxury ajar triumph nylon radar replace friendly very living permit python forbid promise element spend memory course moment story discuss saver spit velvet taught fantasy improve ultimate adjust mustang merit
+column desert beard march acrobat enjoy dryer verify pitch arcade garbage theory very firm category video predator volume speak wisdom that quarter yoga adorn tackle replace hobo punish avoid upgrade view view source
+column desert beard method alarm axis multiple paper step coastal building repeat smug breathe muscle moisture subject charity suitable tactics lily advocate rapids superior reward award ugly mortgage olympic ancient dream scout elder
+column desert ceramic leader alarm tracks temple plastic hesitate debut window extra thank hobo bulge forward practice freshman focus echo strategy impulse moisture inherit exceed slavery railroad cradle buyer crowd family salon wireless
+## passphrase "TREZOR"
+b57d229378164c7c82e3426d0f953aa12cefcfb19b8ac9bb5a80508fa8d64c1c
+## passphrase "wrong"
+2deee3d6cbae9f4318e26405fe1705e8022e5e3939956624ca70f3f45a9d1d87
+## passphrase "another one"
+24adc3ce4c72614210969d71296767288e4c00c9d0d23a8c2de5ffc8ae6845fa
+## passphrase ""
+86914490269560f1923d4a9ce145f7124b774e66d73cb230b86ff9f72411451b
+### -c bip39 split 0 1 2of3
+column describe academic acid coal nuclear salary mild mason fitness wrote senior human friar slim idea gasoline deal fused dining
+column describe academic agency cleanup unwrap evil lamp else quick fluff have iris aunt ocean round huge aircraft step bumpy
+column describe academic always class inherit realize unkind taste lily stilt dress furl watch gray behavior laundry campus fawn provide
+## passphrase "TREZOR"
+legal winner thank year wave sausage worth useful legal winner thank yellow
+## passphrase "wrong"
+purpose dutch paddle skin educate letter dry gallery dove smooth anchor radio
+## passphrase "another one"
+firm slice provide below admit gap answer relax chuckle spirit erupt brush
+## passphrase ""
+future soda pilot moon today palm produce actual chaos hub only powder
+### -c bip39:spanish split 0 1 1of1
+column describe academic academic drove together tolerate remind energy salon equip chew easy squeeze fumes fake makeup necklace identify bucket
+## passphrase "TREZOR"
+abuelo azul filtro arte prueba veneno adulto guion grueso enigma usar surco
+## passphrase "wrong"
+feria pulmón vencer tipo cojín aclarar andar tirón estar sagrado yogur batería
+## passphrase "another one"
+turismo nudillo araña desfile inicio yeso gasolina amistad careta encía género acabar
+## passphrase ""
+válvula arder vía risa melón pie reacción objeto atento sala paleta hormiga
+### -c diceware::6 split 0 1 1of1
+column describe academic academic dilemma empty bucket educate trial famous alto remember program humidity dilemma type society lobe spray vexed
+## passphrase "TREZOR"
+a a&p a's aa aaa aaaa
+## passphrase "wrong"
+sedge slam bender hookup long gun
+## passphrase "another one"
+glove olga axe flare debris nrc
+## passphrase ""
+bane lob poetry mj rise cv
+### -c diceware:dutch:10 split 0 1 2of2
+column describe academic acid activity veteran magazine video decorate marathon evidence merit reject satisfy pajamas treat receiver stick envy surface describe method
+column describe academic agency acid lilac organize hormone museum object modify custody boring drove hanger industry usher main pumps quick remember nylon
+## passphrase "TREZOR"
+kootte buks fel amanda jolige gaucho geluk kam essen lakei
+## passphrase "wrong"
+efg 33 hukken marren komma koelte column manies demo's korven
+## passphrase "another one"
+101 rd Friese maler herig jutten ep hx amict jury's
+## passphrase ""
+column lering ip hullen borgen dekbed heten bg charge auctor
+### -c diceware:german:5 split 0 1 1of1
+column describe academic academic clinic engage nuclear garbage carpet genre slow bucket expand starting upgrade plot timber faint surprise graduate
+## passphrase "TREZOR"
+0 1 2 0 1
+## passphrase "wrong"
+0 empore male fuge widmet
+## passphrase "another one"
+formen zement kuer wigwam staub
+## passphrase ""
+wellen frz holt immer gerste
+### -c password::20 split 0 1 1of1
+column describe academic academic airline market relate fortune herd response legend blimp mild prevent ajar numerous lawsuit fawn husband elegant
+## passphrase "TREZOR"
+aB3dE5gH7jK9mN1pQ3sT
+## passphrase "wrong"
+QekSgLVyzfxzZaCfpExD
+## passphrase "another one"
+cJ5d8jlJDWLUqCzgPvSZ
+## passphrase ""
+IQVgINRmOEcMimoq518o
+### -c password:ascii:16 split 0 1 1of1
+column describe academic academic advocate survive regular airline demand swing exhaust ranked volume aquatic graduate snake amuse shelter mixture best
+## passphrase "TREZOR"
+a"b\c$d%e&f(g)h*
+## passphrase "wrong"
++r<ST>d[A)Aa|5\}
+## passphrase "another one"
+rcT{2I1"LH;Jd*xp
+## passphrase ""
+;4eSmj-Zj*t6I.hw
+### -c password:lower:12 split 0 1 1of1
+column describe academic academic burning airport bulge rebound short fatigue floral example canyon yelp canyon gross slow mountain machine pecan
+## passphrase "TREZOR"
+abcdefghijkl
+## passphrase "wrong"
+jtwyrjxcftmj
+## passphrase "another one"
+lpfshezqjwzo
+## passphrase ""
+philvyroivwm
+### -c password:alpha:12 split 0 1 1of1
+column describe academic academic distance fatigue numerous civil fraction visitor desktop cinema scared lobe rescue triumph jacket erode humidity avoid
+## passphrase "TREZOR"
+abcdefGHIJKL
+## passphrase "wrong"
+tsYmbPolWojk
+## passphrase "another one"
+zYsXiSSuoOjy
+## passphrase ""
+DrtWJYybqjil
+### -c numeric::6 split 0 1 2of3
+column describe academic acid coastal lawsuit salary dramatic traveler duckling makeup cargo involve dish airline browser hormone walnut email decorate
+column describe academic agency dictate umbrella edge airport typical fatigue shadow fiber junior parking describe skunk pregnant diploma envy biology
+column describe academic always again easy prepare union civil threaten grownup cowboy premium bedroom grumpy quarter trouble epidemic wealthy public
+## passphrase "TREZOR"
+012345
+## passphrase "wrong"
+272377
+## passphrase "another one"
+811770
+## passphrase ""
+364370
+### -c totp::32 split 0 1 1of1
+column describe academic academic ajar roster voice briefing advocate earth fiscal glimpse mansion hobo deploy tenant unusual subject step purchase memory phantom market blanket move
+## passphrase "TREZOR"
+JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP
+## passphrase "wrong"
+2PH6SFREMFS2EZPL3EOSPVPDPDHRRLTZ
+## passphrase "another one"
+STID2WQJD5PQ2XIQYSSEEOWXWUYXTZJT
+## passphrase ""
+Z3FBN3TNXJ5S3WB7A6AJOKDXPJNTEGCQ
+### -c totp::26 split 0 1 1of1
+column describe academic academic actress civil testify counter seafood punish increase camera decrease memory company mama capital example expand civil shaft easel
+## passphrase "TREZOR"
+JBSWY3DPEHPK3PXPJBSWY3DPEE
+## passphrase "wrong"
+ZCJJU2MAFWLNAMBVDUIIHNBIKI
+## passphrase "another one"
+QET4YMGIOEYQJML6E77M46TXFQ
+## passphrase ""
+X4R24PAAACJKDUIS4HX4VUYJDE
+### -c bip32::xprv split 0 1 1of1
+column describe academic academic acne black golden dismiss symbolic express bishop enlarge founder forecast artist voting reward solution mental dish dominant process blessing teaspoon rumor threaten arena drink math daisy triumph echo bulb speak engage ultimate injury society cause theater jacket climate estate modern mule punish faint cultural package class thunder inmate lyrics sack music crowd rainbow peasant scout
+## passphrase "TREZOR"
+xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi
+## passphrase "wrong"
+xprv9s21ZrQH143K26Vc2MohdQYVTCpVLq78WWXiVQhi3AnzDZqgKQywnTK6UMaq5y2xcZt7QpMqxrNHjYhw6AidKMfByn6BaeZSmFRuJD9BvwD
+## passphrase "another one"
+xprv9s21ZrQH143K2YxYvDh9b1kuQtKDZd9AUUnv1MYzbeq6RVTMDxbsRQxurUfu7saHFzrGpZPLDtUadaYgqabj8F2gBhTS8SHRBUauXiuXu9d
+## passphrase ""
+xprv9s21ZrQH143K2h7NhsBF6rRJtmkrPB8VUYckyGcfVkTHhDsvq84i4Tt5WiGrsmjXmJUu3F2NNqpx9UoKcxHZ57fTVVy1ZF3pSYiXRAE2Cbw
+### -c wif::compressed split 0 1 1of1
+column describe academic academic advocate teacher elevator density answer group frozen enforce easy scholar greatest gums tricycle elegant aquatic aluminum unfair general bumpy campus deliver amount fact exchange inherit stick survive away spend
+## passphrase "TREZOR"
+KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617
+## passphrase "wrong"
+L2x53pXzoUtwdp1DJejzhBqqq5iWqgzAgraodJcioUXJ3Hkg4hbj
+## passphrase "another one"
+L2MB2uwq3ZFf8EWX1PeRMRB274ZVXRNw9saP276D23uthJepm1U9
+## passphrase ""
+L3mg4UcznSDgv4hYhp8wE9RUZyDQtB3uShR4k9mmzDTDCHpH7s2d
+### -c wif::uncompressed split 0 1 1of1
+column describe academic academic advocate teacher elevator density answer group frozen enforce easy scholar greatest gums tricycle elegant aquatic aluminum unfair general bumpy campus deliver amount fact exchange inherit stick survive away spend
+## passphrase "TREZOR"
+5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ
+## passphrase "wrong"
+5K7azjVKXvSpGbDHP8C6pczHW24y9mQNgPZag3BMoKvY3sX41Je
+## passphrase "another one"
+5JygRuKmR9DPERMjbXWKfA6tuaS2w1zXr8qLwdGgRhzJ9n5f5zq
+## passphrase ""
+5KJNY9XMo6G7KpWaTvGqzMVCgeCsixHyHhRV35FgC9iHMn2oGAi
+### -c nostr split 0 1 1of1
+column describe academic academic activity wrist birthday mailman spew uncover destroy counter intimate beyond dictate knife suitable ladle daughter society wealthy golden liquid salon buyer temple spit unknown practice raisin amuse glad envelope
+## passphrase "TREZOR"
+nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5
+## passphrase "wrong"
+nsec1xyerxlnqnk4wd3pfqnf0g2k8tnmvxr4dh9dsd4a0zj3vnm7fd8eqms0m2n
+## passphrase "another one"
+nsec1ghpx9df0tn4nqevfyyxuldfzpm6nej3ysvsslurpte7c2jarsl9quys97f
+## passphrase ""
+nsec1sj0ncvw8ftzg252n6ppkznymgznh3s3gm88nk723zjw47npyl9asrfuvlp
+### -c codex32::3cash split 0 1 1of1
+column describe academic academic discuss pharmacy morning blimp prevent crunch result include ordinary pickup kidney ambition percent cradle require join
+## passphrase "TREZOR"
+ms13cashsllhdmn9m42vcsamx24zrxgs3qqjzqud4m0d6nln
+## passphrase "wrong"
+ms13cashswlwa857y4dcvasrasw6h6rn8qyv8l3kfxvyfhkl
+## passphrase "another one"
+ms13cashsw0szkcj86qg4g3un7znrw7rzhyj0rahswe78055
+## passphrase ""
+ms13cashs8qwvw544xcqge2emrk07pzu3dsmfpuv7xulh6f7
+### -c codex32::0TEST split 0 1 1of1
+column describe academic academic brave premium drift gravity plastic superior pile robin freshman yoga mild simple dive easy lily budget
+## passphrase "TREZOR"
+MS10TESTSXXXXXXXXXXXXXXXXXXXXXXXXXYWVFUCX7RV8MK8
+## passphrase "wrong"
+MS10TESTSTJMPK52YP5HTW2UHLAMJMSWC3VRKD2Y5HGREPMN
+## passphrase "another one"
+MS10TESTS3C636S6ADLTJ7UEDE9P5L2QYWVUN593R50A8AUY
+## passphrase ""
+MS10TESTS038QGNR86PRZTWQWQDN9FYL0R57Q8WAYCEAM7XH
+### -c base16 split --pre-may-2024 0 2 1of1 2of3
+column deal acrobat easy crowd decent soul emerald exercise jerky divorce transfer broken pumps suitable forbid zero plot fact leaf
+column deal beard echo buyer parcel club dragon bundle impulse fluff club exotic mixture reject custody subject pajamas eraser move
+column deal beard email carpet acne average plastic terminal snake source equation story valuable recover diploma declare slim envy zero
+column deal beard entrance burning warn infant careful program cultural escape flea parking fawn remember aluminum makeup type scroll admit
+## passphrase "TREZOR"
+00000000000000000000000000000000
+## passphrase "wrong"
+0b36c1b70197f9c46b66589bdb44c516
+## passphrase "another one"
+cf2a6ae80538461ccca658d95f78c775
+## passphrase ""
+8da3318077ef20dce4f50c4ddf617dcc
