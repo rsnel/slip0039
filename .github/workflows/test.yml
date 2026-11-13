@@ -17,7 +17,7 @@ jobs:
             cc: gcc
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: install jq
@@ -36,7 +36,7 @@ jobs:
   sanitizers:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: install jq
         run: sudo apt-get install -y jq
       - name: build with sanitizers
