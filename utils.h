@@ -70,6 +70,10 @@ void sbuf_wordlist_dereference(wordlist_t*, sbuf_t*, uint16_t);
 
 int wordeq(const char*, const char*, const char**, int);
 
+int wordpfxeq(const char*, const char*, const char**, size_t);
+
+size_t normalize_words(char*, int);
+
 int vsnprintf_strict(char*, size_t, const char*, va_list);
 
 int snprintf_strict(char*, size_t, const char*, ...);
@@ -85,6 +89,18 @@ int memeq(const uint8_t*, const uint8_t*, size_t);
 
 int memzero(const uint8_t*, size_t);
 
-size_t read_string_lf(char*, size_t, FILE*, const char*, int);
+/* flags of read_string_lf() */
+#define READ_EOF_OK	1
+#define READ_SECRET	2
+
+extern int input_line;
+
+extern int interactive;
+
+int read_string_lf(char*, size_t, FILE*, const char*, int, size_t*);
+
+void prompt(const char*, ...);
+
+void tty_restore(void);
 
 #endif /* SLIP0039_UTILS_H */

@@ -62,18 +62,41 @@ format_wordlist() {
 		fatal "file $FILENAME has $NUM lines, when $4 lines were expected"
 	fi
 
-	# use LANG=C to get the bytecount of word lenght instead of character count
-	MAX_WORD_LENGTH=`LANG=C awk -vmax=0 'length($0) > max {max = length($0)} END {print max}' < "$FILENAME"`
-	MIN_WORD_LENGTH=`LANG=C awk -vmin=255 'length($0) < min {min = length($0)} END {print min}' < "$FILENAME"`
+	# trailing spaces are not part of a word (the dutch diceware
+	# list has one word with a trailing space), use LANG=C to get the
+	# bytecount of word lenght instead of character count
+	MAX_WORD_LENGTH=`sed 's/ *$//' < "$FILENAME" | LANG=C awk -vmax=0 'length($0) > max {max = length($0)} END {print max}'`
+	MIN_WORD_LENGTH=`sed 's/ *$//' < "$FILENAME" | LANG=C awk -vmin=255 'length($0) < min {min = length($0)} END {print min}'`
+
+	# the words of a wordlist (not of an alphabet) are separated by spaces
+	case "$1" in
+		slip0039|bip39|diceware) SPACED=1 ;;
+		*) SPACED=0 ;;
+	esac
+
+	# ASCII letters of the input are converted to lower case, unless
+	# the wordlist has upper case letters
+	if LANG=C grep -q '[A-Z]' "$FILENAME"; then HAS_UPPER=1; else HAS_UPPER=0; fi
+
+	# check that the first PREFIX letters identify a word
+	if [ "$PREFIX" != "0" ] && [ -n "`cut -c 1-$PREFIX < "$FILENAME" | sort | uniq -d`" ]; then
+		fatal "the first $PREFIX letters do not identify the words of $FILENAME"
+	fi
+
 	echo
 	echo wordlist_t $WORDLIST = {
 	echo "\t.elt.key = \"$2\","
 	echo "\t.family = \"$1\","
 	echo "\t.max_word_length = $MAX_WORD_LENGTH,"
 	echo "\t.min_word_length = $MIN_WORD_LENGTH,"
+	echo "\t.min_prefix = $PREFIX,"
+	echo "\t.spaced = $SPACED,"
+	echo "\t.has_upper = $HAS_UPPER,"
+	# printf does not interpret the escapes in its arguments
+	printf '\t.separator = "%s",\n' "$SEPARATOR"
 	echo "\t.words = (char *[]){"
 	# escape backslashes and double quotes, they may occur in alphabets
-	sed 's/[\\"]/\\&/g;s/^/\t\t"/;s/$/",/' < "$FILENAME"
+	sed 's/ *$//;s/[\\"]/\\&/g;s/^/\t\t"/;s/$/",/' < "$FILENAME"
 	echo "\t}"
 	echo "};"
 	INIT="$INIT\tfixnum_multiplier16_init(&$WORDLIST.m, $4);\n"
@@ -90,6 +113,12 @@ format_wordlist() {
 }
 
 REGISTER=1
+
+# words can be given by their first PREFIX letters (0: whole words only)
+PREFIX=0
+
+# separator of words in the output, as a C string
+SEPARATOR=" "
 
 # an alphabet is a wordlist that is used directly by one or more codecs,
 # it is not registered as a selectable wordlist of a codec
@@ -111,15 +140,40 @@ echo "\nwordlist_t *wordlist = &wordlist_base16;"
 
 # wordlist_slip0039 on 2020-05-31 available from
 #    https://github.com/satoshilabs/slips/raw/master/slip-0039/wordlist.txt
+PREFIX=4
 format_wordlist slip0039 "" \
 	bcc4555340332d169718aed8bf31dd9d5248cb7da6e5d355140ef4f1e601eec3 1024
+PREFIX=0
 
 # wordlist_bip0039_english on 2020-05-31 available from
 #    https://github.com/bitcoin/bips/raw/master/bip-0039/english.txt
+PREFIX=4
 format_wordlist bip39 english \
 	2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda 2048
+PREFIX=0
+# the other languages on 2026-11-13 from the same place, these files are
+# in Unicode normalization form NFKD, the input is converted to NFKD
 format_wordlist bip39 spanish \
 	46846a5a0139d1e3cb77293e521c2865f7bcdb82c44e8d0a06a2cd0ecba48c0b 2048
+format_wordlist bip39 french \
+	ebc3959ab7801a1df6bac4fa7d970652f1df76b683cd2f4003c941c63d517e59 2048
+format_wordlist bip39 italian \
+	d392c49fdb700a24cd1fceb237c1f65dcc128f6b34a8aacb58b59384b5c648c2 2048
+format_wordlist bip39 portuguese \
+	2685e9c194c82ae67e10ba59d9ea5345a23dc093e92276fc5361f6667d79cd3f 2048
+format_wordlist bip39 czech \
+	7e80e161c3e93d9554c2efb78d4e3cebf8fc727e9c52e03b83b94406bdcc95fc 2048
+format_wordlist bip39 korean \
+	9e95f86c167de88f450f0aaf89e87f6624a57f973c67b516e338e8e8b8897f60 2048
+format_wordlist bip39 chinese_simplified \
+	5c5942792bd8340cb8b27cd592f1015edf56a8c5b26276ee18a482428e7c5726 2048
+format_wordlist bip39 chinese_traditional \
+	417b26b3d8500a4ae3d59717d7011952db6fc2fb84b807f3f94ac734e89c1b5f 2048
+# japanese mnemonics are written with ideographic spaces (U+3000)
+SEPARATOR='\343\200\200'
+format_wordlist bip39 japanese \
+	2eed0aef492291e061633d7ad8117f1a2b03eb80a29d0e4e3117ac2528d05ffd 2048
+SEPARATOR=" "
 format_wordlist diceware english \
 	5bd86896c6a1ebae137970f4bdc5b084b037ef7792fa4934477bef4748e930f0 7776
 format_wordlist diceware german \

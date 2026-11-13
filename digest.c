@@ -24,7 +24,8 @@
 #include "utils.h"
 #include "verbose.h"
 
-void digest_verify(const uint8_t *digest, const uint8_t *secret, size_t n) {
+/* returns 1 if the digest matches the secret */
+int digest_verify(const uint8_t *digest, const uint8_t *secret, size_t n) {
 	assert(digest && secret && n >= 16);
 	uint8_t computed[DIGEST_LEN];
 
@@ -33,7 +34,7 @@ void digest_verify(const uint8_t *digest, const uint8_t *secret, size_t n) {
 	hmac(computed, DIGEST_LEN, digest + DIGEST_LEN,
 			n - DIGEST_LEN, secret, n, HASH_SHA256);
 
-	if (!memeq(digest, computed, DIGEST_LEN)) FATAL("digest failed");
+	return memeq(digest, computed, DIGEST_LEN);
 }
 
 void digest_compute(uint8_t *digest, const uint8_t *secret, size_t n) {

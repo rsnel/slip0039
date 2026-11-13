@@ -86,7 +86,7 @@ static void pbkdf2_next_block(pbkdf2_t *p) {
 void pbkdf2_generate(pbkdf2_t *p, void *buf, size_t dkLen) {
 	size_t len;
 	assert(p->state == 2);
-	assert(p->tmp_offset <= p->pw.h.f->len && p->tmp_offset >= 0);
+	assert(p->tmp_offset <= p->pw.h.f->len);
 	while (dkLen > 0) {
 		if (p->tmp_offset == p->pw.h.f->len) pbkdf2_next_block(p);
 		len = (dkLen > p->pw.h.f->len - p->tmp_offset)?

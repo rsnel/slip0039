@@ -31,7 +31,20 @@ typedef struct wordlist_s {
 	const char *family;
 	fixnum_multiplier16_t m;
 	uint8_t	max_word_length, min_word_length;
+	/* a word may be given by its first min_prefix letters, if not 0 */
+	uint8_t min_prefix;
+	/* the words are separated by spaces (it is not an alphabet) */
+	uint8_t spaced;
+	/* the wordlist has upper case letters, so the input is not
+	 * converted to lower case */
+	uint8_t has_upper;
+	/* separator of the words in the output */
+	const char *separator;
 	char **words;
+	/* the words in Unicode normalization form NFKD, to compare with
+	 * the normalized input, NULL if they are already in that form,
+	 * see wordlist_prepare() */
+	char **match_words;
 } wordlist_t;
 
 extern wordlist_t wordlist_slip0039;
@@ -63,6 +76,8 @@ void wordlists_init();
 int wordlist_dereference(wordlist_t*, char*, int, uint16_t);
 
 uint16_t wordlist_search(wordlist_t*, const char*, const char**);
+
+void wordlist_prepare(wordlist_t*);
 
 #endif /* SLIP0039_WORDLISTS_H */
 

@@ -40,8 +40,13 @@
 #define LINE 	(WORDS*9 + 1)
 
 
+// size of a line with the master secret (in the format of the codec), a
+// BIP39 mnemonic in japanese or korean needs more than 800 bytes, and its
+// normalization may make it longer
+#define PLAINTEXT_LINE 4096
+
 //#define DISPLAYLINE 160
-#define DISPLAYLINE 1024
+#define DISPLAYLINE 2048
 
 #define DIGEST_LEN 4
 

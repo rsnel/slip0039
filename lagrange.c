@@ -22,7 +22,7 @@
 #include "gf256.h"
 
 static void lagrange_byte(slip0039_set_t *s, int no_idx,
-		uint8_t *idx, uint8_t x, size_t offset) {
+		uint8_t *idx, uint8_t x, size_t offset, uint8_t *out) {
 	// x-coordinates 254 and 255 are the digest and the secret,
 	// SLIP0039_SLOT() maps every x-coordinate to its slot
 	uint8_t sum = 0;
@@ -38,13 +38,13 @@ static void lagrange_byte(slip0039_set_t *s, int no_idx,
 		}
 		sum = gf256_add(sum, prod);
 	}
-	s->slots[SLIP0039_SLOT(x)][offset] = sum;
+	out[offset] = sum;
 }
 
+/* the value at x of the polynomial through the no_idx shares with the
+ * x-coordinates in idx, stored in out */
 void lagrange(slip0039_set_t *s, size_t n,
-		int no_idx, uint8_t *idx, uint8_t x) {
+		int no_idx, uint8_t *idx, uint8_t x, uint8_t *out) {
 	for (size_t i = 0; i < n; i++)
-		lagrange_byte(s, no_idx, idx, x, i);
+		lagrange_byte(s, no_idx, idx, x, i, out);
 }
-
-

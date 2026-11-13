@@ -31,31 +31,31 @@ static void store_be64(unsigned char *p, uint64_t x) {
 	for (int i = 7; i >= 0; i--, x >>= 8) p[i] = x;
 }
 
-static uint64_t inline Ch(uint64_t x, uint64_t y, uint64_t z) {
+static inline uint64_t Ch(uint64_t x, uint64_t y, uint64_t z) {
 	return z ^ (x & (y ^ z));
 }
 
-static uint64_t inline Maj(uint64_t x, uint64_t y, uint64_t z) {
+static inline uint64_t Maj(uint64_t x, uint64_t y, uint64_t z) {
 	return (x & y) | (z & (x | y));
 }
 
-static uint64_t inline Sigma0(uint64_t x) {
+static inline uint64_t Sigma0(uint64_t x) {
 	return (x >> 28 | x << 36) ^ (x >> 34 | x << 30) ^ (x >> 39 | x << 25);
 }
 
-static uint64_t inline Sigma1(uint64_t x) {
+static inline uint64_t Sigma1(uint64_t x) {
 	return (x >> 14 | x << 50) ^ (x >> 18 | x << 46) ^ (x >> 41 | x << 23);
 }
-static int64_t inline sigma0(uint64_t x) {
+static inline uint64_t sigma0(uint64_t x) {
 	return (x >> 1 | x << 63) ^ (x >> 8 | x << 56) ^ (x >> 7);
 }
 
-static uint64_t inline sigma1(uint64_t x) {
+static inline uint64_t sigma1(uint64_t x) {
 	return (x >> 19 | x << 45) ^ (x >> 61 | x << 3) ^ (x >> 6);
 }
 
 /** One round of SHA-512. */
-static void inline Round(uint64_t a, uint64_t b, uint64_t c, uint64_t *d,
+static inline void Round(uint64_t a, uint64_t b, uint64_t c, uint64_t *d,
 		uint64_t e, uint64_t f, uint64_t g, uint64_t *h, uint64_t k, uint64_t w) {
 	uint64_t t1 = *h + Sigma1(e) + Ch(e, f, g) + k + w;
 	uint64_t t2 = Sigma0(a) + Maj(a, b, c);
@@ -213,7 +213,7 @@ void sha512_finalize(struct sha512_ctx *ctx, uint8_t *hash, size_t size) {
 	store_be64(sizedesc + 8, ctx->bytes<<3);
 	sha512_update(ctx, pad, 1 + ((239 - (ctx->bytes%128))%128));
 	sha512_update(ctx, sizedesc, 16);
-	for (int i = 0; i < size/8; i++) 
+	for (size_t i = 0; i < size/8; i++)
 		store_be64(hash + 8*i, ctx->s[i]);
 
 	/* *((uint64_t*)hash)      = cpu_to_be64(ctx->s[0]);

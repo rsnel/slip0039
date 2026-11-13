@@ -24,7 +24,7 @@
 #include "slip0039.h"
 #include "pbkdf2.h"
 
-void digest_verify(const uint8_t*, const uint8_t*, size_t);
+int digest_verify(const uint8_t*, const uint8_t*, size_t);
 
 void digest_compute(uint8_t*, const uint8_t*, size_t);
 

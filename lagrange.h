@@ -23,6 +23,6 @@
 #include <stdint.h>
 #include "slip0039.h"
 
-void lagrange(slip0039_set_t*, size_t, int, uint8_t*, uint8_t);
+void lagrange(slip0039_set_t*, size_t, int, uint8_t*, uint8_t, uint8_t*);
 
 #endif /* SLIP0039_LAGRANGE_H */

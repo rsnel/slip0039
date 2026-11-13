@@ -23,6 +23,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
+#include <termios.h>
 
 #include "utils.h"
 #include "fixnum.h"
@@ -76,6 +78,71 @@ int wordeq(const char *unknown, const char *target, const char **end,
 	*end = (void*)((((long int)unknown)&(boolean - 1))|(long int)*end);
 
 	return boolean;
+}
+
+// like wordeq(), but unknown may also be a prefix of target of at least
+// min characters, the end of unknown is always required to be SPC or NUL
+int wordpfxeq(const char *unknown, const char *target, const char **end,
+		size_t min) {
+	int eq = 0, done = 0, shrt = 0, term;
+	size_t i = 0;
+
+	do {
+		// unknown ends here
+		term = cthelp_eq(*unknown, ' ')|cthelp_eq(*unknown, '\0');
+
+		// it ends before min characters, while target goes on
+		shrt |= term&(1 - done)&(i < min);
+		done |= term;
+
+		// compare as long as unknown has not ended
+		eq |= ((*unknown)^(*target))&(done - 1);
+
+		unknown += 1 - term;
+		i++;
+	} while (*(++target));
+
+	// unknown must not be longer than target
+	term = cthelp_eq(*unknown, ' ')|cthelp_eq(*unknown, '\0');
+
+	int boolean = cthelp_neq(eq, 0)|shrt|(1 - term);
+
+	unknown += cthelp_eq(*unknown, ' ');
+
+	*end = (void*)((((long int)unknown)&(boolean - 1))|(long int)*end);
+
+	return boolean;
+}
+
+// 1 if c is a space, a tab or a CR, 0 otherwise
+static int is_space(char c) {
+	return cthelp_eq(c, ' ')|cthelp_eq(c, '\t')|cthelp_eq(c, '\r');
+}
+
+// replace tabs and CRs by spaces, remove leading and trailing spaces,
+// replace runs of spaces by a single space and, if lower is set, convert
+// the ASCII letters to lower case; without branches that depend on the
+// characters, the result is never longer than the input
+size_t normalize_words(char *buf, int lower) {
+	size_t i, j = 0;
+	int prev = 1; // drop leading spaces
+
+	for (i = 0; buf[i]; i++) {
+		char c = buf[i];
+		int sp = is_space(c);
+		int upper = (uint8_t)(c - 'A') < 26;
+		c ^= (c^' ')&(-sp);
+		c |= 0x20&(-(upper&lower));
+		buf[j] = c;
+		j += 1 - (sp&prev);
+		prev = sp;
+	}
+
+	if (j > 0 && buf[j - 1] == ' ') j--;
+
+	memset(buf + j, 0, i - j);
+
+	return j;
 }
 
 // escape unprintable char as \ooo so that error messages
@@ -134,33 +201,92 @@ void wipestackmemory(const size_t len) {
 		wipememory(fodder, len);
 }
 
-// read \n delimited string from FILE* and return length of string that
-// was read without the terminating \0
-// eof_acceptable means: if we encounter EOF when we try to read the first
-// character of input, we don't complain and return an empty string
-size_t read_string_lf(char *buf, size_t size, FILE *fp, const char *desc,
-		int eof_acceptable) {
+// the number of the line of input that was read last
+int input_line = 0;
+
+// the standard input is a terminal, the user is prompted for the input
+int interactive = 0;
+
+// the terminal settings before echo was switched off
+static struct termios saved_termios;
+static volatile int echo_off = 0;
+
+// switch the echo of the terminal back on, this is also called from
+// the signal handler, so only async-signal-safe functions are used
+void tty_restore(void) {
+	if (echo_off) {
+		tcsetattr(STDIN_FILENO, TCSAFLUSH, &saved_termios);
+		echo_off = 0;
+	}
+}
+
+static void tty_noecho(void) {
+	struct termios t;
+
+	if (tcgetattr(STDIN_FILENO, &saved_termios) < 0)
+		FATAL_errno("reading the terminal settings");
+	t = saved_termios;
+	t.c_lflag &= ~ECHO;
+	echo_off = 1;
+	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &t) < 0)
+		FATAL_errno("switching the echo of the terminal off");
+}
+
+// show a prompt on stderr, if the user types the input
+void prompt(const char *format, ...) {
+	va_list ap;
+
+	if (!interactive) return;
+
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+}
+
+// read a line from fp into buf, a CR before the LF is removed and a
+// missing LF at the end of the input is accepted; returns 0 if the input
+// ends before the first character and READ_EOF_OK is in flags (this is
+// an error otherwise), 1 if a line was read, its length is stored in
+// *len if len is not NULL; with READ_SECRET in flags, the input is not
+// echoed if it is typed on a terminal
+int read_string_lf(char *buf, size_t size, FILE *fp, const char *desc,
+		int flags, size_t *len) {
 	assert(size > 0);
-	int c;
+	int c, ret = 1;
 	size_t i = 0;
-	while (i < size) {
+
+	if (interactive && (flags&READ_SECRET)) tty_noecho();
+
+	while (1) {
 		c = fgetc(fp);
 		if (c == EOF) {
-			if (feof(fp)) {
-				if (i == 0 && eof_acceptable) break;
-				else FATAL("EOF encountered before \\n while "
-						"reading %s", desc);
+			if (ferror(fp)) FATAL("error %d reading %s: %s",
+					errno, desc, strerror(errno));
+			if (i == 0) {
+				if (flags&READ_EOF_OK) ret = 0;
+				else FATAL("end of input while reading %s",
+						desc);
 			}
-			else FATAL("error %d reading %s: %s", errno, desc,
-					strerror(errno));
+			break;
 		}
 		if (c == '\n') break;
-		if (i == size - 1) FATAL("buffer full before encountering \\n "
-				"while reading %s", desc);
+		if (i == size - 1) FATAL("%s on line %d is too long, at most "
+				"%zu bytes are supported", desc,
+				input_line + 1, size - 1);
 		buf[i++] = c;
 	}
+
+	if (interactive && (flags&READ_SECRET)) {
+		tty_restore();
+		fputc('\n', stderr);
+	}
+
+	if (i > 0 && buf[i - 1] == '\r') i--;
 	buf[i] = '\0';
-	return i;
+	if (ret) input_line++;
+	if (len) *len = i;
+
+	return ret;
 }
 
 unsigned long int parse_number(const char *arg, const char *name,

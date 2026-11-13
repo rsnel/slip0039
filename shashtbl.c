@@ -28,7 +28,7 @@
 void *shashtbl_init_default(shashtbl_t *s, uint8_t key_bits, uint8_t unique,
 		size_t size, void (*freer)(void*)) {
 	int i;
-	assert(s && key_bits >= 0 && key_bits <= 16 &&
+	assert(s && key_bits <= 16 &&
 			size > sizeof(void*) && freer);
 	assert(unique == 0 || unique == 1);
 
@@ -48,7 +48,7 @@ void *shashtbl_init_default(shashtbl_t *s, uint8_t key_bits, uint8_t unique,
 
 void *shashtbl_init_simple(shashtbl_t *s, uint8_t key_bits, uint8_t unique) {
 	int i;
-	assert(s && key_bits >= 0 && key_bits <= 16);
+	assert(s && key_bits <= 16);
 	assert(unique == 0 || unique == 1);
 
 	s->key_bits = key_bits;

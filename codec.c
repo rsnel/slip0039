@@ -29,6 +29,11 @@
 #include "pbkdf2.h"
 #include "bech32.h"
 
+/* bit 0: c is a lower case letter, bit 1: c is an upper case letter */
+static int letter_case(char c) {
+	return ((uint8_t)(c - 'a') < 26)|((uint8_t)(c - 'A') < 26)<<1;
+}
+
 static void base16_encode(uint8_t *out, size_t *n,
 		lrcipher_t *l, uint16_t *scratch,
 		size_t scratch_size, const char *in, wordlist_t *w,
@@ -37,11 +42,18 @@ static void base16_encode(uint8_t *out, size_t *n,
 	const char *cur = in;
 
 	while (*cur) {
+		char c[2] = { *cur++, '\0' };
+		const char *end;
+
+		/* spaces are ignored and upper case is accepted */
+		if (c[0] == ' ' || c[0] == '\t') continue;
+		c[0] |= 0x20&-(letter_case(c[0])>>1);
+
 		if (no_input == scratch_size)
 			FATAL("plaintext is too large, maximum size "
 					"is %ld bytes", scratch_size>>1);
 
-		scratch[no_input++] = wordlist_search(w, cur, &cur);
+		scratch[no_input++] = wordlist_search(w, c, &end);
 	}
 
 	if (no_input%4)
@@ -125,7 +137,7 @@ static void bip39_decode(char *out, size_t out_size, lrcipher_t *l,
 	size_t k = 0;
 	goto start;
 	while (++k < n/4*3) {
-		sbuf_printf(&sbuf, " ");
+		sbuf_printf(&sbuf, "%s", w->separator);
 start:
 		sbuf_wordlist_dereference(w, &sbuf, scratch[k]);
 	}
@@ -260,7 +272,7 @@ static void modular_decode(uint16_t *digits, size_t digits_size,
  * of the wordlist separated by spaces, or the characters of the
  * alphabet if all words have length 1 */
 static const char *symbols_unit(const wordlist_t *w) {
-	return w->max_word_length > 1 ? "words" : "characters";
+	return w->spaced ? "words" : "characters";
 }
 
 static void symbols_encode(uint8_t *out, size_t *n,
@@ -298,17 +310,13 @@ static void symbols_decode(char *out, size_t out_size, lrcipher_t *l,
 			symbols_unit(w), in, n, bs);
 
 	for (size_t i = 0; i < (size_t)codec_count; i++) {
-		if (i && w->max_word_length > 1) sbuf_printf(&sbuf, " ");
+		if (i && w->spaced) sbuf_printf(&sbuf, "%s", w->separator);
 		sbuf_wordlist_dereference(w, &sbuf, scratch[i]);
 	}
 }
 
 /* helpers for alphabets with letters of one case */
 
-/* bit 0: c is a lower case letter, bit 1: c is an upper case letter */
-static int letter_case(char c) {
-	return ((uint8_t)(c - 'a') < 26)|((uint8_t)(c - 'A') < 26)<<1;
-}
 
 /* looks up c in alphabet w, letters are converted to lower case if
  * lower is set and to upper case otherwise */
@@ -401,7 +409,7 @@ static void totp_decode(char *out, size_t out_size, lrcipher_t *l,
 			in, n, bs);
 
 	/* modular_decode ensures that len < n */
-	assert(len + 1 <= bs->max_limbs && scratch_size >= codec_count);
+	assert(len + 1 <= bs->max_limbs && scratch_size >= (size_t)codec_count);
 	for (size_t i = 0; i < len; i++) buf[i] = scratch[i];
 	buf[len] = 0;
 
@@ -663,7 +671,7 @@ static void wif_encode(uint8_t *out, size_t *n,
 	compressed = wif_types[wif_type].compressed;
 
 	/* uncompressed keys have 51 characters, compressed keys 52 */
-	if (strlen(in) == 52 - compressed)
+	if (strlen(in) == (size_t)(52 - compressed))
 		FATAL("the WIF key is %scompressed, but -c specifies %s",
 				compressed?"un":"", wif_types[wif_type].name);
 
@@ -855,7 +863,7 @@ static void codex32_encode(uint8_t *out, size_t *n,
 		FATAL("invalid codex32 secret, the checksum does not match "
 				"or the length is invalid");
 
-	if (no_input < CODEX32_HEADER_LEN + 1 + checksum_len)
+	if (no_input < (size_t)(CODEX32_HEADER_LEN + 1 + checksum_len))
 		FATAL("codex32 secret is too short");
 
 	for (int i = 0; i < CODEX32_HEADER_LEN; i++)

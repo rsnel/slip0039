@@ -94,19 +94,20 @@ typedef struct slip0039_s {
 	char title[22];      /* first two words            */
 } slip0039_t;
 
-typedef char slip0039_mnemonic_t[LINE];
+/* a line of input with a mnemonic, there may be extra spaces */
+typedef char slip0039_mnemonic_t[PLAINTEXT_LINE];
 
 typedef enum slip0039_mode_e {
 	SLIP0039_MODE_NULL,
 	SLIP0039_MODE_RECOVER,
+	SLIP0039_MODE_CHECK,
 	SLIP0039_MODE_SPLIT
 } slip0039_mode_t;
 
 typedef enum slip0039_parse_state_e {
-	SLIP0039_PARSE_STATE_SEED,
 	SLIP0039_PARSE_STATE_EXP,
 	SLIP0039_PARSE_STATE_GT,
 	SLIP0039_PARSE_STATE_XOFY
 } slip0039_parse_state_t;
 
-#endif /* SLIP0039_RS1024_H */
+#endif /* SLIP0039_H */
