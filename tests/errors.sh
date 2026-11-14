@@ -26,6 +26,13 @@ fails "invalid gain" "invalid value" "$IN" --gain 2
 fails "--random-seed with recover" "only be used with split" "$IN" --random-seed
 fails "no input" "end of input while reading passphrase" "" split 0 1 1of1
 
+# --help and --version work if the memory can not be locked
+# (root can lock memory whatever the limit is, then this tests nothing)
+GOT=`(ulimit -l 64 2>/dev/null; $S --help) 2>&1 | sed -n 1p`
+contains "--help with a low limit of locked memory" "usage: " "$GOT"
+GOT=`(ulimit -l 64 2>/dev/null; $S -c numeric::6 --version) 2>&1`
+contains "--version with a low limit of locked memory" "slip0039 " "$GOT"
+
 # master secrets
 fails "base16 too short" "at least 16 bytes" "`input TREZOR 0000`" split 0 1 1of1
 fails "base16 odd" "multiple of 16 bits" "`input TREZOR ${MS}00`" split 0 1 1of1

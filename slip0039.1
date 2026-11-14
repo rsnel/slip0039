@@ -86,7 +86,8 @@ With
 make shares in the format of SLIP-0039 before May 2024, without the
 extendable backup flag. Not recommended.
 .B recover
-accepts both formats without this option.
+recognizes the format of the shares itself; only shares of the old format
+with an iteration exponent of 16 or more need this option.
 .TP
 .B \-d
 Show the internal data (shares, digests, secrets) on standard error at

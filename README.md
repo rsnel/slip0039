@@ -243,6 +243,12 @@ data, like diceware, the correctness of the passphrase can be proven if one
 knows the `SEED`. Treat it as confidential as the secret and the
 passphrase.
 
+A CR at the end of a line of the input is not part of the passphrase, the
+SEED or the master secret. Versions before November 2026 took a CR at the
+end of the SEED as a part of it, so the shares of a split of that time
+from an input with CRLF line ends can only be reproduced with such a
+version. Recovering those shares is not affected, it does not use the SEED.
+
 All data supplied to this program on standard input should be treated as highly confidential. `SEED` should be destroyed after a single use
 
 The first `XofY` reflects the distribution of shares in the first group.

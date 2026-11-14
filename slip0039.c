@@ -1095,13 +1095,7 @@ void parse_options(slip0039_t *s, int argc, char *argv[]) {
 		char *arg = argv[optind++];
 		if (!strcmp(arg, "-d")) debug = 1;
 		else if (!strcmp(arg, "-q")) quiet = 1;
-		else if (!strcmp(arg, "-h") || !strcmp(arg, "--help")) {
-			usage(stdout);
-			exit(EXIT_SUCCESS);
-		} else if (!strcmp(arg, "-V") || !strcmp(arg, "--version")) {
-			printf("slip0039 %s\n", SLIP0039_VERSION);
-			exit(EXIT_SUCCESS);
-		} else if (!strcmp(arg, "-c")) {
+		else if (!strcmp(arg, "-c")) {
 			if (argc > optind) {
 				parse_codec(argv[optind++]);
 			} else FATAL("option -c given, but no argument "
@@ -1229,6 +1223,23 @@ static void warn_unused_groups(slip0039_t *s) {
 	}
 }
 
+/* --help and --version need no secrets, they are handled before the
+ * memory is locked, so that they also work if that fails; the argument
+ * of an option is skipped, it is not an option itself */
+static void early_options(int argc, char *argv[]) {
+	for (int i = 1; i < argc; i++) {
+		char *arg = argv[i];
+		if (!strcmp(arg, "-c") || !strcmp(arg, "--gain")) i++;
+		else if (!strcmp(arg, "-h") || !strcmp(arg, "--help")) {
+			usage(stdout);
+			exit(EXIT_SUCCESS);
+		} else if (!strcmp(arg, "-V") || !strcmp(arg, "--version")) {
+			printf("slip0039 %s\n", SLIP0039_VERSION);
+			exit(EXIT_SUCCESS);
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
 #if defined(__APPLE__) && defined(__MACH__)
 	// save stackbase for locking stack memory
@@ -1236,6 +1247,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 	verbose_init(argv[0]);
+	early_options(argc, argv);
 	codec_init();
 	boring_stuff();
 	base_init_scratch(&bs, base_scratch_space, BLOCKS<<1);
